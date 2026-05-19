@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestionale Commesse Statue</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; font-size: 13px; background: #f4f5f7; color: #1a1a1a; min-height: 100vh; }
+  .topnav { background: #1e3a5f; color: #fff; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; height: 52px; }
+  .topnav h1 { font-size: 15px; font-weight: 500; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+  .topnav-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .btn-nav { background: rgba(255,255,255,.12); border: 0.5px solid rgba(255,255,255,.25); border-radius: 7px; color: #fff; padding: 5px 11px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+  .btn-nav:hover { background: rgba(255,255,255,.22); }
+  .btn-nav.green { background: rgba(34,197,94,.25); border-color: rgba(34,197,94,.5); }
+  .btn-nav.green:hover { background: rgba(34,197,94,.35); }
+  .drive-status { font-size: 11px; display: flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; }
+  .drive-status.ok  { background: rgba(34,197,94,.2); color: #86efac; }
+  .drive-status.off { background: rgba(255,255,255,.08); color: rgba(255,255,255,.5); }
+  .container { max-width: 920px; margin: 0 auto; padding: 18px 16px; }
+  .sel-bar { background: #fff; border: 0.5px solid #e0e0e0; border-radius: 10px; padding: 12px 16px; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .sel-bar label { font-size: 12px; color: #666; white-space: nowrap; }
+  .sel-bar select { border: 0.5px solid #ccc; border-radius: 7px; padding: 6px 10px; font-size: 13px; background: #fafafa; color: #1a1a1a; flex: 1; min-width: 180px; }
+  .sel-bar input[type=text] { border: 0.5px solid #ccc; border-radius: 7px; padding: 6px 10px; font-size: 13px; flex: 1; min-width: 160px; }
+  .badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+  .s-aperto   { background: #dbeafe; color: #1e40af; }
+  .s-parziale { background: #fef3c7; color: #92400e; }
+  .s-saldato  { background: #dcfce7; color: #166534; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+  .dot-a { background: #3b82f6; } .dot-p { background: #f59e0b; } .dot-s { background: #22c55e; }
+  .card { background: #fff; border: 0.5px solid #e0e0e0; border-radius: 10px; padding: 14px 18px; margin-bottom: 12px; }
+  .card-hdr { font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+  .metrics { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 12px; }
+  .metric { background: #f8f9fa; border-radius: 8px; padding: 12px 14px; }
+  .metric .ml { font-size: 11px; color: #888; margin-bottom: 4px; }
+  .metric .mv { font-size: 20px; font-weight: 600; color: #1a1a1a; }
+  .metric.info .mv  { color: #1e40af; }
+  .metric.ok .mv    { color: #166534; }
+  .metric.danger .mv{ color: #dc2626; }
+  table { width: 100%; border-collapse: collapse; }
+  th { font-size: 11px; font-weight: 600; color: #888; text-align: left; padding: 6px 8px; border-bottom: 0.5px solid #eee; }
+  td { padding: 7px 8px; border-bottom: 0.5px solid #f0f0f0; vertical-align: middle; color: #1a1a1a; }
+  tr:last-child td { border-bottom: none; }
+  td input[type=text], td input[type=number], td input[type=date], td select { border: 0.5px solid #ddd; border-radius: 6px; padding: 4px 7px; font-size: 12px; background: #fafafa; color: #1a1a1a; width: 100%; }
+  td input[type=number] { text-align: right; }
+  .riga-tot { font-weight: 600; white-space: nowrap; color: #1e3a5f; }
+  .btn-add { background: none; border: 0.5px dashed #ccc; border-radius: 8px; color: #888; padding: 6px 12px; font-size: 12px; cursor: pointer; width: 100%; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 5px; }
+  .btn-add:hover { background: #f4f5f7; }
+  .btn-del { background: none; border: none; cursor: pointer; color: #bbb; padding: 2px 5px; border-radius: 4px; font-size: 15px; line-height: 1; }
+  .btn-del:hover { color: #dc2626; background: #fee2e2; }
+  .btn { border: 0.5px solid #ccc; border-radius: 8px; padding: 7px 14px; font-size: 12px; cursor: pointer; background: #fff; color: #1a1a1a; display: inline-flex; align-items: center; gap: 6px; }
+  .btn:hover { background: #f4f5f7; }
+  .btn-save { border-color: #86efac; color: #166534; font-weight: 600; }
+  .btn-save:hover { background: #dcfce7; }
+  .btn-danger { border-color: #fca5a5; color: #dc2626; }
+  .btn-danger:hover { background: #fee2e2; }
+  .btn-row { display: flex; gap: 8px; justify-content: space-between; align-items: center; margin-top: 12px; flex-wrap: wrap; }
+  .avviso { background: #fef3c7; border-radius: 8px; padding: 9px 14px; font-size: 12px; color: #92400e; display: none; align-items: center; gap: 8px; margin-top: 8px; }
+  .link-box { background: #f4f5f7; border-radius: 8px; padding: 9px 12px; font-size: 11px; font-family: monospace; color: #555; display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; word-break: break-all; }
+  .toast { position: fixed; bottom: 24px; right: 24px; background: #166534; color: #fff; border-radius: 8px; padding: 10px 18px; font-size: 13px; display: none; align-items: center; gap: 8px; z-index: 999; box-shadow: 0 4px 16px rgba(0,0,0,.18); }
+  .grid-cliente { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .field label { font-size: 11px; color: #888; display: block; margin-bottom: 3px; }
+  .field input { border: 0.5px solid #ddd; border-radius: 7px; padding: 6px 9px; font-size: 13px; width: 100%; background: #fafafa; color: #1a1a1a; }
+  .note-field textarea { border: 0.5px solid #ddd; border-radius: 7px; padding: 7px 9px; font-size: 13px; width: 100%; background: #fafafa; color: #1a1a1a; resize: vertical; min-height: 56px; font-family: inherit; }
+  select:focus, input:focus { outline: 2px solid #3b82f6; outline-offset: 1px; }
+  .filter-btn { border: 0.5px solid #ddd; border-radius: 7px; padding: 5px 12px; font-size: 12px; cursor: pointer; background: #fff; color: #666; }
+  .filter-btn.on { background: #1e3a5f; color: #fff; border-color: #1e3a5f; }
+  .dash-tr td { padding: 9px 10px; border-bottom: 0.5px solid #f0f0f0; color: #1a1a1a; vertical-align: middle; cursor: pointer; }
+  .dash-tr:hover td { background: #f8f9fa; }
+  .dash-tr:last-child td { border-bottom: none; }
+  .prog-wrap { background: #f0f0f0; border-radius: 99px; height: 6px; overflow: hidden; }
+  .prog-bar  { height: 100%; border-radius: 99px; transition: width .4s; }
+  .spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #login-overlay { position: fixed; inset: 0; background: #f4f5f7; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; }
+  #login-overlay.hidden { display: none; }
+  .login-card { background: #fff; border: 0.5px solid #e0e0e0; border-radius: 14px; padding: 36px 40px; text-align: center; max-width: 360px; width: 90%; box-shadow: 0 4px 24px rgba(0,0,0,.08); }
+  .login-card i { font-size: 48px; color: #1e3a5f; margin-bottom: 14px; display: block; }
+  .login-card h2 { font-size: 19px; font-weight: 600; margin-bottom: 8px; }
+  .login-card p { font-size: 13px; color: #888; margin-bottom: 22px; line-height: 1.55; }
+  .btn-google { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 11px 22px; font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; font-weight: 500; color: #333; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+  .btn-google:hover { background: #f8f8f8; box-shadow: 0 2px 8px rgba(0,0,0,.12); }
+  .btn-google img { width: 20px; height: 20px; }
+  @media(max-width:600px){ .metrics{grid-template-columns:1fr;} .grid-cliente{grid-template-columns:1fr;} table{font-size:11px;} }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-overlay">
+  <div class="login-card">
+    <i class="ti ti-cloud"></i>
+    <h2>Gestionale Commesse</h2>
+    <p>Accedi con Google per sincronizzare automaticamente i dati su tutti i tuoi PC tramite Google Drive.</p>
+    <button class="btn-google" onclick="avviaLogin()">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+      Accedi con Google
+    </button>
+    <p style="margin-top:14px;font-size:11px;color:#bbb;">I dati vengono salvati nel tuo Google Drive personale.<br>Nessun server esterno coinvolto.</p>
+  </div>
+</div>
+
+<!-- TOPNAV -->
+<div class="topnav">
+  <h1><i class="ti ti-package"></i> <span>Gestionale Commesse Statue</span></h1>
+  <div class="topnav-right">
+    <div class="drive-status off" id="drive-status"><i class="ti ti-cloud-off"></i> Non connesso</div>
+    <button class="btn-nav green" id="btn-sync" onclick="sincronizzaDrive()" style="display:none;"><i class="ti ti-refresh"></i> Sincronizza</button>
+    <button class="btn-nav" onclick="esportaDati()"><i class="ti ti-download"></i> Backup</button>
+    <button class="btn-nav" onclick="document.getElementById('import-input').click()"><i class="ti ti-upload"></i> Importa</button>
+    <input type="file" id="import-input" accept=".json" style="display:none;" onchange="importaDati(event)">
+    <button class="btn-nav" id="btn-logout" onclick="logout()" style="display:none;" title="Esci da Google"><i class="ti ti-logout"></i></button>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="sel-bar">
+    <label>Commessa:</label>
+    <select id="ord-sel" onchange="onSelChange()"><option value="">— seleziona commessa —</option></select>
+    <input type="text" id="nuovo-input" placeholder="Nome nuova commessa..." style="display:none;">
+    <button class="btn" id="btn-nuovo" onclick="mostraNuovo()"><i class="ti ti-plus"></i> Nuova</button>
+    <button class="btn" id="btn-conferma" onclick="confermaNuovo()" style="display:none;border-color:#86efac;color:#166534;"><i class="ti ti-check"></i> Crea</button>
+    <button class="btn btn-danger" id="btn-elimina" onclick="eliminaOrdine()" style="display:none;" title="Elimina commessa"><i class="ti ti-trash"></i></button>
+    <span id="badge-stato" class="badge s-aperto" style="margin-left:auto;"><span class="dot dot-a"></span>Aperto</span>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="pannello-vuoto">
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px;">
+      <div style="background:#fff;border:0.5px solid #e0e0e0;border-radius:10px;padding:14px 16px;">
+        <div style="font-size:11px;color:#888;margin-bottom:6px;display:flex;align-items:center;gap:5px;"><i class="ti ti-list"></i> Commesse totali</div>
+        <div style="font-size:24px;font-weight:700;color:#1e40af;" id="k-tot">0</div>
+        <div style="font-size:11px;color:#aaa;margin-top:2px;">ordini in archivio</div>
+      </div>
+      <div style="background:#fff;border:0.5px solid #e0e0e0;border-radius:10px;padding:14px 16px;">
+        <div style="font-size:11px;color:#888;margin-bottom:6px;display:flex;align-items:center;gap:5px;"><i class="ti ti-clock"></i> Aperte</div>
+        <div style="font-size:24px;font-weight:700;color:#92400e;" id="k-aperte">0</div>
+        <div style="font-size:11px;color:#aaa;margin-top:2px;">senza pagamenti</div>
+      </div>
+      <div style="background:#fff;border:0.5px solid #e0e0e0;border-radius:10px;padding:14px 16px;">
+        <div style="font-size:11px;color:#888;margin-bottom:6px;display:flex;align-items:center;gap:5px;"><i class="ti ti-check"></i> Saldate</div>
+        <div style="font-size:24px;font-weight:700;color:#166534;" id="k-saldate">0</div>
+        <div style="font-size:11px;color:#aaa;margin-top:2px;">completate</div>
+      </div>
+      <div style="background:#fff;border:0.5px solid #e0e0e0;border-radius:10px;padding:14px 16px;">
+        <div style="font-size:11px;color:#888;margin-bottom:6px;display:flex;align-items:center;gap:5px;"><i class="ti ti-coin"></i> Da incassare</div>
+        <div style="font-size:24px;font-weight:700;color:#dc2626;" id="k-residuo">€ 0</div>
+        <div style="font-size:11px;color:#aaa;margin-top:2px;">totale saldi aperti</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="card">
+        <p class="card-hdr"><i class="ti ti-chart-pie"></i> Riepilogo finanziario</p>
+        <div style="display:flex;align-items:center;gap:20px;">
+          <svg width="100" height="100" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="38" fill="none" stroke="#f0f0f0" stroke-width="14"/>
+            <circle cx="50" cy="50" r="38" fill="none" stroke="#22c55e" stroke-width="14" stroke-dasharray="0 239" stroke-dashoffset="60" stroke-linecap="round" id="donut-arc" style="transition:stroke-dasharray .5s;"/>
+            <text x="50" y="54" text-anchor="middle" font-size="13" font-weight="700" fill="#1a1a1a" id="donut-pct">0%</text>
+          </svg>
+          <div style="display:flex;flex-direction:column;gap:10px;flex:1;">
+            <div style="display:flex;align-items:center;gap:8px;font-size:12px;"><div style="width:10px;height:10px;border-radius:50%;background:#22c55e;flex-shrink:0;"></div><div><div style="font-weight:600;" id="leg-inc">€ 0,00</div><div style="color:#888;font-size:11px;">Incassato</div></div></div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:12px;"><div style="width:10px;height:10px;border-radius:50%;background:#f0f0f0;border:1px solid #ddd;flex-shrink:0;"></div><div><div style="font-weight:600;" id="leg-res">€ 0,00</div><div style="color:#888;font-size:11px;">Residuo</div></div></div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:12px;"><div style="width:10px;height:10px;border-radius:50%;background:#1e40af;flex-shrink:0;"></div><div><div style="font-weight:600;" id="leg-tot">€ 0,00</div><div style="color:#888;font-size:11px;">Totale ordini</div></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <p class="card-hdr"><i class="ti ti-calendar-event"></i> Prossime consegne</p>
+        <div id="scad-list"><div style="color:#aaa;font-size:12px;padding:10px 0;text-align:center;">Nessuna scadenza trovata</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <p class="card-hdr" style="justify-content:space-between;">
+        <span><i class="ti ti-table"></i> Tutte le commesse</span>
+        <button class="btn" onclick="refreshDashboard()" style="padding:3px 10px;font-size:11px;"><i class="ti ti-refresh"></i> Aggiorna</button>
+      </p>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+        <input type="text" id="dash-search" placeholder="Cerca commessa o cliente..." oninput="renderTabella()" style="border:0.5px solid #ddd;border-radius:7px;padding:6px 10px;font-size:13px;background:#fff;color:#1a1a1a;flex:1;min-width:160px;">
+        <button class="filter-btn on" id="fb-all"      onclick="setFiltro('tutti')"   >Tutti</button>
+        <button class="filter-btn"    id="fb-aperto"   onclick="setFiltro('aperto')"  >Aperti</button>
+        <button class="filter-btn"    id="fb-parziale" onclick="setFiltro('parziale')">Parz.</button>
+        <button class="filter-btn"    id="fb-saldato"  onclick="setFiltro('saldato')" >Saldati</button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;">
+          <thead><tr>
+            <th style="font-size:11px;font-weight:600;color:#888;text-align:left;padding:7px 10px;border-bottom:0.5px solid #eee;">Commessa</th>
+            <th style="font-size:11px;font-weight:600;color:#888;text-align:left;padding:7px 10px;border-bottom:0.5px solid #eee;">Cliente</th>
+            <th style="font-size:11px;font-weight:600;color:#888;text-align:left;padding:7px 10px;border-bottom:0.5px solid #eee;">Apertura</th>
+            <th style="font-size:11px;font-weight:600;color:#888;text-align:right;padding:7px 10px;border-bottom:0.5px solid #eee;">Totale</th>
+            <th style="font-size:11px;font-weight:600;color:#888;text-align:right;padding:7px 10px;border-bottom:0.5px solid #eee;">Incassato</th>
+            <th style="font-size:11px;font-weight:600;color:#888;text-align:right;padding:7px 10px;border-bottom:0.5px solid #eee;">Residuo</th>
+            <th style="font-size:11px;font-weight:600;color:#888;text-align:left;padding:7px 10px;border-bottom:0.5px solid #eee;min-width:90px;">Incasso %</th>
+            <th style="font-size:11px;font-weight:600;color:#888;text-align:left;padding:7px 10px;border-bottom:0.5px solid #eee;">Stato</th>
+          </tr></thead>
+          <tbody id="dash-tbody"></tbody>
+        </table>
+      </div>
+      <div id="dash-empty" style="text-align:center;padding:30px;color:#aaa;display:none;">
+        <i class="ti ti-mood-empty" style="font-size:28px;display:block;margin-bottom:8px;"></i>
+        Nessuna commessa in archivio. Creane una nuova dal menu qui sopra.
+      </div>
+    </div>
+  </div>
+
+  <!-- PANNELLO COMMESSA -->
+  <div id="pannello" style="display:none;">
+    <div class="card">
+      <p class="card-hdr"><i class="ti ti-user"></i> Dati cliente</p>
+      <div class="grid-cliente">
+        <div class="field"><label>Nome e cognome</label><input type="text" id="cl-nome" placeholder="Mario Rossi"></div>
+        <div class="field"><label>Telefono / WhatsApp</label><input type="text" id="cl-tel" placeholder="+39 333 0000000"></div>
+        <div class="field"><label>Data apertura ordine</label><input type="date" id="cl-data"></div>
+      </div>
+    </div>
+    <div class="metrics">
+      <div class="metric info"><div class="ml">Totale ordine</div><div class="mv" id="m-tot">€ 0,00</div></div>
+      <div class="metric ok"><div class="ml">Totale incassato</div><div class="mv" id="m-inc">€ 0,00</div></div>
+      <div class="metric danger"><div class="ml">Saldo residuo</div><div class="mv" id="m-res">€ 0,00</div></div>
+    </div>
+    <div class="card">
+      <p class="card-hdr"><i class="ti ti-package"></i> Statue prenotate</p>
+      <table>
+        <thead><tr>
+          <th style="width:36%">Descrizione statua</th><th style="width:8%">Qtà</th>
+          <th style="width:16%">Prezzo (€)</th><th style="width:16%">Consegna prevista</th>
+          <th style="width:16%">Totale riga</th><th style="width:8%"></th>
+        </tr></thead>
+        <tbody id="statue-body"></tbody>
+      </table>
+      <button class="btn-add" onclick="aggStatua()"><i class="ti ti-plus"></i> Aggiungi statua</button>
+    </div>
+    <div class="card">
+      <p class="card-hdr"><i class="ti ti-cash"></i> Pagamenti ricevuti</p>
+      <table>
+        <thead><tr>
+          <th style="width:16%">Data</th><th style="width:20%">Tipo</th>
+          <th style="width:17%">Metodo</th><th style="width:15%">Importo (€)</th>
+          <th style="width:26%">Note</th><th style="width:6%"></th>
+        </tr></thead>
+        <tbody id="pag-body"></tbody>
+      </table>
+      <button class="btn-add" onclick="aggPag()"><i class="ti ti-plus"></i> Aggiungi pagamento</button>
+    </div>
+    <div class="avviso" id="avviso"><i class="ti ti-alert-triangle"></i> Attenzione: saldo residuo ancora da incassare prima della consegna.</div>
+    <div class="card">
+      <p class="card-hdr"><i class="ti ti-notes"></i> Note ordine</p>
+      <div class="note-field"><textarea id="note-ordine" placeholder="Personalizzazioni, variazioni, comunicazioni con il cliente..."></textarea></div>
+    </div>
+    <div class="card">
+      <p class="card-hdr"><i class="ti ti-link"></i> Link per monday.com</p>
+      <p style="font-size:12px;color:#888;margin-bottom:4px;">Incolla questo link nella colonna <strong>Link</strong> della riga su monday.com.</p>
+      <div class="link-box"><span id="link-val" style="flex:1;">—</span><button class="btn" onclick="copiaLink()" style="flex-shrink:0;"><i class="ti ti-copy"></i> Copia</button></div>
+    </div>
+    <div class="btn-row">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn" onclick="tornaAllaLista()"><i class="ti ti-arrow-left"></i> Dashboard</button>
+        <button class="btn" onclick="copiaRiepilogo()"><i class="ti ti-copy"></i> Copia riepilogo</button>
+        <button class="btn" onclick="window.print()"><i class="ti ti-printer"></i> Stampa</button>
+      </div>
+      <button class="btn btn-save" onclick="salva()"><i class="ti ti-device-floppy"></i> Salva &amp; Sincronizza</button>
+    </div>
+  </div>
+
+</div>
+<div class="toast" id="toast"><i class="ti ti-check"></i> <span id="toast-msg"></span></div>
+
+<script>
+/* ── CONFIG ── */
+const CLIENT_ID  = '994203576107-k72u8odttdfnmdd4bhbammrqf0eh3k6p.apps.googleusercontent.com';
+const SCOPES     = 'https://www.googleapis.com/auth/drive.file';
+const DRIVE_FILE = 'commesse_statue.json';
+const today      = new Date().toISOString().split('T')[0];
+
+/* ── STATE ── */
+let accessToken  = null;
+let driveFileId  = null;
+let ordineAttivo = null;
+let filtroStato  = 'tutti';
+
+/* ── UTILS ── */
+function storageKey(n){ return 'commessa__'+n; }
+function fmt(n){ return '€ '+Math.max(0,n).toFixed(2).replace('.',','); }
+function fmtShort(n){ return '€ '+Math.max(0,n).toLocaleString('it-IT',{minimumFractionDigits:0,maximumFractionDigits:0}); }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;'); }
+
+function showToast(msg,color){
+  const t=document.getElementById('toast');
+  document.getElementById('toast-msg').textContent=msg;
+  t.style.background=color||'#166534';
+  t.style.display='flex';
+  clearTimeout(t._tid);
+  t._tid=setTimeout(()=>t.style.display='none',2600);
+}
+
+/* ── GOOGLE AUTH ── */
+function avviaLogin(){
+  const client=google.accounts.oauth2.initTokenClient({
+    client_id:CLIENT_ID, scope:SCOPES,
+    callback:async(resp)=>{
+      if(resp.error){showToast('Errore login: '+resp.error,'#dc2626');return;}
+      accessToken=resp.access_token;
+      document.getElementById('login-overlay').classList.add('hidden');
+      document.getElementById('drive-status').className='drive-status ok';
+      document.getElementById('drive-status').innerHTML='<i class="ti ti-cloud-check"></i> Drive connesso';
+      document.getElementById('btn-sync').style.display='inline-flex';
+      document.getElementById('btn-logout').style.display='inline-flex';
+      await sincronizzaDrive();
+    }
+  });
+  client.requestAccessToken();
+}
+
+function logout(){
+  if(!confirm('Esci dall\'account Google?')) return;
+  accessToken=null; driveFileId=null;
+  document.getElementById('login-overlay').classList.remove('hidden');
+  document.getElementById('drive-status').className='drive-status off';
+  document.getElementById('drive-status').innerHTML='<i class="ti ti-cloud-off"></i> Non connesso';
+  document.getElementById('btn-sync').style.display='none';
+  document.getElementById('btn-logout').style.display='none';
+}
+
+/* ── GOOGLE DRIVE ── */
+async function driveFetch(url,opts={}){
+  if(!accessToken) return null;
+  opts.headers={...(opts.headers||{}),'Authorization':'Bearer '+accessToken};
+  const r=await fetch(url,opts);
+  if(r.status===401){showToast('Sessione scaduta, riaccedi','#dc2626');logout();return null;}
+  return r;
+}
+
+async function trovaDriveFile(){
+  const q=encodeURIComponent(`name='${DRIVE_FILE}' and trashed=false`);
+  const r=await driveFetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`);
+  if(!r) return null;
+  const d=await r.json();
+  return d.files&&d.files.length?d.files[0].id:null;
+}
+
+async function leggiDaDrive(fileId){
+  const r=await driveFetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`);
+  if(!r) return null;
+  try{return await r.json();}catch(e){return null;}
+}
+
+async function scrivisuDrive(data){
+  const body=JSON.stringify(data);
+  if(driveFileId){
+    await driveFetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`,{
+      method:'PATCH',headers:{'Content-Type':'application/json'},body
+    });
+  } else {
+    const meta=JSON.stringify({name:DRIVE_FILE});
+    const form=new FormData();
+    form.append('metadata',new Blob([meta],{type:'application/json'}));
+    form.append('file',new Blob([body],{type:'application/json'}));
+    const r=await driveFetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',{method:'POST',body:form});
+    if(!r) return;
+    const d=await r.json();
+    driveFileId=d.id;
+  }
+}
+
+async function sincronizzaDrive(){
+  if(!accessToken){showToast('Non connesso a Drive','#92400e');return;}
+  const btn=document.getElementById('btn-sync');
+  btn.innerHTML='<span class="spinner"></span> Sync...';
+  btn.disabled=true;
+  try{
+    if(!driveFileId) driveFileId=await trovaDriveFile();
+    if(driveFileId){
+      const remoto=await leggiDaDrive(driveFileId);
+      if(remoto){
+        let aggiornate=0;
+        Object.keys(remoto).forEach(k=>{
+          if(k.startsWith('commessa__')){
+            const locale=localStorage.getItem(k);
+            const rs=JSON.stringify(remoto[k]);
+            if(locale!==rs){localStorage.setItem(k,rs);aggiornate++;}
+          }
+        });
+        showToast(aggiornate>0?`Sincronizzate ${aggiornate} commesse da Drive ✓`:'Dati già aggiornati ✓');
+      }
+    } else {
+      const backup={};
+      Object.keys(localStorage).filter(k=>k.startsWith('commessa__')).forEach(k=>{try{backup[k]=JSON.parse(localStorage.getItem(k));}catch(e){}});
+      await scrivisuDrive(backup);
+      showToast('Dati caricati su Drive ✓');
+    }
+  }catch(e){showToast('Errore sync: '+e.message,'#dc2626');}
+  btn.innerHTML='<i class="ti ti-refresh"></i> Sincronizza';
+  btn.disabled=false;
+  caricaListaOrdini();
+  refreshDashboard();
+}
+
+async function salvaSuDrive(){
+  if(!accessToken) return;
+  const backup={};
+  Object.keys(localStorage).filter(k=>k.startsWith('commessa__')).forEach(k=>{try{backup[k]=JSON.parse(localStorage.getItem(k));}catch(e){}});
+  if(!driveFileId) driveFileId=await trovaDriveFile();
+  await scrivisuDrive(backup);
+}
+
+/* ── LOCAL STORAGE ── */
+function caricaListaOrdini(){
+  const sel=document.getElementById('ord-sel');
+  const corrente=sel.value;
+  while(sel.options.length>1) sel.remove(1);
+  Object.keys(localStorage).filter(k=>k.startsWith('commessa__')).sort().forEach(k=>{
+    const nome=k.replace('commessa__','');
+    const opt=document.createElement('option');
+    opt.value=nome; opt.textContent=nome;
+    sel.appendChild(opt);
+  });
+  if(corrente) sel.value=corrente;
+}
+
+/* ── DASHBOARD ── */
+function tuttiGliOrdini(){
+  return Object.keys(localStorage).filter(k=>k.startsWith('commessa__')).map(k=>{
+    const nome=k.replace('commessa__','');
+    let d={};
+    try{d=JSON.parse(localStorage.getItem(k))||{};}catch(e){}
+    let tot=0,inc=0;
+    (d.statue||[]).forEach(s=>{tot+=(parseFloat(s.qty)||0)*(parseFloat(s.prezzo)||0);});
+    (d.pagamenti||[]).forEach(p=>{inc+=parseFloat(p.importo)||0;});
+    const res=Math.max(0,tot-inc);
+    const stato=res<=0.001?'saldato':inc>0.001?'parziale':'aperto';
+    let prossima=null;
+    (d.statue||[]).forEach(s=>{if(s.consegna&&(!prossima||s.consegna<prossima))prossima=s.consegna;});
+    return{nome,cliente:d.cliente||{},tot,inc,res,stato,prossima};
+  });
+}
+
+function refreshDashboard(){
+  const ordini=tuttiGliOrdini();
+  const totInc=ordini.reduce((s,o)=>s+o.inc,0);
+  const totRes=ordini.reduce((s,o)=>s+o.res,0);
+  const totOrd=ordini.reduce((s,o)=>s+o.tot,0);
+  document.getElementById('k-tot').textContent=ordini.length;
+  document.getElementById('k-aperte').textContent=ordini.filter(o=>o.stato==='aperto').length;
+  document.getElementById('k-saldate').textContent=ordini.filter(o=>o.stato==='saldato').length;
+  document.getElementById('k-residuo').textContent=fmtShort(totRes);
+  const pct=totOrd>0?totInc/totOrd:0;
+  const circ=2*Math.PI*38;
+  document.getElementById('donut-arc').setAttribute('stroke-dasharray',(pct*circ).toFixed(1)+' '+circ.toFixed(1));
+  document.getElementById('donut-pct').textContent=Math.round(pct*100)+'%';
+  document.getElementById('leg-inc').textContent=fmt(totInc);
+  document.getElementById('leg-res').textContent=fmt(totRes);
+  document.getElementById('leg-tot').textContent=fmt(totOrd);
+  const oggi=new Date();oggi.setHours(0,0,0,0);
+  const conScad=ordini.filter(o=>o.prossima&&o.stato!=='saldato').sort((a,b)=>a.prossima.localeCompare(b.prossima)).slice(0,5);
+  const scadEl=document.getElementById('scad-list');
+  if(!conScad.length){scadEl.innerHTML='<div style="color:#aaa;font-size:12px;padding:10px 0;text-align:center;">Nessuna scadenza imminente</div>';}
+  else{scadEl.innerHTML=conScad.map(o=>{
+    const d=new Date(o.prossima);d.setHours(0,0,0,0);
+    const diff=Math.round((d-oggi)/864e5);
+    let pc='',pt='';
+    if(diff<0){pc='background:#fee2e2;color:#dc2626';pt='Scaduta';}
+    else if(diff<=7){pc='background:#fef3c7;color:#92400e';pt=diff===0?'Oggi':diff+'gg';}
+    else{pc='background:#dcfce7;color:#166534';pt=diff+'gg';}
+    return `<div onclick="apriCommessa('${esc(o.nome)}')" style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid #f0f0f0;gap:8px;cursor:pointer;">
+      <div style="font-weight:500;font-size:13px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(o.nome)}</div>
+      <div style="font-size:12px;color:#888;white-space:nowrap;">${o.prossima.split('-').reverse().join('/')}</div>
+      <div style="font-size:11px;padding:2px 8px;border-radius:20px;font-weight:500;white-space:nowrap;${pc}">${pt}</div>
+    </div>`;
+  }).join('');}
+  renderTabella(ordini);
+}
+
+function setFiltro(f){
+  filtroStato=f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('on'));
+  const map={tutti:'fb-all',aperto:'fb-aperto',parziale:'fb-parziale',saldato:'fb-saldato'};
+  if(map[f]) document.getElementById(map[f]).classList.add('on');
+  renderTabella();
+}
+
+function renderTabella(ordini){
+  ordini=ordini||tuttiGliOrdini();
+  const q=(document.getElementById('dash-search')?.value||'').toLowerCase();
+  const rows=ordini.filter(o=>{
+    const mQ=!q||o.nome.toLowerCase().includes(q)||(o.cliente.nome||'').toLowerCase().includes(q);
+    return mQ&&(filtroStato==='tutti'||o.stato===filtroStato);
+  }).sort((a,b)=>b.res-a.res);
+  const tbody=document.getElementById('dash-tbody');
+  const empty=document.getElementById('dash-empty');
+  if(!rows.length){tbody.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  const bmap={
+    aperto:`<span class="badge s-aperto"><span class="dot dot-a"></span>Aperto</span>`,
+    parziale:`<span class="badge s-parziale"><span class="dot dot-p"></span>Parz. saldato</span>`,
+    saldato:`<span class="badge s-saldato"><span class="dot dot-s"></span>Saldato</span>`,
+  };
+  tbody.innerHTML=rows.map(o=>{
+    const pct=o.tot>0?Math.round(o.inc/o.tot*100):0;
+    const bc=o.stato==='saldato'?'#22c55e':o.stato==='parziale'?'#f59e0b':'#e5e7eb';
+    return `<tr class="dash-tr" onclick="apriCommessa('${esc(o.nome)}')">
+      <td style="font-weight:600;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(o.nome)}</td>
+      <td style="color:#555;">${esc(o.cliente.nome||'—')}</td>
+      <td style="color:#888;">${o.cliente.data?o.cliente.data.split('-').reverse().join('/'):'—'}</td>
+      <td style="text-align:right;">${fmt(o.tot)}</td>
+      <td style="text-align:right;color:#166534;">${fmt(o.inc)}</td>
+      <td style="text-align:right;color:${o.res>0?'#dc2626':'#166534'};font-weight:600;">${fmt(o.res)}</td>
+      <td><div style="font-size:11px;color:#888;margin-bottom:3px;">${pct}%</div><div class="prog-wrap"><div class="prog-bar" style="width:${pct}%;background:${bc};"></div></div></td>
+      <td>${bmap[o.stato]||''}</td>
+    </tr>`;
+  }).join('');
+}
+
+function apriCommessa(nome){
+  caricaListaOrdini();
+  document.getElementById('ord-sel').value=nome;
+  onSelChange();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function tornaAllaLista(){
+  document.getElementById('pannello').style.display='none';
+  document.getElementById('pannello-vuoto').style.display='block';
+  document.getElementById('ord-sel').value='';
+  document.getElementById('btn-elimina').style.display='none';
+  ordineAttivo=null;
+  refreshDashboard();
+}
+
+/* ── GESTIONALE ── */
+function mostraNuovo(){
+  document.getElementById('nuovo-input').style.display='block';
+  document.getElementById('btn-conferma').style.display='inline-flex';
+  document.getElementById('btn-nuovo').style.display='none';
+  document.getElementById('nuovo-input').focus();
+}
+
+function confermaNuovo(){
+  const nome=document.getElementById('nuovo-input').value.trim().toUpperCase();
+  if(!nome){alert('Inserisci il nome della commessa');return;}
+  if(localStorage.getItem(storageKey(nome))){alert('Esiste già una commessa con questo nome');return;}
+  localStorage.setItem(storageKey(nome),JSON.stringify({cliente:{nome:'',tel:'',data:today},statue:[],pagamenti:[],note:''}));
+  document.getElementById('nuovo-input').value='';
+  document.getElementById('nuovo-input').style.display='none';
+  document.getElementById('btn-conferma').style.display='none';
+  document.getElementById('btn-nuovo').style.display='inline-flex';
+  caricaListaOrdini();
+  document.getElementById('ord-sel').value=nome;
+  onSelChange();
+  showToast('Commessa creata!');
+}
+
+function eliminaOrdine(){
+  if(!ordineAttivo) return;
+  if(!confirm('Eliminare "'+ordineAttivo+'"? I dati verranno persi.')) return;
+  localStorage.removeItem(storageKey(ordineAttivo));
+  tornaAllaLista();
+  showToast('Commessa eliminata','#dc2626');
+}
+
+function onSelChange(){
+  const nome=document.getElementById('ord-sel').value;
+  if(!nome){tornaAllaLista();return;}
+  ordineAttivo=nome;
+  document.getElementById('btn-elimina').style.display='inline-flex';
+  const raw=localStorage.getItem(storageKey(nome));
+  renderPannello(raw?JSON.parse(raw):null);
+  document.getElementById('pannello-vuoto').style.display='none';
+  document.getElementById('pannello').style.display='block';
+  aggiornaLink();
+}
+
+function renderPannello(dati){
+  document.getElementById('cl-nome').value=dati?.cliente?.nome||'';
+  document.getElementById('cl-tel').value=dati?.cliente?.tel||'';
+  document.getElementById('cl-data').value=dati?.cliente?.data||today;
+  document.getElementById('note-ordine').value=dati?.note||'';
+  document.getElementById('statue-body').innerHTML='';
+  document.getElementById('pag-body').innerHTML='';
+  (dati?.statue?.length?dati.statue:[{}]).forEach(s=>_addStatuaRow(s));
+  (dati?.pagamenti?.length?dati.pagamenti:[{}]).forEach(p=>_addPagRow(p));
+  aggiornaTotali();
+}
+
+function aggStatua(){_addStatuaRow({});aggiornaTotali();}
+function _addStatuaRow(s){
+  s=s||{};
+  const tr=document.createElement('tr');
+  tr.innerHTML=`
+    <td><input type="text" value="${esc(s.desc||'')}" placeholder="Nome / modello statua" oninput="aggiornaTotali()"></td>
+    <td><input type="number" value="${s.qty||1}" min="1" style="width:48px;text-align:center;" oninput="aggiornaTotali()"></td>
+    <td><input type="number" value="${s.prezzo||''}" placeholder="0.00" step="0.01" oninput="aggiornaTotali()"></td>
+    <td><input type="date" value="${s.consegna||''}"></td>
+    <td class="riga-tot">€ 0,00</td>
+    <td><button class="btn-del" onclick="this.closest('tr').remove();aggiornaTotali()">×</button></td>`;
+  document.getElementById('statue-body').appendChild(tr);
+}
+
+function aggPag(){_addPagRow({});}
+function _addPagRow(p){
+  p=p||{};
+  const tipos=['Acconto','Acconto 2','Acconto 3','Saldo parziale','Saldo'];
+  const metodi=['Contanti','Bonifico','PayPal','POS','Satispay'];
+  const optT=tipos.map(t=>`<option${p.tipo===t?' selected':''}>${t}</option>`).join('');
+  const optM=metodi.map(m=>`<option${p.metodo===m?' selected':''}>${m}</option>`).join('');
+  const tr=document.createElement('tr');
+  tr.innerHTML=`
+    <td><input type="date" value="${p.data||today}"></td>
+    <td><select>${optT}</select></td><td><select>${optM}</select></td>
+    <td><input type="number" value="${p.importo||''}" placeholder="0.00" step="0.01" style="width:90px;" oninput="aggiornaTotali()"></td>
+    <td><input type="text" value="${esc(p.note||'')}" placeholder="Facoltativo"></td>
+    <td><button class="btn-del" onclick="this.closest('tr').remove();aggiornaTotali()">×</button></td>`;
+  document.getElementById('pag-body').appendChild(tr);
+  aggiornaTotali();
+}
+
+function aggiornaTotali(){
+  let tot=0;
+  document.querySelectorAll('#statue-body tr').forEach(tr=>{
+    const ins=tr.querySelectorAll('input[type=number]');
+    if(ins.length>=2){const r=(parseFloat(ins[0].value)||0)*(parseFloat(ins[1].value)||0);tr.querySelector('.riga-tot').textContent='€ '+r.toFixed(2).replace('.',',');tot+=r;}
+  });
+  let inc=0;
+  document.querySelectorAll('#pag-body input[type=number]').forEach(i=>inc+=parseFloat(i.value)||0);
+  const res=tot-inc;
+  document.getElementById('m-tot').textContent=fmt(tot);
+  document.getElementById('m-inc').textContent=fmt(inc);
+  document.getElementById('m-res').textContent=fmt(Math.max(0,res));
+  document.getElementById('avviso').style.display=res>0.001?'flex':'none';
+  const cls=res<=0.001?'s-saldato':inc>0.001?'s-parziale':'s-aperto';
+  const labels={'s-aperto':'Aperto','s-parziale':'Parz. saldato','s-saldato':'Saldato'};
+  const dots={'s-aperto':'dot-a','s-parziale':'dot-p','s-saldato':'dot-s'};
+  const b=document.getElementById('badge-stato');
+  b.className='badge '+cls;
+  b.innerHTML=`<span class="dot ${dots[cls]}"></span>${labels[cls]}`;
+}
+
+function raccogliDati(){
+  const statue=[];
+  document.querySelectorAll('#statue-body tr').forEach(tr=>{const ins=tr.querySelectorAll('input');statue.push({desc:ins[0].value,qty:ins[1].value,prezzo:ins[2].value,consegna:ins[3].value});});
+  const pagamenti=[];
+  document.querySelectorAll('#pag-body tr').forEach(tr=>{const ins=tr.querySelectorAll('input');const sels=tr.querySelectorAll('select');pagamenti.push({data:ins[0].value,tipo:sels[0].value,metodo:sels[1].value,importo:ins[1].value,note:ins[2].value});});
+  return{cliente:{nome:document.getElementById('cl-nome').value,tel:document.getElementById('cl-tel').value,data:document.getElementById('cl-data').value},statue,pagamenti,note:document.getElementById('note-ordine').value};
+}
+
+async function salva(){
+  if(!ordineAttivo) return;
+  localStorage.setItem(storageKey(ordineAttivo),JSON.stringify(raccogliDati()));
+  showToast('Salvataggio in corso...','#1e40af');
+  await salvaSuDrive();
+  showToast('Salvato e sincronizzato su Drive ✓');
+}
+
+function aggiornaLink(){
+  const base=window.location.href.split('?')[0];
+  document.getElementById('link-val').textContent=base+'?commessa='+encodeURIComponent(ordineAttivo||'');
+}
+function copiaLink(){ navigator.clipboard.writeText(document.getElementById('link-val').textContent).then(()=>showToast('Link copiato!')); }
+
+function copiaRiepilogo(){
+  if(!ordineAttivo) return;
+  const cl=document.getElementById('cl-nome').value,tel=document.getElementById('cl-tel').value;
+  let txt=`COMMESSA: ${ordineAttivo}\nCliente: ${cl} ${tel}\n\nTotale: ${document.getElementById('m-tot').textContent}\nIncassato: ${document.getElementById('m-inc').textContent}\nResiduo: ${document.getElementById('m-res').textContent}\n\nSTATUE:\n`;
+  document.querySelectorAll('#statue-body tr').forEach(tr=>{const ins=tr.querySelectorAll('input');if(!ins[0].value)return;txt+=`• ${ins[0].value} x${ins[1].value} = ${tr.querySelector('.riga-tot').textContent}\n`;});
+  txt+='\nPAGAMENTI:\n';
+  document.querySelectorAll('#pag-body tr').forEach(tr=>{const ins=tr.querySelectorAll('input');const sels=tr.querySelectorAll('select');if(!ins[1].value)return;txt+=`• ${ins[0].value} | ${sels[0].value} | ${sels[1].value} | € ${parseFloat(ins[1].value||0).toFixed(2)}\n`;});
+  navigator.clipboard.writeText(txt).then(()=>showToast('Riepilogo copiato!'));
+}
+
+/* ── BACKUP MANUALE ── */
+function esportaDati(){
+  const backup={};
+  Object.keys(localStorage).filter(k=>k.startsWith('commessa__')).forEach(k=>{try{backup[k]=JSON.parse(localStorage.getItem(k));}catch(e){}});
+  if(!Object.keys(backup).length){showToast('Nessun dato da esportare','#92400e');return;}
+  const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=`commesse_backup_${new Date().toISOString().slice(0,10)}.json`;
+  a.click(); URL.revokeObjectURL(url);
+  showToast('Backup scaricato!');
+}
+
+function importaDati(event){
+  const file=event.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const backup=JSON.parse(e.target.result);
+      let count=0;
+      Object.keys(backup).forEach(k=>{if(k.startsWith('commessa__')){localStorage.setItem(k,JSON.stringify(backup[k]));count++;}});
+      caricaListaOrdini();refreshDashboard();
+      showToast(`Importate ${count} commesse!`);
+    }catch(e){showToast('File non valido','#dc2626');}
+    event.target.value='';
+  };
+  reader.readAsText(file);
+}
+
+/* ── AVVIO ── */
+setFiltro('tutti');
+caricaListaOrdini();
+refreshDashboard();
+const params=new URLSearchParams(window.location.search);
+const qc=params.get('commessa');
+if(qc){
+  if(!localStorage.getItem(storageKey(qc))) localStorage.setItem(storageKey(qc),JSON.stringify({cliente:{nome:'',tel:'',data:today},statue:[{}],pagamenti:[{}],note:''}));
+  caricaListaOrdini();
+  document.getElementById('ord-sel').value=qc;
+  onSelChange();
+}
+</script>
+</body>
+</html>
