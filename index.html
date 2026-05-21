@@ -8,82 +8,182 @@
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; font-size: 13px; background: #f4f5f7; color: #1a1a1a; min-height: 100vh; }
-  .topnav { background: #1e3a5f; color: #fff; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; height: 52px; }
-  .topnav h1 { font-size: 15px; font-weight: 500; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
-  .topnav-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-  .btn-nav { background: rgba(255,255,255,.12); border: 0.5px solid rgba(255,255,255,.25); border-radius: 7px; color: #fff; padding: 5px 11px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
-  .btn-nav:hover { background: rgba(255,255,255,.22); }
-  .btn-nav.green { background: rgba(34,197,94,.25); border-color: rgba(34,197,94,.5); }
-  .btn-nav.green:hover { background: rgba(34,197,94,.35); }
+  :root {
+    --navy: #0f2547;
+    --navy2: #162f5a;
+    --navy3: #1e3a6e;
+    --blue:  #2563eb;
+    --blue2: #3b82f6;
+    --blue3: #60a5fa;
+    --surface: #0d1b2e;
+    --surface2: #112240;
+    --surface3: #1a3055;
+    --border: rgba(255,255,255,.09);
+    --border2: rgba(255,255,255,.14);
+    --text: #e2e8f0;
+    --text2: #94a3b8;
+    --text3: #64748b;
+    --green: #22c55e;
+    --amber: #f59e0b;
+    --red: #ef4444;
+    --glass: rgba(255,255,255,.04);
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; font-size: 13px; background: var(--surface); color: var(--text); min-height: 100vh; }
+
+  /* ── TOPNAV ── */
+  .topnav { background: var(--navy); border-bottom: 1px solid var(--border); padding: 0 20px; display: flex; align-items: center; justify-content: space-between; height: 54px; position: sticky; top:0; z-index: 100; }
+  .topnav h1 { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; white-space: nowrap; color: #fff; letter-spacing: -.01em; }
+  .topnav h1 i { color: var(--blue2); font-size: 20px; }
+  .topnav-right { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
+  .btn-nav { background: var(--glass); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 5px 11px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; transition: all .15s; }
+  .btn-nav:hover { background: rgba(255,255,255,.1); border-color: var(--border2); }
+  .btn-nav.green { background: rgba(34,197,94,.15); border-color: rgba(34,197,94,.35); color: #86efac; }
+  .btn-nav.green:hover { background: rgba(34,197,94,.25); }
+  .btn-nav.blue { background: rgba(37,99,235,.25); border-color: rgba(37,99,235,.5); color: #93c5fd; }
+  .btn-nav.blue:hover { background: rgba(37,99,235,.35); }
   .drive-status { font-size: 11px; display: flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; }
-  .drive-status.ok  { background: rgba(34,197,94,.2); color: #86efac; }
-  .drive-status.off { background: rgba(255,255,255,.08); color: rgba(255,255,255,.5); }
-  .container { max-width: 920px; margin: 0 auto; padding: 18px 16px; }
-  .sel-bar { background: #fff; border: 0.5px solid #e0e0e0; border-radius: 10px; padding: 12px 16px; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .sel-bar label { font-size: 12px; color: #666; white-space: nowrap; }
-  .sel-bar select { border: 0.5px solid #ccc; border-radius: 7px; padding: 6px 10px; font-size: 13px; background: #fafafa; color: #1a1a1a; flex: 1; min-width: 180px; }
-  .sel-bar input[type=text] { border: 0.5px solid #ccc; border-radius: 7px; padding: 6px 10px; font-size: 13px; flex: 1; min-width: 160px; }
+  .drive-status.ok  { background: rgba(34,197,94,.15); color: #86efac; border: 1px solid rgba(34,197,94,.3); }
+  .drive-status.off { background: rgba(255,255,255,.05); color: var(--text3); border: 1px solid var(--border); }
+
+  /* ── CONTAINER ── */
+  .container { max-width: 960px; margin: 0 auto; padding: 20px 16px; }
+
+  /* ── SEL BAR ── */
+  .sel-bar { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .sel-bar label { font-size: 12px; color: var(--text2); white-space: nowrap; }
+  .sel-bar select, .sel-bar input[type=text] { border: 1px solid var(--border2); border-radius: 8px; padding: 6px 10px; font-size: 13px; background: var(--surface3); color: var(--text); flex: 1; min-width: 180px; }
+
+  /* ── BADGE ── */
   .badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
-  .s-aperto   { background: #dbeafe; color: #1e40af; }
-  .s-parziale { background: #fef3c7; color: #92400e; }
-  .s-saldato  { background: #dcfce7; color: #166534; }
-  .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+  .s-aperto   { background: rgba(59,130,246,.2); color: #93c5fd; border: 1px solid rgba(59,130,246,.35); }
+  .s-parziale { background: rgba(245,158,11,.2); color: #fcd34d; border: 1px solid rgba(245,158,11,.35); }
+  .s-saldato  { background: rgba(34,197,94,.2);  color: #86efac; border: 1px solid rgba(34,197,94,.35); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex-shrink:0; }
   .dot-a { background: #3b82f6; } .dot-p { background: #f59e0b; } .dot-s { background: #22c55e; }
-  .card { background: #fff; border: 0.5px solid #e0e0e0; border-radius: 10px; padding: 14px 18px; margin-bottom: 12px; }
-  .card-hdr { font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
-  .metrics { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 12px; }
-  .metric { background: #f8f9fa; border-radius: 8px; padding: 12px 14px; }
-  .metric .ml { font-size: 11px; color: #888; margin-bottom: 4px; }
-  .metric .mv { font-size: 20px; font-weight: 600; color: #1a1a1a; }
-  .metric.info .mv  { color: #1e40af; }
-  .metric.ok .mv    { color: #166534; }
-  .metric.danger .mv{ color: #dc2626; }
+
+  /* ── CARD ── */
+  .card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; margin-bottom: 14px; }
+  .card-hdr { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 14px; display: flex; align-items: center; gap: 6px; }
+  .card-hdr i { color: var(--blue2); font-size: 14px; }
+
+  /* ── KPI GRID ── */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 16px; }
+  .kpi { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; position:relative; overflow:hidden; }
+  .kpi::before { content:''; position:absolute; inset:0; background: linear-gradient(135deg, rgba(37,99,235,.08), transparent); pointer-events:none; }
+  .kpi .kl { font-size: 11px; color: var(--text2); margin-bottom: 8px; display:flex; align-items:center; gap:5px; }
+  .kpi .kv { font-size: 26px; font-weight: 700; line-height:1; }
+  .kpi .ks { font-size: 11px; color: var(--text3); margin-top: 4px; }
+  .kpi.info .kv  { color: #93c5fd; }
+  .kpi.ok .kv    { color: #86efac; }
+  .kpi.warn .kv  { color: #fcd34d; }
+  .kpi.danger .kv{ color: #fca5a5; }
+
+  /* ── METRICS (commessa) ── */
+  .metrics { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 14px; }
+  .metric { background: var(--surface3); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .metric .ml { font-size: 11px; color: var(--text2); margin-bottom: 5px; }
+  .metric .mv { font-size: 22px; font-weight: 700; }
+  .metric.info .mv  { color: #93c5fd; }
+  .metric.ok .mv    { color: #86efac; }
+  .metric.danger .mv{ color: #fca5a5; }
+
+  /* ── TABLE ── */
   table { width: 100%; border-collapse: collapse; }
-  th { font-size: 11px; font-weight: 600; color: #888; text-align: left; padding: 6px 8px; border-bottom: 0.5px solid #eee; }
-  td { padding: 7px 8px; border-bottom: 0.5px solid #f0f0f0; vertical-align: middle; color: #1a1a1a; }
+  th { font-size: 11px; font-weight: 600; color: var(--text2); text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  td { padding: 7px 8px; border-bottom: 1px solid rgba(255,255,255,.04); vertical-align: middle; color: var(--text); }
   tr:last-child td { border-bottom: none; }
-  td input[type=text], td input[type=number], td input[type=date], td select { border: 0.5px solid #ddd; border-radius: 6px; padding: 4px 7px; font-size: 12px; background: #fafafa; color: #1a1a1a; width: 100%; }
+  td input[type=text], td input[type=number], td input[type=date], td select { border: 1px solid var(--border2); border-radius: 6px; padding: 5px 8px; font-size: 12px; background: var(--surface3); color: var(--text); width: 100%; }
   td input[type=number] { text-align: right; }
-  .riga-tot { font-weight: 600; white-space: nowrap; color: #1e3a5f; }
-  .btn-add { background: none; border: 0.5px dashed #ccc; border-radius: 8px; color: #888; padding: 6px 12px; font-size: 12px; cursor: pointer; width: 100%; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 5px; }
-  .btn-add:hover { background: #f4f5f7; }
-  .btn-del { background: none; border: none; cursor: pointer; color: #bbb; padding: 2px 5px; border-radius: 4px; font-size: 15px; line-height: 1; }
-  .btn-del:hover { color: #dc2626; background: #fee2e2; }
-  .btn { border: 0.5px solid #ccc; border-radius: 8px; padding: 7px 14px; font-size: 12px; cursor: pointer; background: #fff; color: #1a1a1a; display: inline-flex; align-items: center; gap: 6px; }
-  .btn:hover { background: #f4f5f7; }
-  .btn-save { border-color: #86efac; color: #166534; font-weight: 600; }
-  .btn-save:hover { background: #dcfce7; }
-  .btn-danger { border-color: #fca5a5; color: #dc2626; }
-  .btn-danger:hover { background: #fee2e2; }
-  .btn-row { display: flex; gap: 8px; justify-content: space-between; align-items: center; margin-top: 12px; flex-wrap: wrap; }
-  .avviso { background: #fef3c7; border-radius: 8px; padding: 9px 14px; font-size: 12px; color: #92400e; display: none; align-items: center; gap: 8px; margin-top: 8px; }
-  .link-box { background: #f4f5f7; border-radius: 8px; padding: 9px 12px; font-size: 11px; font-family: monospace; color: #555; display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; word-break: break-all; }
-  .toast { position: fixed; bottom: 24px; right: 24px; background: #166534; color: #fff; border-radius: 8px; padding: 10px 18px; font-size: 13px; display: none; align-items: center; gap: 8px; z-index: 999; box-shadow: 0 4px 16px rgba(0,0,0,.18); }
-  .grid-cliente { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-  .field label { font-size: 11px; color: #888; display: block; margin-bottom: 3px; }
-  .field input { border: 0.5px solid #ddd; border-radius: 7px; padding: 6px 9px; font-size: 13px; width: 100%; background: #fafafa; color: #1a1a1a; }
-  .note-field textarea { border: 0.5px solid #ddd; border-radius: 7px; padding: 7px 9px; font-size: 13px; width: 100%; background: #fafafa; color: #1a1a1a; resize: vertical; min-height: 56px; font-family: inherit; }
-  select:focus, input:focus { outline: 2px solid #3b82f6; outline-offset: 1px; }
-  .filter-btn { border: 0.5px solid #ddd; border-radius: 7px; padding: 5px 12px; font-size: 12px; cursor: pointer; background: #fff; color: #666; }
-  .filter-btn.on { background: #1e3a5f; color: #fff; border-color: #1e3a5f; }
-  .dash-tr td { padding: 9px 10px; border-bottom: 0.5px solid #f0f0f0; color: #1a1a1a; vertical-align: middle; cursor: pointer; }
-  .dash-tr:hover td { background: #f8f9fa; }
-  .dash-tr:last-child td { border-bottom: none; }
-  .prog-wrap { background: #f0f0f0; border-radius: 99px; height: 6px; overflow: hidden; }
+  .riga-tot { font-weight: 700; white-space: nowrap; color: #93c5fd; }
+  .dash-tr td { padding: 9px 10px; cursor: pointer; }
+  .dash-tr:hover td { background: var(--surface3); }
+
+  /* ── BUTTONS ── */
+  .btn-add { background: none; border: 1px dashed var(--border2); border-radius: 8px; color: var(--text2); padding: 7px 12px; font-size: 12px; cursor: pointer; width: 100%; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 5px; transition: all .15s; }
+  .btn-add:hover { background: var(--glass); color: var(--text); }
+  .btn-del { background: none; border: none; cursor: pointer; color: var(--text3); padding: 3px 6px; border-radius: 5px; font-size: 15px; line-height: 1; transition: all .15s; }
+  .btn-del:hover { color: var(--red); background: rgba(239,68,68,.15); }
+  .btn { border: 1px solid var(--border2); border-radius: 9px; padding: 7px 14px; font-size: 12px; cursor: pointer; background: var(--surface3); color: var(--text); display: inline-flex; align-items: center; gap: 6px; transition: all .15s; }
+  .btn:hover { background: var(--surface); border-color: var(--blue2); }
+  .btn-save { background: rgba(37,99,235,.2); border-color: rgba(37,99,235,.5); color: #93c5fd; font-weight: 600; }
+  .btn-save:hover { background: rgba(37,99,235,.35); }
+  .btn-danger { border-color: rgba(239,68,68,.4); color: #fca5a5; }
+  .btn-danger:hover { background: rgba(239,68,68,.15); }
+  .btn-wallet { background: rgba(245,158,11,.15); border-color: rgba(245,158,11,.4); color: #fcd34d; font-weight:600; }
+  .btn-wallet:hover { background: rgba(245,158,11,.25); }
+  .btn-fattura { background: rgba(34,197,94,.15); border-color: rgba(34,197,94,.4); color: #86efac; font-weight:600; }
+  .btn-fattura:hover { background: rgba(34,197,94,.25); }
+  .btn-row { display: flex; gap: 8px; justify-content: space-between; align-items: center; margin-top: 14px; flex-wrap: wrap; }
+
+  /* ── INTEGRATION BANNER ── */
+  .integration-bar { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 12px 18px; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .integration-bar .ib-title { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing:.06em; flex-shrink:0; display:flex; align-items:center; gap:5px; }
+  .integration-bar .ib-sep { width:1px; height:24px; background: var(--border); flex-shrink:0; }
+
+  /* ── FORM FIELDS ── */
+  .grid-cliente { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; }
+  .field label { font-size: 11px; color: var(--text2); display: block; margin-bottom: 4px; }
+  .field input, .field select { border: 1px solid var(--border2); border-radius: 8px; padding: 7px 10px; font-size: 13px; width: 100%; background: var(--surface3); color: var(--text); }
+  .note-field textarea { border: 1px solid var(--border2); border-radius: 8px; padding: 8px 10px; font-size: 13px; width: 100%; background: var(--surface3); color: var(--text); resize: vertical; min-height: 64px; font-family: inherit; }
+
+  /* ── MISC ── */
+  select:focus, input:focus, textarea:focus { outline: 2px solid var(--blue2); outline-offset: 2px; }
+  .filter-btn { border: 1px solid var(--border); border-radius: 7px; padding: 5px 12px; font-size: 12px; cursor: pointer; background: var(--surface2); color: var(--text2); transition: all .15s; }
+  .filter-btn.on { background: var(--navy3); color: #fff; border-color: var(--blue); }
+  .prog-wrap { background: rgba(255,255,255,.07); border-radius: 99px; height: 6px; overflow: hidden; }
   .prog-bar  { height: 100%; border-radius: 99px; transition: width .4s; }
-  .spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
+  .spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid rgba(255,255,255,.2); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  #login-overlay { position: fixed; inset: 0; background: #f4f5f7; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; }
+
+  /* ── AVVISO ── */
+  .avviso { background: rgba(245,158,11,.12); border: 1px solid rgba(245,158,11,.3); border-radius: 8px; padding: 9px 14px; font-size: 12px; color: #fcd34d; display: none; align-items: center; gap: 8px; margin-top: 8px; }
+
+  /* ── LINK BOX ── */
+  .link-box { background: var(--surface3); border: 1px solid var(--border); border-radius: 8px; padding: 9px 12px; font-size: 11px; font-family: monospace; color: var(--text2); display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; word-break: break-all; }
+
+  /* ── TOAST ── */
+  .toast { position: fixed; bottom: 24px; right: 24px; background: #166534; color: #fff; border-radius: 10px; padding: 11px 18px; font-size: 13px; display: none; align-items: center; gap: 8px; z-index: 9999; box-shadow: 0 8px 30px rgba(0,0,0,.4); border: 1px solid rgba(255,255,255,.12); }
+
+  /* ── MODAL ── */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.7); display: none; align-items: center; justify-content: center; z-index: 500; backdrop-filter: blur(4px); }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface2); border: 1px solid var(--border2); border-radius: 16px; padding: 28px 32px; max-width: 480px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+  .modal h3 { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+  .modal p { font-size: 13px; color: var(--text2); margin-bottom: 20px; line-height: 1.55; }
+  .modal .mfield { margin-bottom: 14px; }
+  .modal .mfield label { font-size: 11px; color: var(--text2); display:block; margin-bottom:4px; }
+  .modal .mfield input, .modal .mfield select, .modal .mfield textarea { border: 1px solid var(--border2); border-radius: 8px; padding: 8px 11px; font-size: 13px; width: 100%; background: var(--surface3); color: var(--text); }
+  .modal .mfield textarea { min-height: 60px; resize: vertical; font-family: inherit; }
+  .modal-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+  .modal-close { position: absolute; top: 12px; right: 16px; background: none; border: none; color: var(--text2); cursor: pointer; font-size: 20px; }
+
+  /* ── LOGIN ── */
+  #login-overlay { position: fixed; inset: 0; background: var(--surface); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; }
   #login-overlay.hidden { display: none; }
-  .login-card { background: #fff; border: 0.5px solid #e0e0e0; border-radius: 14px; padding: 36px 40px; text-align: center; max-width: 360px; width: 90%; box-shadow: 0 4px 24px rgba(0,0,0,.08); }
-  .login-card i { font-size: 48px; color: #1e3a5f; margin-bottom: 14px; display: block; }
-  .login-card h2 { font-size: 19px; font-weight: 600; margin-bottom: 8px; }
-  .login-card p { font-size: 13px; color: #888; margin-bottom: 22px; line-height: 1.55; }
-  .btn-google { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 11px 22px; font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; font-weight: 500; color: #333; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
-  .btn-google:hover { background: #f8f8f8; box-shadow: 0 2px 8px rgba(0,0,0,.12); }
+  .login-card { background: var(--surface2); border: 1px solid var(--border2); border-radius: 18px; padding: 42px 46px; text-align: center; max-width: 380px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+  .login-logo { font-size: 52px; color: var(--blue2); margin-bottom: 16px; display: block; }
+  .login-card h2 { font-size: 21px; font-weight: 700; margin-bottom: 8px; }
+  .login-card .sub { font-size: 13px; color: var(--text2); margin-bottom: 28px; line-height: 1.6; }
+  .btn-google { background: #fff; border: 1px solid #ddd; border-radius: 10px; padding: 12px 24px; font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; font-weight: 600; color: #333; box-shadow: 0 2px 8px rgba(0,0,0,.15); transition: all .15s; }
+  .btn-google:hover { box-shadow: 0 4px 14px rgba(0,0,0,.2); transform: translateY(-1px); }
   .btn-google img { width: 20px; height: 20px; }
-  @media(max-width:600px){ .metrics{grid-template-columns:1fr;} .grid-cliente{grid-template-columns:1fr;} table{font-size:11px;} }
+  .login-hint { margin-top: 18px; font-size: 11px; color: var(--text3); line-height: 1.6; }
+
+  /* ── DASHBOARD CHART AREA ── */
+  .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+
+  @media(max-width:700px){
+    .kpi-grid{grid-template-columns:1fr 1fr;}
+    .metrics{grid-template-columns:1fr;}
+    .grid-cliente{grid-template-columns:1fr 1fr;}
+    .dash-grid{grid-template-columns:1fr;}
+    table{font-size:11px;}
+    .topnav h1 span{display:none;}
+  }
+  @media(max-width:420px){
+    .kpi-grid{grid-template-columns:1fr;}
+    .grid-cliente{grid-template-columns:1fr;}
+  }
 </style>
 </head>
 <body>
@@ -91,14 +191,60 @@
 <!-- LOGIN -->
 <div id="login-overlay">
   <div class="login-card">
-    <i class="ti ti-cloud"></i>
+    <i class="ti ti-package login-logo"></i>
     <h2>Gestionale Commesse</h2>
-    <p>Accedi con Google per sincronizzare automaticamente i dati su tutti i tuoi PC tramite Google Drive.</p>
+    <div class="sub">Accedi con Google per sincronizzare automaticamente i dati su tutti i tuoi dispositivi tramite Google Drive.</div>
     <button class="btn-google" onclick="avviaLogin()">
       <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
       Accedi con Google
     </button>
-    <p style="margin-top:14px;font-size:11px;color:#bbb;">I dati vengono salvati nel tuo Google Drive personale.<br>Nessun server esterno coinvolto.</p>
+    <div class="login-hint">I dati vengono salvati nel tuo Google Drive personale.<br>Nessun server esterno. Privacy garantita.</div>
+  </div>
+</div>
+
+<!-- MODAL WALLET (BudgetBakers) -->
+<div class="modal-overlay" id="modal-wallet">
+  <div class="modal">
+    <h3><i class="ti ti-wallet" style="color:#fcd34d;"></i> Registra Pagamento in Contanti</h3>
+    <p>Il pagamento verrà registrato come uscita su <strong>Wallet by BudgetBakers</strong> tramite deep link / import CSV.</p>
+    <div class="mfield"><label>Data pagamento</label><input type="date" id="w-data"></div>
+    <div class="mfield"><label>Importo (€)</label><input type="number" id="w-importo" placeholder="0.00" step="0.01"></div>
+    <div class="mfield"><label>Categoria</label><select id="w-cat"><option>Vendita statue</option><option>Acconto cliente</option><option>Saldo cliente</option><option>Altro incasso</option></select></div>
+    <div class="mfield"><label>Note / Descrizione</label><textarea id="w-note" placeholder="Es. Acconto commessa Mario Rossi…"></textarea></div>
+    <div style="background:var(--surface3);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text2);margin-bottom:4px;">
+      <strong style="color:var(--text);">Metodi disponibili:</strong><br>
+      1. <b>Deep link</b> → apre Wallet con i dati precompilati (app mobile).<br>
+      2. <b>Esporta CSV</b> → scarica riga da importare in Wallet → Impostazioni → Importa.
+    </div>
+    <div class="modal-btns">
+      <button class="btn" onclick="chiudiModal('modal-wallet')">Annulla</button>
+      <button class="btn btn-wallet" onclick="esportaWalletCSV()"><i class="ti ti-download"></i> Esporta CSV</button>
+      <button class="btn btn-wallet" onclick="apriWalletDeepLink()"><i class="ti ti-external-link"></i> Apri Wallet</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL FATTURA (Fatture in Cloud) -->
+<div class="modal-overlay" id="modal-fattura">
+  <div class="modal">
+    <h3><i class="ti ti-file-invoice" style="color:#86efac;"></i> Emetti Fattura</h3>
+    <p>Connetti le tue credenziali <strong>Fatture in Cloud</strong> per emettere fattura direttamente dalla commessa.</p>
+    <div style="background:var(--surface3);border-radius:8px;padding:12px 14px;font-size:12px;margin-bottom:14px;">
+      <div style="font-weight:600;color:var(--text);margin-bottom:8px;"><i class="ti ti-key" style="color:#fcd34d;"></i> Configurazione API (una tantum)</div>
+      <div class="mfield" style="margin-bottom:8px;"><label>Access Token Fatture in Cloud</label><input type="password" id="fic-token" placeholder="Bearer token da → Account → API"></div>
+      <div class="mfield" style="margin-bottom:0;"><label>Company ID</label><input type="text" id="fic-company" placeholder="Trova in: Impostazioni → Azienda"></div>
+      <button class="btn" style="margin-top:8px;font-size:11px;" onclick="salvaCredFIC()"><i class="ti ti-device-floppy"></i> Salva credenziali</button>
+    </div>
+    <div class="mfield"><label>Tipo documento</label><
+select id="fic-tipo"><option value="in">Fattura</option><option value="p">Proforma</option><option value="r">Ricevuta</option></select></div>
+    <div class="mfield"><label>Data documento</label><input type="date" id="fic-data"></div>
+    <div class="mfield"><label>Pagamento</label><select id="fic-pag"><option>Contanti</option><option>Bonifico Bancario</option><option>PayPal</option><option>Carta di Credito</option><option>Satispay</option></select></div>
+    <div class="mfield"><label>Note aggiuntive</label><textarea id="fic-note" placeholder="Note interne o per il cliente…"></textarea></div>
+    <div id="fic-status" style="font-size:12px;color:var(--text2);margin-top:4px;display:none;"></div>
+    <div class="modal-btns">
+      <button class="btn" onclick="chiudiModal('modal-fattura')">Annulla</button>
+      <button class="btn btn-fattura" onclick="emettereFattura()"><i class="ti ti-send"></i> Emetti Fattura</button>
+    </div>
   </div>
 </div>
 
@@ -107,7 +253,7 @@
   <h1><i class="ti ti-package"></i> <span>Gestionale Commesse Statue</span></h1>
   <div class="topnav-right">
     <div class="drive-status off" id="drive-status"><i class="ti ti-cloud-off"></i> Non connesso</div>
-    <button class="btn-nav green" id="btn-sync" onclick="sincronizzaDrive()" style="display:none;"><i class="ti ti-refresh"></i> Sincronizza</button>
+    <button class="btn-nav green" id="btn-sync" onclick="sincronizzaDrive()" style="display:none;"><i class="ti ti-refresh"></i> Sync</button>
     <button class="btn-nav" onclick="esportaDati()"><i class="ti ti-download"></i> Backup</button>
     <button class="btn-nav" onclick="document.getElementById('import-input').click()"><i class="ti ti-upload"></i> Importa</button>
     <input type="file" id="import-input" accept=".json" style="display:none;" onchange="importaDati(event)">
@@ -117,167 +263,206 @@
 
 <div class="container">
 
+  <!-- SEL BAR -->
   <div class="sel-bar">
     <label>Commessa:</label>
     <select id="ord-sel" onchange="onSelChange()"><option value="">— seleziona commessa —</option></select>
-    <input type="text" id="nuovo-input" placeholder="Nome nuova commessa..." style="display:none;">
+    <input type="text" id="nuovo-input" placeholder="Nome nuova commessa…" style="display:none;">
     <button class="btn" id="btn-nuovo" onclick="mostraNuovo()"><i class="ti ti-plus"></i> Nuova</button>
-    <button class="btn" id="btn-conferma" onclick="confermaNuovo()" style="display:none;border-color:#86efac;color:#166534;"><i class="ti ti-check"></i> Crea</button>
-    <button class="btn btn-danger" id="btn-elimina" onclick="eliminaOrdine()" style="display:none;" title="Elimina commessa"><i class="ti ti-trash"></i></button>
+    <button class="btn" id="btn-conferma" onclick="confermaNuovo()" style="display:none;background:rgba(34,197,94,.15);border-color:rgba(34,197,94,.4);color:#86efac;"><i class="ti ti-check"></i> Crea</button>
+    <button class="btn btn-danger" id="btn-elimina" onclick="eliminaOrdine()" style="display:none;"><i class="ti ti-trash"></i></button>
     <span id="badge-stato" class="badge s-aperto" style="margin-left:auto;"><span class="dot dot-a"></span>Aperto</span>
   </div>
 
-  <!-- DASHBOARD -->
+  <!-- ════════════════ DASHBOARD ════════════════ -->
   <div id="pannello-vuoto">
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px;">
-      <div style="background:#fff;border:0.5px solid #e0e0e0;border-radius:10px;padding:14px 16px;">
-        <div style="font-size:11px;color:#888;margin-bottom:6px;display:flex;align-items:center;gap:5px;"><i class="ti ti-list"></i> Commesse totali</div>
-        <div style="font-size:24px;font-weight:700;color:#1e40af;" id="k-tot">0</div>
-        <div style="font-size:11px;color:#aaa;margin-top:2px;">ordini in archivio</div>
+
+    <!-- KPI Row -->
+    <div class="kpi-grid">
+      <div class="kpi info">
+        <div class="kl"><i class="ti ti-list-details"></i> Commesse totali</div>
+        <div class="kv" id="k-tot">0</div>
+        <div class="ks">ordini in archivio</div>
       </div>
-      <div style="background:#fff;border:0.5px solid #e0e0e0;border-radius:10px;padding:14px 16px;">
-        <div style="font-size:11px;color:#888;margin-bottom:6px;display:flex;align-items:center;gap:5px;"><i class="ti ti-clock"></i> Aperte</div>
-        <div style="font-size:24px;font-weight:700;color:#92400e;" id="k-aperte">0</div>
-        <div style="font-size:11px;color:#aaa;margin-top:2px;">senza pagamenti</div>
+      <div class="kpi warn">
+        <div class="kl"><i class="ti ti-clock-hour-4"></i> Aperte</div>
+        <div class="kv" id="k-aperte">0</div>
+        <div class="ks">senza pagamenti</div>
       </div>
-      <div style="background:#fff;border:0.5px solid #e0e0e0;border-radius:10px;padding:14px 16px;">
-        <div style="font-size:11px;color:#888;margin-bottom:6px;display:flex;align-items:center;gap:5px;"><i class="ti ti-check"></i> Saldate</div>
-        <div style="font-size:24px;font-weight:700;color:#166534;" id="k-saldate">0</div>
-        <div style="font-size:11px;color:#aaa;margin-top:2px;">completate</div>
+      <div class="kpi ok">
+        <div class="kl"><i class="ti ti-circle-check"></i> Saldate</div>
+        <div class="kv" id="k-saldate">0</div>
+        <div class="ks">completate</div>
       </div>
-      <div style="background:#fff;border:0.5px solid #e0e0e0;border-radius:10px;padding:14px 16px;">
-        <div style="font-size:11px;color:#888;margin-bottom:6px;display:flex;align-items:center;gap:5px;"><i class="ti ti-coin"></i> Da incassare</div>
-        <div style="font-size:24px;font-weight:700;color:#dc2626;" id="k-residuo">€ 0</div>
-        <div style="font-size:11px;color:#aaa;margin-top:2px;">totale saldi aperti</div>
+      <div class="kpi danger">
+        <div class="kl"><i class="ti ti-coin"></i> Da incassare</div>
+        <div class="kv" id="k-residuo">€ 0</div>
+        <div class="ks">saldi aperti</div>
       </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+    <!-- Charts row -->
+    <div class="dash-grid">
       <div class="card">
-        <p class="card-hdr"><i class="ti ti-chart-pie"></i> Riepilogo finanziario</p>
-        <div style="display:flex;align-items:center;gap:20px;">
-          <svg width="100" height="100" viewBox="0 0 100 100">
-            <circle cx="50" cy="50" r="38" fill="none" stroke="#f0f0f0" stroke-width="14"/>
-            <circle cx="50" cy="50" r="38" fill="none" stroke="#22c55e" stroke-width="14" stroke-dasharray="0 239" stroke-dashoffset="60" stroke-linecap="round" id="donut-arc" style="transition:stroke-dasharray .5s;"/>
-            <text x="50" y="54" text-anchor="middle" font-size="13" font-weight="700" fill="#1a1a1a" id="donut-pct">0%</text>
+        <p class="card-hdr"><i class="ti ti-chart-donut"></i> Riepilogo finanziario</p>
+        <div style="display:flex;align-items:center;gap:24px;">
+          <svg width="110" height="110" viewBox="0 0 110 110">
+            <circle cx="55" cy="55" r="42" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="14"/>
+            <circle cx="55" cy="55" r="42" fill="none" stroke="#22c55e" stroke-width="14" stroke-dasharray="0 264" stroke-dashoffset="66" stroke-linecap="round" id="donut-arc" style="transition:stroke-dasharray .5s;"/>
+            <text x="55" y="59" text-anchor="middle" font-size="14" font-weight="700" fill="#e2e8f0" id="donut-pct">0%</text>
           </svg>
-          <div style="display:flex;flex-direction:column;gap:10px;flex:1;">
-            <div style="display:flex;align-items:center;gap:8px;font-size:12px;"><div style="width:10px;height:10px;border-radius:50%;background:#22c55e;flex-shrink:0;"></div><div><div style="font-weight:600;" id="leg-inc">€ 0,00</div><div style="color:#888;font-size:11px;">Incassato</div></div></div>
-            <div style="display:flex;align-items:center;gap:8px;font-size:12px;"><div style="width:10px;height:10px;border-radius:50%;background:#f0f0f0;border:1px solid #ddd;flex-shrink:0;"></div><div><div style="font-weight:600;" id="leg-res">€ 0,00</div><div style="color:#888;font-size:11px;">Residuo</div></div></div>
-            <div style="display:flex;align-items:center;gap:8px;font-size:12px;"><div style="width:10px;height:10px;border-radius:50%;background:#1e40af;flex-shrink:0;"></div><div><div style="font-weight:600;" id="leg-tot">€ 0,00</div><div style="color:#888;font-size:11px;">Totale ordini</div></div></div>
+          <div style="display:flex;flex-direction:column;gap:12px;flex:1;">
+            <div style="display:flex;align-items:center;gap:9px;font-size:12px;"><div style="width:10px;height:10px;border-radius:50%;background:#22c55e;flex-shrink:0;"></div><div><div style="font-weight:700;" id="leg-inc">€ 0,00</div><div style="color:var(--text2);font-size:11px;">Incassato</div></div></div>
+            <div style="display:flex;align-items:center;gap:9px;font-size:12px;"><div style="width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.12);border:1px solid var(--border2);flex-shrink:0;"></div><div><div style="font-weight:700;" id="leg-res">€ 0,00</div><div style="color:var(--text2);font-size:11px;">Residuo</div></div></div>
+            <div style="display:flex;align-items:center;gap:9px;font-size:12px;"><div style="width:10px;height:10px;border-radius:50%;background:#3b82f6;flex-shrink:0;"></div><div><div style="font-weight:700;" id="leg-tot">€ 0,00</div><div style="color:var(--text2);font-size:11px;">Totale ordini</div></div></div>
           </div>
         </div>
       </div>
       <div class="card">
         <p class="card-hdr"><i class="ti ti-calendar-event"></i> Prossime consegne</p>
-        <div id="scad-list"><div style="color:#aaa;font-size:12px;padding:10px 0;text-align:center;">Nessuna scadenza trovata</div></div>
+        <div id="scad-list"><div style="color:var(--text3);font-size:12px;padding:14px 0;text-align:center;">Nessuna scadenza trovata</div></div>
       </div>
     </div>
 
+    <!-- Table -->
     <div class="card">
       <p class="card-hdr" style="justify-content:space-between;">
         <span><i class="ti ti-table"></i> Tutte le commesse</span>
         <button class="btn" onclick="refreshDashboard()" style="padding:3px 10px;font-size:11px;"><i class="ti ti-refresh"></i> Aggiorna</button>
       </p>
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
-        <input type="text" id="dash-search" placeholder="Cerca commessa o cliente..." oninput="renderTabella()" style="border:0.5px solid #ddd;border-radius:7px;padding:6px 10px;font-size:13px;background:#fff;color:#1a1a1a;flex:1;min-width:160px;">
+        <input type="text" id="dash-search" placeholder="Cerca commessa o cliente…" oninput="renderTabella()" style="border:1px solid var(--border2);border-radius:8px;padding:7px 11px;font-size:13px;background:var(--surface3);color:var(--text);flex:1;min-width:160px;">
         <button class="filter-btn on" id="fb-all"      onclick="setFiltro('tutti')"   >Tutti</button>
         <button class="filter-btn"    id="fb-aperto"   onclick="setFiltro('aperto')"  >Aperti</button>
-        <button class="filter-btn"    id="fb-parziale" onclick="setFiltro('parziale')">Parz.</button>
+        <button class="filter-btn"    id="fb-parziale" onclick="setFiltro('parziale')">Parziali</button>
         <button class="filter-btn"    id="fb-saldato"  onclick="setFiltro('saldato')" >Saldati</button>
       </div>
       <div style="overflow-x:auto;">
-        <table style="width:100%;border-collapse:collapse;">
+        <table>
           <thead><tr>
-            <th style="font-size:11px;font-weight:600;color:#888;text-align:left;padding:7px 10px;border-bottom:0.5px solid #eee;">Commessa</th>
-            <th style="font-size:11px;font-weight:600;color:#888;text-align:left;padding:7px 10px;border-bottom:0.5px solid #eee;">Cliente</th>
-            <th style="font-size:11px;font-weight:600;color:#888;text-align:left;padding:7px 10px;border-bottom:0.5px solid #eee;">Apertura</th>
-            <th style="font-size:11px;font-weight:600;color:#888;text-align:right;padding:7px 10px;border-bottom:0.5px solid #eee;">Totale</th>
-            <th style="font-size:11px;font-weight:600;color:#888;text-align:right;padding:7px 10px;border-bottom:0.5px solid #eee;">Incassato</th>
-            <th style="font-size:11px;font-weight:600;color:#888;text-align:right;padding:7px 10px;border-bottom:0.5px solid #eee;">Residuo</th>
-            <th style="font-size:11px;font-weight:600;color:#888;text-align:left;padding:7px 10px;border-bottom:0.5px solid #eee;min-width:90px;">Incasso %</th>
-            <th style="font-size:11px;font-weight:600;color:#888;text-align:left;padding:7px 10px;border-bottom:0.5px solid #eee;">Stato</th>
+            <th>Commessa</th><th>Cliente</th><th>Apertura</th>
+            <th style="text-align:right;">Totale</th><th style="text-align:right;">Incassato</th><th style="text-align:right;">Residuo</th>
+            <th style="min-width:90px;">Incasso %</th><th>Stato</th>
           </tr></thead>
           <tbody id="dash-tbody"></tbody>
         </table>
       </div>
-      <div id="dash-empty" style="text-align:center;padding:30px;color:#aaa;display:none;">
-        <i class="ti ti-mood-empty" style="font-size:28px;display:block;margin-bottom:8px;"></i>
+      <div id="dash-empty" style="text-align:center;padding:36px;color:var(--text3);display:none;">
+        <i class="ti ti-mood-empty" style="font-size:32px;display:block;margin-bottom:10px;"></i>
         Nessuna commessa in archivio. Creane una nuova dal menu qui sopra.
       </div>
     </div>
   </div>
 
-  <!-- PANNELLO COMMESSA -->
+  <!-- ════════════════ PANNELLO COMMESSA ════════════════ -->
   <div id="pannello" style="display:none;">
+
+    <!-- Dati Cliente -->
     <div class="card">
-      <p class="card-hdr"><i class="ti ti-user"></i> Dati cliente</p>
+      <p class="card-hdr"><i class="ti ti-user-circle"></i> Dati cliente</p>
       <div class="grid-cliente">
         <div class="field"><label>Nome e cognome</label><input type="text" id="cl-nome" placeholder="Mario Rossi"></div>
         <div class="field"><label>Telefono / WhatsApp</label><input type="text" id="cl-tel" placeholder="+39 333 0000000"></div>
+        <div class="field"><label>Email</label><input type="email" id="cl-email" placeholder="mario@email.com"></div>
         <div class="field"><label>Data apertura ordine</label><input type="date" id="cl-data"></div>
       </div>
     </div>
+
+    <!-- Metriche -->
     <div class="metrics">
       <div class="metric info"><div class="ml">Totale ordine</div><div class="mv" id="m-tot">€ 0,00</div></div>
       <div class="metric ok"><div class="ml">Totale incassato</div><div class="mv" id="m-inc">€ 0,00</div></div>
       <div class="metric danger"><div class="ml">Saldo residuo</div><div class="mv" id="m-res">€ 0,00</div></div>
     </div>
+
+    <!-- Integrations -->
+    <div class="integration-bar">
+      <div class="ib-title"><i class="ti ti-plug-connected"></i> Integrazioni</div>
+      <div class="ib-sep"></div>
+      <button class="btn btn-wallet" onclick="apriModalWallet()">
+        <i class="ti ti-wallet"></i> Registra Pagamento Contanti
+        <span style="font-size:10px;opacity:.7;font-weight:400;">BudgetBakers</span>
+      </button>
+      <button class="btn btn-fattura" onclick="apriModalFattura()">
+        <i class="ti ti-file-invoice"></i> Emetti Fattura
+        <span style="font-size:10px;opacity:.7;font-weight:400;">Fatture in Cloud</span>
+      </button>
+    </div>
+
+    <!-- Statue -->
     <div class="card">
       <p class="card-hdr"><i class="ti ti-package"></i> Statue prenotate</p>
       <table>
         <thead><tr>
-          <th style="width:36%">Descrizione statua</th><th style="width:8%">Qtà</th>
-          <th style="width:16%">Prezzo (€)</th><th style="width:16%">Consegna prevista</th>
-          <th style="width:16%">Totale riga</th><th style="width:8%"></th>
+          <th style="width:35%">Descrizione statua</th>
+          <th style="width:7%">Qtà</th>
+          <th style="width:14%">Prezzo (€)</th>
+          <th style="width:16%">Consegna prevista</th>
+          <th style="width:16%">Totale riga</th>
+          <th style="width:6%"></th>
         </tr></thead>
         <tbody id="statue-body"></tbody>
       </table>
       <button class="btn-add" onclick="aggStatua()"><i class="ti ti-plus"></i> Aggiungi statua</button>
     </div>
+
+    <!-- Pagamenti -->
     <div class="card">
       <p class="card-hdr"><i class="ti ti-cash"></i> Pagamenti ricevuti</p>
       <table>
         <thead><tr>
-          <th style="width:16%">Data</th><th style="width:20%">Tipo</th>
-          <th style="width:17%">Metodo</th><th style="width:15%">Importo (€)</th>
-          <th style="width:26%">Note</th><th style="width:6%"></th>
+          <th style="width:14%">Data</th>
+          <th style="width:18%">Tipo</th>
+          <th style="width:15%">Metodo</th>
+          <th style="width:13%">Importo (€)</th>
+          <th style="width:32%">Note</th>
+          <th style="width:6%"></th>
         </tr></thead>
         <tbody id="pag-body"></tbody>
       </table>
       <button class="btn-add" onclick="aggPag()"><i class="ti ti-plus"></i> Aggiungi pagamento</button>
     </div>
+
     <div class="avviso" id="avviso"><i class="ti ti-alert-triangle"></i> Attenzione: saldo residuo ancora da incassare prima della consegna.</div>
+
+    <!-- Note -->
     <div class="card">
       <p class="card-hdr"><i class="ti ti-notes"></i> Note ordine</p>
-      <div class="note-field"><textarea id="note-ordine" placeholder="Personalizzazioni, variazioni, comunicazioni con il cliente..."></textarea></div>
+      <div class="note-field"><textarea id="note-ordine" placeholder="Personalizzazioni, variazioni, comunicazioni con il cliente…"></textarea></div>
     </div>
+
+    <!-- Link -->
     <div class="card">
-      <p class="card-hdr"><i class="ti ti-link"></i> Link per monday.com</p>
-      <p style="font-size:12px;color:#888;margin-bottom:4px;">Incolla questo link nella colonna <strong>Link</strong> della riga su monday.com.</p>
-      <div class="link-box"><span id="link-val" style="flex:1;">—</span><button class="btn" onclick="copiaLink()" style="flex-shrink:0;"><i class="ti ti-copy"></i> Copia</button></div>
+      <p class="card-hdr"><i class="ti ti-link"></i> Link commessa</p>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:4px;">Link diretto a questa commessa (per monday.com o condivisione).</p>
+      <div class="link-box"><span id="link-val" style="flex:1;">—</span><button class="btn" onclick="copiaLink()" style="flex-shrink:0;font-size:11px;"><i class="ti ti-copy"></i> Copia</button></div>
     </div>
+
+    <!-- Bottom bar -->
     <div class="btn-row">
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button class="btn" onclick="tornaAllaLista()"><i class="ti ti-arrow-left"></i> Dashboard</button>
-        <button class="btn" onclick="copiaRiepilogo()"><i class="ti ti-copy"></i> Copia riepilogo</button>
+        <button class="btn" onclick="copiaRiepilogo()"><i class="ti ti-copy"></i> Riepilogo</button>
         <button class="btn" onclick="window.print()"><i class="ti ti-printer"></i> Stampa</button>
       </div>
-      <button class="btn btn-save" onclick="salva()"><i class="ti ti-device-floppy"></i> Salva &amp; Sincronizza</button>
+      <button class="btn btn-save" onclick="salva()"><i class="ti ti-device-floppy"></i> Salva &amp; Sincronizza Drive</button>
     </div>
-  </div>
 
+  </div>
 </div>
+
 <div class="toast" id="toast"><i class="ti ti-check"></i> <span id="toast-msg"></span></div>
 
 <script>
-/* ── CONFIG ── */
+/* ══════════════════════════════════════════
+   CONFIG
+══════════════════════════════════════════ */
 const CLIENT_ID  = '994203576107-k72u8odttdfnmdd4bhbammrqf0eh3k6p.apps.googleusercontent.com';
 const SCOPES     = 'https://www.googleapis.com/auth/drive.file';
 const DRIVE_FILE = 'commesse_statue.json';
 const today      = new Date().toISOString().split('T')[0];
 
-/* ── STATE ── */
+/* STATE */
 let accessToken  = null;
 let driveFileId  = null;
 let ordineAttivo = null;
@@ -289,21 +474,29 @@ function fmt(n){ return '€ '+Math.max(0,n).toFixed(2).replace('.',','); }
 function fmtShort(n){ return '€ '+Math.max(0,n).toLocaleString('it-IT',{minimumFractionDigits:0,maximumFractionDigits:0}); }
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;'); }
 
-function showToast(msg,color){
+function showToast(msg, color, icon){
   const t=document.getElementById('toast');
   document.getElementById('toast-msg').textContent=msg;
   t.style.background=color||'#166534';
+  t.querySelector('i').className='ti '+(icon||'ti-check');
   t.style.display='flex';
   clearTimeout(t._tid);
-  t._tid=setTimeout(()=>t.style.display='none',2600);
+  t._tid=setTimeout(()=>t.style.display='none',3000);
 }
 
-/* ── GOOGLE AUTH ── */
+/* ── MODALI ── */
+function apriModal(id){ document.getElementById(id).classList.add('open'); }
+function chiudiModal(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+
+/* ══════════════════════════════════════════
+   GOOGLE AUTH
+══════════════════════════════════════════ */
 function avviaLogin(){
   const client=google.accounts.oauth2.initTokenClient({
     client_id:CLIENT_ID, scope:SCOPES,
     callback:async(resp)=>{
-      if(resp.error){showToast('Errore login: '+resp.error,'#dc2626');return;}
+      if(resp.error){showToast('Errore login: '+resp.error,'#dc2626','ti-x'); return;}
       accessToken=resp.access_token;
       document.getElementById('login-overlay').classList.add('hidden');
       document.getElementById('drive-status').className='drive-status ok';
@@ -326,12 +519,14 @@ function logout(){
   document.getElementById('btn-logout').style.display='none';
 }
 
-/* ── GOOGLE DRIVE ── */
+/* ══════════════════════════════════════════
+   GOOGLE DRIVE
+══════════════════════════════════════════ */
 async function driveFetch(url,opts={}){
   if(!accessToken) return null;
   opts.headers={...(opts.headers||{}),'Authorization':'Bearer '+accessToken};
   const r=await fetch(url,opts);
-  if(r.status===401){showToast('Sessione scaduta, riaccedi','#dc2626');logout();return null;}
+  if(r.status===401){showToast('Sessione scaduta, riaccedi','#dc2626','ti-lock'); logout(); return null;}
   return r;
 }
 
@@ -349,7 +544,7 @@ async function leggiDaDrive(fileId){
   try{return await r.json();}catch(e){return null;}
 }
 
-async function scrivisuDrive(data){
+async function scriviSuDrive(data){
   const body=JSON.stringify(data);
   if(driveFileId){
     await driveFetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`,{
@@ -368,9 +563,9 @@ async function scrivisuDrive(data){
 }
 
 async function sincronizzaDrive(){
-  if(!accessToken){showToast('Non connesso a Drive','#92400e');return;}
+  if(!accessToken){showToast('Non connesso a Drive','#92400e','ti-alert-circle'); return;}
   const btn=document.getElementById('btn-sync');
-  btn.innerHTML='<span class="spinner"></span> Sync...';
+  btn.innerHTML='<span class="spinner"></span>';
   btn.disabled=true;
   try{
     if(!driveFileId) driveFileId=await trovaDriveFile();
@@ -385,16 +580,16 @@ async function sincronizzaDrive(){
             if(locale!==rs){localStorage.setItem(k,rs);aggiornate++;}
           }
         });
-        showToast(aggiornate>0?`Sincronizzate ${aggiornate} commesse da Drive ✓`:'Dati già aggiornati ✓');
+        showToast(aggiornate>0?`Sincronizzate ${aggiornate} commesse da Drive ✓`:'Dati già aggiornati ✓','#166534','ti-cloud-check');
       }
     } else {
       const backup={};
       Object.keys(localStorage).filter(k=>k.startsWith('commessa__')).forEach(k=>{try{backup[k]=JSON.parse(localStorage.getItem(k));}catch(e){}});
-      await scrivisuDrive(backup);
+      await scriviSuDrive(backup);
       showToast('Dati caricati su Drive ✓');
     }
-  }catch(e){showToast('Errore sync: '+e.message,'#dc2626');}
-  btn.innerHTML='<i class="ti ti-refresh"></i> Sincronizza';
+  }catch(e){showToast('Errore sync: '+e.message,'#dc2626','ti-x');}
+  btn.innerHTML='<i class="ti ti-refresh"></i> Sync';
   btn.disabled=false;
   caricaListaOrdini();
   refreshDashboard();
@@ -405,10 +600,12 @@ async function salvaSuDrive(){
   const backup={};
   Object.keys(localStorage).filter(k=>k.startsWith('commessa__')).forEach(k=>{try{backup[k]=JSON.parse(localStorage.getItem(k));}catch(e){}});
   if(!driveFileId) driveFileId=await trovaDriveFile();
-  await scrivisuDrive(backup);
+  await scriviSuDrive(backup);
 }
 
-/* ── LOCAL STORAGE ── */
+/* ══════════════════════════════════════════
+   LOCAL STORAGE
+══════════════════════════════════════════ */
 function caricaListaOrdini(){
   const sel=document.getElementById('ord-sel');
   const corrente=sel.value;
@@ -422,7 +619,9 @@ function caricaListaOrdini(){
   if(corrente) sel.value=corrente;
 }
 
-/* ── DASHBOARD ── */
+/* ══════════════════════════════════════════
+   DASHBOARD
+══════════════════════════════════════════ */
 function tuttiGliOrdini(){
   return Object.keys(localStorage).filter(k=>k.startsWith('commessa__')).map(k=>{
     const nome=k.replace('commessa__','');
@@ -449,29 +648,33 @@ function refreshDashboard(){
   document.getElementById('k-saldate').textContent=ordini.filter(o=>o.stato==='saldato').length;
   document.getElementById('k-residuo').textContent=fmtShort(totRes);
   const pct=totOrd>0?totInc/totOrd:0;
-  const circ=2*Math.PI*38;
+  const circ=2*Math.PI*42;
   document.getElementById('donut-arc').setAttribute('stroke-dasharray',(pct*circ).toFixed(1)+' '+circ.toFixed(1));
   document.getElementById('donut-pct').textContent=Math.round(pct*100)+'%';
   document.getElementById('leg-inc').textContent=fmt(totInc);
   document.getElementById('leg-res').textContent=fmt(totRes);
   document.getElementById('leg-tot').textContent=fmt(totOrd);
-  const oggi=new Date();oggi.setHours(0,0,0,0);
+
+  const oggi=new Date(); oggi.setHours(0,0,0,0);
   const conScad=ordini.filter(o=>o.prossima&&o.stato!=='saldato').sort((a,b)=>a.prossima.localeCompare(b.prossima)).slice(0,5);
   const scadEl=document.getElementById('scad-list');
-  if(!conScad.length){scadEl.innerHTML='<div style="color:#aaa;font-size:12px;padding:10px 0;text-align:center;">Nessuna scadenza imminente</div>';}
-  else{scadEl.innerHTML=conScad.map(o=>{
-    const d=new Date(o.prossima);d.setHours(0,0,0,0);
-    const diff=Math.round((d-oggi)/864e5);
-    let pc='',pt='';
-    if(diff<0){pc='background:#fee2e2;color:#dc2626';pt='Scaduta';}
-    else if(diff<=7){pc='background:#fef3c7;color:#92400e';pt=diff===0?'Oggi':diff+'gg';}
-    else{pc='background:#dcfce7;color:#166534';pt=diff+'gg';}
-    return `<div onclick="apriCommessa('${esc(o.nome)}')" style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid #f0f0f0;gap:8px;cursor:pointer;">
-      <div style="font-weight:500;font-size:13px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(o.nome)}</div>
-      <div style="font-size:12px;color:#888;white-space:nowrap;">${o.prossima.split('-').reverse().join('/')}</div>
-      <div style="font-size:11px;padding:2px 8px;border-radius:20px;font-weight:500;white-space:nowrap;${pc}">${pt}</div>
-    </div>`;
-  }).join('');}
+  if(!conScad.length){
+    scadEl.innerHTML='<div style="color:var(--text3);font-size:12px;padding:14px 0;text-align:center;">Nessuna scadenza imminente</div>';
+  } else {
+    scadEl.innerHTML=conScad.map(o=>{
+      const d=new Date(o.prossima); d.setHours(0,0,0,0);
+      const diff=Math.round((d-oggi)/864e5);
+      let pc='',pt='';
+      if(diff<0){pc='background:rgba(239,68,68,.2);color:#fca5a5;';pt='Scaduta';}
+      else if(diff<=7){pc='background:rgba(245,158,11,.2);color:#fcd34d;';pt=diff===0?'Oggi':diff+'gg';}
+      else{pc='background:rgba(34,197,94,.2);color:#86efac;';pt=diff+'gg';}
+      return `<div onclick="apriCommessa('${esc(o.nome)}')" style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04);gap:8px;cursor:pointer;">
+        <div style="font-weight:600;font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(o.nome)}</div>
+        <div style="font-size:11px;color:var(--text2);white-space:nowrap;">${o.prossima.split('-').reverse().join('/')}</div>
+        <div style="font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;white-space:nowrap;${pc}">${pt}</div>
+      </div>`;
+    }).join('');
+  }
   renderTabella(ordini);
 }
 
@@ -501,15 +704,15 @@ function renderTabella(ordini){
   };
   tbody.innerHTML=rows.map(o=>{
     const pct=o.tot>0?Math.round(o.inc/o.tot*100):0;
-    const bc=o.stato==='saldato'?'#22c55e':o.stato==='parziale'?'#f59e0b':'#e5e7eb';
+    const bc=o.stato==='saldato'?'#22c55e':o.stato==='parziale'?'#f59e0b':'rgba(255,255,255,.12)';
     return `<tr class="dash-tr" onclick="apriCommessa('${esc(o.nome)}')">
-      <td style="font-weight:600;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(o.nome)}</td>
-      <td style="color:#555;">${esc(o.cliente.nome||'—')}</td>
-      <td style="color:#888;">${o.cliente.data?o.cliente.data.split('-').reverse().join('/'):'—'}</td>
+      <td style="font-weight:700;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(o.nome)}</td>
+      <td style="color:var(--text2);">${esc(o.cliente.nome||'—')}</td>
+      <td style="color:var(--text3);">${o.cliente.data?o.cliente.data.split('-').reverse().join('/'):'—'}</td>
       <td style="text-align:right;">${fmt(o.tot)}</td>
-      <td style="text-align:right;color:#166534;">${fmt(o.inc)}</td>
-      <td style="text-align:right;color:${o.res>0?'#dc2626':'#166534'};font-weight:600;">${fmt(o.res)}</td>
-      <td><div style="font-size:11px;color:#888;margin-bottom:3px;">${pct}%</div><div class="prog-wrap"><div class="prog-bar" style="width:${pct}%;background:${bc};"></div></div></td>
+      <td style="text-align:right;color:#86efac;">${fmt(o.inc)}</td>
+      <td style="text-align:right;color:${o.res>0?'#fca5a5':'#86efac'};font-weight:700;">${fmt(o.res)}</td>
+      <td><div style="font-size:11px;color:var(--text2);margin-bottom:3px;">${pct}%</div><div class="prog-wrap"><div class="prog-bar" style="width:${pct}%;background:${bc};"></div></div></td>
       <td>${bmap[o.stato]||''}</td>
     </tr>`;
   }).join('');
@@ -531,7 +734,9 @@ function tornaAllaLista(){
   refreshDashboard();
 }
 
-/* ── GESTIONALE ── */
+/* ══════════════════════════════════════════
+   GESTIONALE
+══════════════════════════════════════════ */
 function mostraNuovo(){
   document.getElementById('nuovo-input').style.display='block';
   document.getElementById('btn-conferma').style.display='inline-flex';
@@ -541,9 +746,9 @@ function mostraNuovo(){
 
 function confermaNuovo(){
   const nome=document.getElementById('nuovo-input').value.trim().toUpperCase();
-  if(!nome){alert('Inserisci il nome della commessa');return;}
-  if(localStorage.getItem(storageKey(nome))){alert('Esiste già una commessa con questo nome');return;}
-  localStorage.setItem(storageKey(nome),JSON.stringify({cliente:{nome:'',tel:'',data:today},statue:[],pagamenti:[],note:''}));
+  if(!nome){alert('Inserisci il nome della commessa'); return;}
+  if(localStorage.getItem(storageKey(nome))){alert('Esiste già una commessa con questo nome'); return;}
+  localStorage.setItem(storageKey(nome),JSON.stringify({cliente:{nome:'',tel:'',email:'',data:today},statue:[],pagamenti:[],note:''}));
   document.getElementById('nuovo-input').value='';
   document.getElementById('nuovo-input').style.display='none';
   document.getElementById('btn-conferma').style.display='none';
@@ -551,7 +756,7 @@ function confermaNuovo(){
   caricaListaOrdini();
   document.getElementById('ord-sel').value=nome;
   onSelChange();
-  showToast('Commessa creata!');
+  showToast('Commessa creata!','#1e3a6e','ti-sparkles');
 }
 
 function eliminaOrdine(){
@@ -559,12 +764,12 @@ function eliminaOrdine(){
   if(!confirm('Eliminare "'+ordineAttivo+'"? I dati verranno persi.')) return;
   localStorage.removeItem(storageKey(ordineAttivo));
   tornaAllaLista();
-  showToast('Commessa eliminata','#dc2626');
+  showToast('Commessa eliminata','#7f1d1d','ti-trash');
 }
 
 function onSelChange(){
   const nome=document.getElementById('ord-sel').value;
-  if(!nome){tornaAllaLista();return;}
+  if(!nome){tornaAllaLista(); return;}
   ordineAttivo=nome;
   document.getElementById('btn-elimina').style.display='inline-flex';
   const raw=localStorage.getItem(storageKey(nome));
@@ -577,6 +782,7 @@ function onSelChange(){
 function renderPannello(dati){
   document.getElementById('cl-nome').value=dati?.cliente?.nome||'';
   document.getElementById('cl-tel').value=dati?.cliente?.tel||'';
+  document.getElementById('cl-email').value=dati?.cliente?.email||'';
   document.getElementById('cl-data').value=dati?.cliente?.data||today;
   document.getElementById('note-ordine').value=dati?.note||'';
   document.getElementById('statue-body').innerHTML='';
@@ -586,13 +792,13 @@ function renderPannello(dati){
   aggiornaTotali();
 }
 
-function aggStatua(){_addStatuaRow({});aggiornaTotali();}
+function aggStatua(){ _addStatuaRow({}); aggiornaTotali(); }
 function _addStatuaRow(s){
   s=s||{};
   const tr=document.createElement('tr');
   tr.innerHTML=`
     <td><input type="text" value="${esc(s.desc||'')}" placeholder="Nome / modello statua" oninput="aggiornaTotali()"></td>
-    <td><input type="number" value="${s.qty||1}" min="1" style="width:48px;text-align:center;" oninput="aggiornaTotali()"></td>
+    <td><input type="number" value="${s.qty||1}" min="1" style="width:52px;text-align:center;" oninput="aggiornaTotali()"></td>
     <td><input type="number" value="${s.prezzo||''}" placeholder="0.00" step="0.01" oninput="aggiornaTotali()"></td>
     <td><input type="date" value="${s.consegna||''}"></td>
     <td class="riga-tot">€ 0,00</td>
@@ -600,7 +806,7 @@ function _addStatuaRow(s){
   document.getElementById('statue-body').appendChild(tr);
 }
 
-function aggPag(){_addPagRow({});}
+function aggPag(){ _addPagRow({}); }
 function _addPagRow(p){
   p=p||{};
   const tipos=['Acconto','Acconto 2','Acconto 3','Saldo parziale','Saldo'];
@@ -610,7 +816,8 @@ function _addPagRow(p){
   const tr=document.createElement('tr');
   tr.innerHTML=`
     <td><input type="date" value="${p.data||today}"></td>
-    <td><select>${optT}</select></td><td><select>${optM}</select></td>
+    <td><select>${optT}</select></td>
+    <td><select>${optM}</select></td>
     <td><input type="number" value="${p.importo||''}" placeholder="0.00" step="0.01" style="width:90px;" oninput="aggiornaTotali()"></td>
     <td><input type="text" value="${esc(p.note||'')}" placeholder="Facoltativo"></td>
     <td><button class="btn-del" onclick="this.closest('tr').remove();aggiornaTotali()">×</button></td>`;
@@ -641,16 +848,32 @@ function aggiornaTotali(){
 
 function raccogliDati(){
   const statue=[];
-  document.querySelectorAll('#statue-body tr').forEach(tr=>{const ins=tr.querySelectorAll('input');statue.push({desc:ins[0].value,qty:ins[1].value,prezzo:ins[2].value,consegna:ins[3].value});});
+  document.querySelectorAll('#statue-body tr').forEach(tr=>{
+    const ins=tr.querySelectorAll('input');
+    statue.push({desc:ins[0].value,qty:ins[1].value,prezzo:ins[2].value,consegna:ins[3].value});
+  });
   const pagamenti=[];
-  document.querySelectorAll('#pag-body tr').forEach(tr=>{const ins=tr.querySelectorAll('input');const sels=tr.querySelectorAll('select');pagamenti.push({data:ins[0].value,tipo:sels[0].value,metodo:sels[1].value,importo:ins[1].value,note:ins[2].value});});
-  return{cliente:{nome:document.getElementById('cl-nome').value,tel:document.getElementById('cl-tel').value,data:document.getElementById('cl-data').value},statue,pagamenti,note:document.getElementById('note-ordine').value};
+  document.querySelectorAll('#pag-body tr').forEach(tr=>{
+    const ins=tr.querySelectorAll('input');
+    const sels=tr.querySelectorAll('select');
+    pagamenti.push({data:ins[0].value,tipo:sels[0].value,metodo:sels[1].value,importo:ins[1].value,note:ins[2].value});
+  });
+  return{
+    cliente:{
+      nome:document.getElementById('cl-nome').value,
+      tel:document.getElementById('cl-tel').value,
+      email:document.getElementById('cl-email').value,
+      data:document.getElementById('cl-data').value
+    },
+    statue,pagamenti,
+    note:document.getElementById('note-ordine').value
+  };
 }
 
 async function salva(){
   if(!ordineAttivo) return;
   localStorage.setItem(storageKey(ordineAttivo),JSON.stringify(raccogliDati()));
-  showToast('Salvataggio in corso...','#1e40af');
+  showToast('Salvataggio in corso…','#1e40af','ti-loader');
   await salvaSuDrive();
   showToast('Salvato e sincronizzato su Drive ✓');
 }
@@ -663,51 +886,197 @@ function copiaLink(){ navigator.clipboard.writeText(document.getElementById('lin
 
 function copiaRiepilogo(){
   if(!ordineAttivo) return;
-  const cl=document.getElementById('cl-nome').value,tel=document.getElementById('cl-tel').value;
-  let txt=`COMMESSA: ${ordineAttivo}\nCliente: ${cl} ${tel}\n\nTotale: ${document.getElementById('m-tot').textContent}\nIncassato: ${document.getElementById('m-inc').textContent}\nResiduo: ${document.getElementById('m-res').textContent}\n\nSTATUE:\n`;
+  const cl=document.getElementById('cl-nome').value;
+  const tel=document.getElementById('cl-tel').value;
+  const email=document.getElementById('cl-email').value;
+  let txt=`COMMESSA: ${ordineAttivo}\nCliente: ${cl} ${tel} ${email}\n\nTotale: ${document.getElementById('m-tot').textContent}\nIncassato: ${document.getElementById('m-inc').textContent}\nResiduo: ${document.getElementById('m-res').textContent}\n\nSTATUE:\n`;
   document.querySelectorAll('#statue-body tr').forEach(tr=>{const ins=tr.querySelectorAll('input');if(!ins[0].value)return;txt+=`• ${ins[0].value} x${ins[1].value} = ${tr.querySelector('.riga-tot').textContent}\n`;});
   txt+='\nPAGAMENTI:\n';
   document.querySelectorAll('#pag-body tr').forEach(tr=>{const ins=tr.querySelectorAll('input');const sels=tr.querySelectorAll('select');if(!ins[1].value)return;txt+=`• ${ins[0].value} | ${sels[0].value} | ${sels[1].value} | € ${parseFloat(ins[1].value||0).toFixed(2)}\n`;});
   navigator.clipboard.writeText(txt).then(()=>showToast('Riepilogo copiato!'));
 }
 
-/* ── BACKUP MANUALE ── */
+/* ══════════════════════════════════════════
+   BACKUP / IMPORT
+══════════════════════════════════════════ */
 function esportaDati(){
   const backup={};
   Object.keys(localStorage).filter(k=>k.startsWith('commessa__')).forEach(k=>{try{backup[k]=JSON.parse(localStorage.getItem(k));}catch(e){}});
-  if(!Object.keys(backup).length){showToast('Nessun dato da esportare','#92400e');return;}
+  if(!Object.keys(backup).length){showToast('Nessun dato da esportare','#92400e','ti-alert-circle'); return;}
   const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url; a.download=`commesse_backup_${new Date().toISOString().slice(0,10)}.json`;
+  const a=document.createElement('a'); a.href=url; a.download=`commesse_backup_${new Date().toISOString().slice(0,10)}.json`;
   a.click(); URL.revokeObjectURL(url);
   showToast('Backup scaricato!');
 }
 
 function importaDati(event){
-  const file=event.target.files[0];if(!file)return;
+  const file=event.target.files[0]; if(!file) return;
   const reader=new FileReader();
   reader.onload=function(e){
     try{
       const backup=JSON.parse(e.target.result);
       let count=0;
       Object.keys(backup).forEach(k=>{if(k.startsWith('commessa__')){localStorage.setItem(k,JSON.stringify(backup[k]));count++;}});
-      caricaListaOrdini();refreshDashboard();
+      caricaListaOrdini(); refreshDashboard();
       showToast(`Importate ${count} commesse!`);
-    }catch(e){showToast('File non valido','#dc2626');}
+    }catch(e){showToast('File non valido','#dc2626','ti-x');}
     event.target.value='';
   };
   reader.readAsText(file);
 }
 
-/* ── AVVIO ── */
+/* ══════════════════════════════════════════
+   BUDGETBAKERS / WALLET
+══════════════════════════════════════════ */
+function apriModalWallet(){
+  // Precompila con dati commessa attiva
+  document.getElementById('w-data').value=today;
+  const res=document.getElementById('m-res').textContent.replace('€','').replace(',','.').replace(/\s/g,'');
+  document.getElementById('w-importo').value=parseFloat(res)||'';
+  const nome=ordineAttivo||'';
+  document.getElementById('w-note').value=nome?`Incasso commessa ${nome}`:'';
+  apriModal('modal-wallet');
+}
+
+function _buildWalletRecord(){
+  return {
+    date: document.getElementById('w-data').value,
+    amount: parseFloat(document.getElementById('w-importo').value)||0,
+    currency: 'EUR',
+    category: document.getElementById('w-cat').value,
+    note: document.getElementById('w-note').value,
+    type: 'income'
+  };
+}
+
+function apriWalletDeepLink(){
+  const r=_buildWalletRecord();
+  if(!r.amount){showToast('Inserisci un importo','#92400e','ti-alert-circle'); return;}
+  // Wallet by BudgetBakers deep link scheme
+  const note=encodeURIComponent(r.note);
+  const cat=encodeURIComponent(r.category);
+  const url=`budgetbakers://add?amount=${r.amount}&currency=${r.currency}&note=${note}&category=${cat}&date=${r.date}`;
+  window.location.href=url;
+  showToast('Apertura Wallet…','#92400e','ti-external-link');
+  chiudiModal('modal-wallet');
+}
+
+function esportaWalletCSV(){
+  const r=_buildWalletRecord();
+  if(!r.amount){showToast('Inserisci un importo','#92400e','ti-alert-circle'); return;}
+  // CSV formato Wallet by BudgetBakers: date,note,amount,currency,category,type
+  const csv=`date,note,amount,currency,category,type\n${r.date},"${r.note.replace(/"/g,'""')}",${r.amount},${r.currency},"${r.category}",${r.type}`;
+  const blob=new Blob([csv],{type:'text/csv'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=`wallet_${r.date}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+  showToast('CSV Wallet esportato!','#92400e','ti-download');
+  chiudiModal('modal-wallet');
+}
+
+/* ══════════════════════════════════════════
+   FATTURE IN CLOUD
+══════════════════════════════════════════ */
+function salvaCredFIC(){
+  const tok=document.getElementById('fic-token').value.trim();
+  const cid=document.getElementById('fic-company').value.trim();
+  if(!tok||!cid){showToast('Compila token e company ID','#92400e','ti-alert-circle'); return;}
+  localStorage.setItem('fic_token',tok);
+  localStorage.setItem('fic_company',cid);
+  showToast('Credenziali Fatture in Cloud salvate!');
+}
+
+function caricaCredFIC(){
+  const tok=localStorage.getItem('fic_token')||'';
+  const cid=localStorage.getItem('fic_company')||'';
+  if(tok) document.getElementById('fic-token').value=tok;
+  if(cid) document.getElementById('fic-company').value=cid;
+}
+
+function apriModalFattura(){
+  caricaCredFIC();
+  document.getElementById('fic-data').value=today;
+  document.getElementById('fic-status').style.display='none';
+  // Precompila note con nome commessa
+  if(ordineAttivo) document.getElementById('fic-note').value=`Commessa: ${ordineAttivo}`;
+  apriModal('modal-fattura');
+}
+
+async function emettereFattura(){
+  const token=localStorage.getItem('fic_token');
+  const company=localStorage.getItem('fic_company');
+  if(!token||!company){
+    showToast('Configura prima le credenziali API','#dc2626','ti-key');
+    return;
+  }
+  const dati=raccogliDati();
+  const statusEl=document.getElementById('fic-status');
+  statusEl.style.display='block';
+  statusEl.innerHTML='<i class="ti ti-loader" style="animation:spin .7s linear infinite;display:inline-block;"></i> Emissione fattura in corso…';
+
+  // Costruisce il payload per Fatture in Cloud API v2
+  const righe=dati.statue.filter(s=>s.desc&&s.prezzo).map(s=>({
+    product_id: null,
+    name: s.desc,
+    qty: parseFloat(s.qty)||1,
+    measure: 'pz',
+    net_price: parseFloat(s.prezzo)||0,
+    category: 'Statue',
+    vat: { id: 0, value: 22 }
+  }));
+
+  if(!righe.length){showToast('Nessuna riga di prodotto da fatturare','#92400e','ti-alert-circle'); return;}
+
+  const payload={
+    data:{
+      type: document.getElementById('fic-tipo').value,
+      date: document.getElementById('fic-data').value,
+      client:{
+        name: dati.cliente.nome||'Cliente',
+        email: dati.cliente.email||undefined
+      },
+      items_list: righe,
+      payment_method:{ name: document.getElementById('fic-pag').value },
+      notes: document.getElementById('fic-note').value||undefined,
+    }
+  };
+
+  try{
+    const res=await fetch(`https://api.fattureincloud.it/v2/c/${company}/issued_documents`,{
+      method:'POST',
+      headers:{
+        'Authorization':'Bearer '+token,
+        'Content-Type':'application/json'
+      },
+      body:JSON.stringify(payload)
+    });
+    const data=await res.json();
+    if(res.ok){
+      const url=data?.data?.url||'';
+      statusEl.innerHTML=`<span style="color:#86efac;"><i class="ti ti-circle-check"></i> Fattura emessa! ${url?`<a href="${url}" target="_blank" style="color:#86efac;">Apri PDF</a>`:'ID: '+(data?.data?.id||'—')}</span>`;
+      showToast('Fattura emessa con successo ✓','#166534','ti-file-invoice');
+    } else {
+      const msg=data?.error?.message||data?.message||res.statusText;
+      statusEl.innerHTML=`<span style="color:#fca5a5;"><i class="ti ti-x"></i> Errore: ${msg}</span>`;
+      showToast('Errore API Fatture in Cloud','#dc2626','ti-x');
+    }
+  }catch(e){
+    statusEl.innerHTML=`<span style="color:#fca5a5;"><i class="ti ti-x"></i> Errore di rete: ${e.message}</span>`;
+    showToast('Errore di rete','#dc2626','ti-x');
+  }
+}
+
+/* ══════════════════════════════════════════
+   AVVIO
+══════════════════════════════════════════ */
 setFiltro('tutti');
 caricaListaOrdini();
 refreshDashboard();
 const params=new URLSearchParams(window.location.search);
 const qc=params.get('commessa');
 if(qc){
-  if(!localStorage.getItem(storageKey(qc))) localStorage.setItem(storageKey(qc),JSON.stringify({cliente:{nome:'',tel:'',data:today},statue:[{}],pagamenti:[{}],note:''}));
+  if(!localStorage.getItem(storageKey(qc))) localStorage.setItem(storageKey(qc),JSON.stringify({cliente:{nome:'',tel:'',email:'',data:today},statue:[{}],pagamenti:[{}],note:''}));
   caricaListaOrdini();
   document.getElementById('ord-sel').value=qc;
   onSelChange();
