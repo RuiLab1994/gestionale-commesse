@@ -205,21 +205,21 @@
 <!-- MODAL WALLET (BudgetBakers) -->
 <div class="modal-overlay" id="modal-wallet">
   <div class="modal">
-    <h3><i class="ti ti-wallet" style="color:#fcd34d;"></i> Registra Pagamento in Contanti</h3>
-    <p>Il pagamento verrà registrato come uscita su <strong>Wallet by BudgetBakers</strong> tramite deep link / import CSV.</p>
-    <div class="mfield"><label>Data pagamento</label><input type="date" id="w-data"></div>
-    <div class="mfield"><label>Importo (€)</label><input type="number" id="w-importo" placeholder="0.00" step="0.01"></div>
-    <div class="mfield"><label>Categoria</label><select id="w-cat"><option>Vendita statue</option><option>Acconto cliente</option><option>Saldo cliente</option><option>Altro incasso</option></select></div>
-    <div class="mfield"><label>Note / Descrizione</label><textarea id="w-note" placeholder="Es. Acconto commessa Mario Rossi…"></textarea></div>
-    <div style="background:var(--surface3);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text2);margin-bottom:4px;">
-      <strong style="color:var(--text);">Metodi disponibili:</strong><br>
-      1. <b>Deep link</b> → apre Wallet con i dati precompilati (app mobile).<br>
-      2. <b>Esporta CSV</b> → scarica riga da importare in Wallet → Impostazioni → Importa.
+    <h3><i class="ti ti-wallet" style="color:#fcd34d;"></i> Registra Pagamento Contanti</h3>
+    <p style="margin-bottom:14px;">Verrai reindirizzato su <strong>Wallet by BudgetBakers</strong>. Inserisci il pagamento manualmente una volta aperta l'app.</p>
+    <div style="background:var(--surface3);border-radius:10px;padding:14px 16px;margin-bottom:16px;">
+      <div style="font-size:11px;color:var(--text2);margin-bottom:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;">Dati da inserire in Wallet</div>
+      <div style="display:flex;flex-direction:column;gap:7px;font-size:13px;">
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--text2);">Commessa</span><strong id="w-info-nome">—</strong></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--text2);">Cliente</span><strong id="w-info-cliente">—</strong></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--text2);">Importo residuo</span><strong style="color:#fcd34d;" id="w-info-importo">—</strong></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--text2);">Data</span><strong id="w-info-data">—</strong></div>
+      </div>
+      <button onclick="copiaDatiWallet()" class="btn" style="margin-top:12px;width:100%;justify-content:center;font-size:12px;"><i class="ti ti-copy"></i> Copia riepilogo negli appunti</button>
     </div>
     <div class="modal-btns">
-      <button class="btn" onclick="chiudiModal('modal-wallet')">Annulla</button>
-      <button class="btn btn-wallet" onclick="esportaWalletCSV()"><i class="ti ti-download"></i> Esporta CSV</button>
-      <button class="btn btn-wallet" onclick="apriWalletDeepLink()"><i class="ti ti-external-link"></i> Apri Wallet</button>
+      <button class="btn" onclick="chiudiModal('modal-wallet')">Chiudi</button>
+      <button class="btn btn-wallet" onclick="apriWallet()"><i class="ti ti-external-link"></i> Apri Wallet</button>
     </div>
   </div>
 </div>
@@ -228,22 +228,21 @@
 <div class="modal-overlay" id="modal-fattura">
   <div class="modal">
     <h3><i class="ti ti-file-invoice" style="color:#86efac;"></i> Emetti Fattura</h3>
-    <p>Connetti le tue credenziali <strong>Fatture in Cloud</strong> per emettere fattura direttamente dalla commessa.</p>
-    <div style="background:var(--surface3);border-radius:8px;padding:12px 14px;font-size:12px;margin-bottom:14px;">
-      <div style="font-weight:600;color:var(--text);margin-bottom:8px;"><i class="ti ti-key" style="color:#fcd34d;"></i> Configurazione API (una tantum)</div>
-      <div class="mfield" style="margin-bottom:8px;"><label>Access Token Fatture in Cloud</label><input type="password" id="fic-token" placeholder="Bearer token da → Account → API"></div>
-      <div class="mfield" style="margin-bottom:0;"><label>Company ID</label><input type="text" id="fic-company" placeholder="Trova in: Impostazioni → Azienda"></div>
-      <button class="btn" style="margin-top:8px;font-size:11px;" onclick="salvaCredFIC()"><i class="ti ti-device-floppy"></i> Salva credenziali</button>
+    <p style="margin-bottom:14px;">Verrai reindirizzato su <strong>Fatture in Cloud</strong>. Crea la fattura direttamente nel sito con i dati già pronti.</p>
+    <div style="background:var(--surface3);border-radius:10px;padding:14px 16px;margin-bottom:16px;">
+      <div style="font-size:11px;color:var(--text2);margin-bottom:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;">Dati da riportare in fattura</div>
+      <div style="display:flex;flex-direction:column;gap:7px;font-size:13px;">
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--text2);">Cliente</span><strong id="f-info-cliente">—</strong></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--text2);">Email</span><strong id="f-info-email">—</strong></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--text2);">Telefono</span><strong id="f-info-tel">—</strong></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--text2);">Totale ordine</span><strong style="color:#86efac;" id="f-info-tot">—</strong></div>
+      </div>
+      <div id="f-righe" style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px;font-size:12px;color:var(--text2);"></div>
+      <button onclick="copiaDatiFattura()" class="btn" style="margin-top:12px;width:100%;justify-content:center;font-size:12px;"><i class="ti ti-copy"></i> Copia riepilogo negli appunti</button>
     </div>
-    <div class="mfield"><label>Tipo documento</label><
-select id="fic-tipo"><option value="in">Fattura</option><option value="p">Proforma</option><option value="r">Ricevuta</option></select></div>
-    <div class="mfield"><label>Data documento</label><input type="date" id="fic-data"></div>
-    <div class="mfield"><label>Pagamento</label><select id="fic-pag"><option>Contanti</option><option>Bonifico Bancario</option><option>PayPal</option><option>Carta di Credito</option><option>Satispay</option></select></div>
-    <div class="mfield"><label>Note aggiuntive</label><textarea id="fic-note" placeholder="Note interne o per il cliente…"></textarea></div>
-    <div id="fic-status" style="font-size:12px;color:var(--text2);margin-top:4px;display:none;"></div>
     <div class="modal-btns">
-      <button class="btn" onclick="chiudiModal('modal-fattura')">Annulla</button>
-      <button class="btn btn-fattura" onclick="emettereFattura()"><i class="ti ti-send"></i> Emetti Fattura</button>
+      <button class="btn" onclick="chiudiModal('modal-fattura')">Chiudi</button>
+      <button class="btn btn-fattura" onclick="apriFattureCloud()"><i class="ti ti-external-link"></i> Apri Fatture in Cloud</button>
     </div>
   </div>
 </div>
@@ -930,141 +929,67 @@ function importaDati(event){
    BUDGETBAKERS / WALLET
 ══════════════════════════════════════════ */
 function apriModalWallet(){
-  // Precompila con dati commessa attiva
-  document.getElementById('w-data').value=today;
-  const res=document.getElementById('m-res').textContent.replace('€','').replace(',','.').replace(/\s/g,'');
-  document.getElementById('w-importo').value=parseFloat(res)||'';
-  const nome=ordineAttivo||'';
-  document.getElementById('w-note').value=nome?`Incasso commessa ${nome}`:'';
+  const dati=raccogliDati();
+  const res=document.getElementById('m-res').textContent;
+  const dataOggi=new Date().toLocaleDateString('it-IT');
+  document.getElementById('w-info-nome').textContent=ordineAttivo||'—';
+  document.getElementById('w-info-cliente').textContent=dati.cliente.nome||'—';
+  document.getElementById('w-info-importo').textContent=res||'—';
+  document.getElementById('w-info-data').textContent=dataOggi;
   apriModal('modal-wallet');
 }
 
-function _buildWalletRecord(){
-  return {
-    date: document.getElementById('w-data').value,
-    amount: parseFloat(document.getElementById('w-importo').value)||0,
-    currency: 'EUR',
-    category: document.getElementById('w-cat').value,
-    note: document.getElementById('w-note').value,
-    type: 'income'
-  };
+function copiaDatiWallet(){
+  const dati=raccogliDati();
+  const res=document.getElementById('m-res').textContent;
+  const txt=`💰 PAGAMENTO DA REGISTRARE IN WALLET\nCommessa: ${ordineAttivo||'—'}\nCliente: ${dati.cliente.nome||'—'}\nImporto: ${res}\nData: ${new Date().toLocaleDateString('it-IT')}\nCategoria: Vendita statue`;
+  navigator.clipboard.writeText(txt).then(()=>showToast('Dati copiati negli appunti!'));
 }
 
-function apriWalletDeepLink(){
-  const r=_buildWalletRecord();
-  if(!r.amount){showToast('Inserisci un importo','#92400e','ti-alert-circle'); return;}
-  // Wallet by BudgetBakers deep link scheme
-  const note=encodeURIComponent(r.note);
-  const cat=encodeURIComponent(r.category);
-  const url=`budgetbakers://add?amount=${r.amount}&currency=${r.currency}&note=${note}&category=${cat}&date=${r.date}`;
-  window.location.href=url;
-  showToast('Apertura Wallet…','#92400e','ti-external-link');
-  chiudiModal('modal-wallet');
-}
-
-function esportaWalletCSV(){
-  const r=_buildWalletRecord();
-  if(!r.amount){showToast('Inserisci un importo','#92400e','ti-alert-circle'); return;}
-  // CSV formato Wallet by BudgetBakers: date,note,amount,currency,category,type
-  const csv=`date,note,amount,currency,category,type\n${r.date},"${r.note.replace(/"/g,'""')}",${r.amount},${r.currency},"${r.category}",${r.type}`;
-  const blob=new Blob([csv],{type:'text/csv'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a'); a.href=url; a.download=`wallet_${r.date}.csv`;
-  a.click(); URL.revokeObjectURL(url);
-  showToast('CSV Wallet esportato!','#92400e','ti-download');
+function apriWallet(){
+  window.open('https://web.budgetbakers.com','_blank');
   chiudiModal('modal-wallet');
 }
 
 /* ══════════════════════════════════════════
    FATTURE IN CLOUD
 ══════════════════════════════════════════ */
-function salvaCredFIC(){
-  const tok=document.getElementById('fic-token').value.trim();
-  const cid=document.getElementById('fic-company').value.trim();
-  if(!tok||!cid){showToast('Compila token e company ID','#92400e','ti-alert-circle'); return;}
-  localStorage.setItem('fic_token',tok);
-  localStorage.setItem('fic_company',cid);
-  showToast('Credenziali Fatture in Cloud salvate!');
-}
-
-function caricaCredFIC(){
-  const tok=localStorage.getItem('fic_token')||'';
-  const cid=localStorage.getItem('fic_company')||'';
-  if(tok) document.getElementById('fic-token').value=tok;
-  if(cid) document.getElementById('fic-company').value=cid;
-}
-
 function apriModalFattura(){
-  caricaCredFIC();
-  document.getElementById('fic-data').value=today;
-  document.getElementById('fic-status').style.display='none';
-  // Precompila note con nome commessa
-  if(ordineAttivo) document.getElementById('fic-note').value=`Commessa: ${ordineAttivo}`;
+  const dati=raccogliDati();
+  const tot=document.getElementById('m-tot').textContent;
+  document.getElementById('f-info-cliente').textContent=dati.cliente.nome||'—';
+  document.getElementById('f-info-email').textContent=dati.cliente.email||'—';
+  document.getElementById('f-info-tel').textContent=dati.cliente.tel||'—';
+  document.getElementById('f-info-tot').textContent=tot;
+  // Elenco righe statue
+  const righe=dati.statue.filter(s=>s.desc);
+  document.getElementById('f-righe').innerHTML=righe.length
+    ? '<div style="margin-bottom:6px;font-weight:600;color:var(--text);">Voci da inserire:</div>'
+      + righe.map(s=>{
+          const tot=(parseFloat(s.qty)||1)*(parseFloat(s.prezzo)||0);
+          return `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border);">
+            <span>${s.desc} × ${s.qty||1}</span>
+            <strong>€ ${tot.toFixed(2)}</strong>
+          </div>`;
+        }).join('')
+    : '';
   apriModal('modal-fattura');
 }
 
-async function emettereFattura(){
-  const token=localStorage.getItem('fic_token');
-  const company=localStorage.getItem('fic_company');
-  if(!token||!company){
-    showToast('Configura prima le credenziali API','#dc2626','ti-key');
-    return;
-  }
+function copiaDatiFattura(){
   const dati=raccogliDati();
-  const statusEl=document.getElementById('fic-status');
-  statusEl.style.display='block';
-  statusEl.innerHTML='<i class="ti ti-loader" style="animation:spin .7s linear infinite;display:inline-block;"></i> Emissione fattura in corso…';
+  const tot=document.getElementById('m-tot').textContent;
+  let txt=`🧾 DATI FATTURA\nCommessa: ${ordineAttivo||'—'}\nCliente: ${dati.cliente.nome||'—'}\nEmail: ${dati.cliente.email||'—'}\nTel: ${dati.cliente.tel||'—'}\nTotale: ${tot}\n\nVOCI:\n`;
+  dati.statue.filter(s=>s.desc).forEach(s=>{
+    const r=(parseFloat(s.qty)||1)*(parseFloat(s.prezzo)||0);
+    txt+=`• ${s.desc} × ${s.qty||1} = € ${r.toFixed(2)}\n`;
+  });
+  navigator.clipboard.writeText(txt).then(()=>showToast('Dati fattura copiati negli appunti!'));
+}
 
-  // Costruisce il payload per Fatture in Cloud API v2
-  const righe=dati.statue.filter(s=>s.desc&&s.prezzo).map(s=>({
-    product_id: null,
-    name: s.desc,
-    qty: parseFloat(s.qty)||1,
-    measure: 'pz',
-    net_price: parseFloat(s.prezzo)||0,
-    category: 'Statue',
-    vat: { id: 0, value: 22 }
-  }));
-
-  if(!righe.length){showToast('Nessuna riga di prodotto da fatturare','#92400e','ti-alert-circle'); return;}
-
-  const payload={
-    data:{
-      type: document.getElementById('fic-tipo').value,
-      date: document.getElementById('fic-data').value,
-      client:{
-        name: dati.cliente.nome||'Cliente',
-        email: dati.cliente.email||undefined
-      },
-      items_list: righe,
-      payment_method:{ name: document.getElementById('fic-pag').value },
-      notes: document.getElementById('fic-note').value||undefined,
-    }
-  };
-
-  try{
-    const res=await fetch(`https://api.fattureincloud.it/v2/c/${company}/issued_documents`,{
-      method:'POST',
-      headers:{
-        'Authorization':'Bearer '+token,
-        'Content-Type':'application/json'
-      },
-      body:JSON.stringify(payload)
-    });
-    const data=await res.json();
-    if(res.ok){
-      const url=data?.data?.url||'';
-      statusEl.innerHTML=`<span style="color:#86efac;"><i class="ti ti-circle-check"></i> Fattura emessa! ${url?`<a href="${url}" target="_blank" style="color:#86efac;">Apri PDF</a>`:'ID: '+(data?.data?.id||'—')}</span>`;
-      showToast('Fattura emessa con successo ✓','#166534','ti-file-invoice');
-    } else {
-      const msg=data?.error?.message||data?.message||res.statusText;
-      statusEl.innerHTML=`<span style="color:#fca5a5;"><i class="ti ti-x"></i> Errore: ${msg}</span>`;
-      showToast('Errore API Fatture in Cloud','#dc2626','ti-x');
-    }
-  }catch(e){
-    statusEl.innerHTML=`<span style="color:#fca5a5;"><i class="ti ti-x"></i> Errore di rete: ${e.message}</span>`;
-    showToast('Errore di rete','#dc2626','ti-x');
-  }
+function apriFattureCloud(){
+  window.open('https://app.fattureincloud.it/issued-documents/invoices/new','_blank');
+  chiudiModal('modal-fattura');
 }
 
 /* ══════════════════════════════════════════
