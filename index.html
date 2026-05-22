@@ -184,6 +184,24 @@
     .kpi-grid{grid-template-columns:1fr;}
     .grid-cliente{grid-template-columns:1fr;}
   }
+
+  /* ── PREVISIONE ENTRATE SCROLLBAR ── */
+  #mese1-lista, #mese2-lista, #mese3-lista {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,.15) transparent;
+  }
+  #mese1-lista::-webkit-scrollbar,
+  #mese2-lista::-webkit-scrollbar,
+  #mese3-lista::-webkit-scrollbar { width: 6px; }
+  #mese1-lista::-webkit-scrollbar-track,
+  #mese2-lista::-webkit-scrollbar-track,
+  #mese3-lista::-webkit-scrollbar-track { background: transparent; border-radius: 3px; }
+  #mese1-lista::-webkit-scrollbar-thumb,
+  #mese2-lista::-webkit-scrollbar-thumb,
+  #mese3-lista::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); border-radius: 3px; }
+  #mese1-lista::-webkit-scrollbar-thumb:hover,
+  #mese2-lista::-webkit-scrollbar-thumb:hover,
+  #mese3-lista::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.25); }
 </style>
 </head>
 <body>
@@ -297,6 +315,50 @@
         <div class="kl"><i class="ti ti-coin"></i> Da incassare</div>
         <div class="kv" id="k-residuo">€ 0</div>
         <div class="ks">saldi aperti</div>
+      </div>
+    </div>
+
+    <!-- PREVISIONE ENTRATE 3 MESI -->
+    <div class="card">
+      <p class="card-hdr" style="justify-content:space-between;">
+        <span><i class="ti ti-chart-line"></i> Previsione Entrate (3 Mesi)</span>
+        <button class="btn" onclick="refreshEntrate()" style="padding:3px 10px;font-size:11px;">
+          <i class="ti ti-refresh"></i> Aggiorna
+        </button>
+      </p>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;">
+        <!-- Mese 1 -->
+        <div style="background:var(--surface3);border:1px solid var(--border);border-radius:10px;padding:14px;">
+          <div style="font-size:11px;color:var(--text2);font-weight:600;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em;" id="mese1-label">—</div>
+          <div style="font-size:20px;font-weight:700;color:#93c5fd;margin-bottom:8px;" id="mese1-totale">€ 0,00</div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:10px;" id="mese1-commesse">0 commesse</div>
+          <div style="max-height:120px;overflow-y:auto;font-size:11px;"><div id="mese1-lista"></div></div>
+        </div>
+        <!-- Mese 2 -->
+        <div style="background:var(--surface3);border:1px solid var(--border);border-radius:10px;padding:14px;">
+          <div style="font-size:11px;color:var(--text2);font-weight:600;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em;" id="mese2-label">—</div>
+          <div style="font-size:20px;font-weight:700;color:#fcd34d;margin-bottom:8px;" id="mese2-totale">€ 0,00</div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:10px;" id="mese2-commesse">0 commesse</div>
+          <div style="max-height:120px;overflow-y:auto;font-size:11px;"><div id="mese2-lista"></div></div>
+        </div>
+        <!-- Mese 3 -->
+        <div style="background:var(--surface3);border:1px solid var(--border);border-radius:10px;padding:14px;">
+          <div style="font-size:11px;color:var(--text2);font-weight:600;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em;" id="mese3-label">—</div>
+          <div style="font-size:20px;font-weight:700;color:#86efac;margin-bottom:8px;" id="mese3-totale">€ 0,00</div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:10px;" id="mese3-commesse">0 commesse</div>
+          <div style="max-height:120px;overflow-y:auto;font-size:11px;"><div id="mese3-lista"></div></div>
+        </div>
+      </div>
+      <!-- Riepilogo totale -->
+      <div style="background:rgba(37,99,235,.12);border:1px solid rgba(37,99,235,.3);border-radius:10px;padding:12px;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-size:11px;color:#93c5fd;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Totale Entrate Previste</div>
+          <div style="font-size:16px;font-weight:700;color:#93c5fd;margin-top:4px;" id="totale-entrate">€ 0,00</div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);text-align:right;">
+          <div>Periodo:</div>
+          <div style="font-weight:600;color:var(--text2);" id="periodo-entrate">—</div>
+        </div>
       </div>
     </div>
 
@@ -675,6 +737,83 @@ function refreshDashboard(){
     }).join('');
   }
   renderTabella(ordini);
+  renderEntratePrevisioni();
+}
+
+/* ══════════════════════════════════════════
+   PREVISIONE ENTRATE 3 MESI
+══════════════════════════════════════════ */
+function calcolaEntratePrevisioni(){
+  const oggi=new Date(); oggi.setHours(0,0,0,0);
+  const mesi=[];
+  for(let i=0;i<3;i++){
+    const primo=new Date(oggi.getFullYear(),oggi.getMonth()+i,1);
+    const ultimo=new Date(oggi.getFullYear(),oggi.getMonth()+i+1,0);
+    const label=primo.toLocaleString('it-IT',{month:'long',year:'numeric'});
+    mesi.push({inizio:primo,fine:ultimo,mese:label.charAt(0).toUpperCase()+label.slice(1)});
+  }
+  const ordini=tuttiGliOrdini();
+  const eps=[
+    {mese:mesi[0],commesse:[],totale:0},
+    {mese:mesi[1],commesse:[],totale:0},
+    {mese:mesi[2],commesse:[],totale:0}
+  ];
+  ordini.forEach(o=>{
+    if(o.stato==='saldato') return;
+    let dataPross=null;
+    try{
+      const dati=JSON.parse(localStorage.getItem(storageKey(o.nome))||'{}');
+      (dati.righe_ordine||dati.statue||[]).forEach(r=>{
+        const dc=r.consegna||r.data_consegna||null;
+        if(dc&&(!dataPross||dc<dataPross)) dataPross=dc;
+      });
+    }catch(e){}
+    if(!dataPross) return;
+    const dc=new Date(dataPross); dc.setHours(0,0,0,0);
+    for(let i=0;i<eps.length;i++){
+      const em=eps[i];
+      if(dc>=em.mese.inizio&&dc<=em.mese.fine){
+        if(!em.commesse.find(c=>c.nome===o.nome)){
+          em.commesse.push({nome:o.nome,residuo:o.res,data:dataPross,cliente:o.cliente.nome||'—'});
+          em.totale+=o.res;
+        }
+        break;
+      }
+    }
+  });
+  return{eps,mesi};
+}
+
+function refreshEntrate(){
+  const btn=event.target.closest('.btn');
+  btn.style.opacity='0.5'; btn.style.pointerEvents='none';
+  setTimeout(()=>{renderEntratePrevisioni();btn.style.opacity='1';btn.style.pointerEvents='auto';},300);
+}
+
+function renderEntratePrevisioni(){
+  const{eps}=calcolaEntratePrevisioni();
+  let totaleFull=0;
+  eps.forEach((em,idx)=>{
+    const id=`mese${idx+1}`;
+    document.getElementById(`${id}-label`).textContent=em.mese.mese.toUpperCase();
+    document.getElementById(`${id}-totale`).textContent=fmt(em.totale);
+    totaleFull+=em.totale;
+    const n=em.commesse.length;
+    document.getElementById(`${id}-commesse`).textContent=n+(n===1?' commessa':' commesse');
+    const html=em.commesse.sort((a,b)=>a.data.localeCompare(b.data)).map(r=>`
+      <div style="padding:6px;margin-bottom:6px;background:var(--surface2);border-radius:6px;border:1px solid var(--border);cursor:pointer;"
+        onclick="apriCommessa('${esc(r.nome)}')">
+        <div style="font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(r.nome)}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:2px;">${r.data.split('-').reverse().join('/')}</div>
+        <div style="font-size:11px;color:#86efac;font-weight:600;margin-top:2px;">${fmt(r.residuo)}</div>
+      </div>`).join('');
+    document.getElementById(`${id}-lista`).innerHTML=html||
+      '<div style="color:var(--text3);text-align:center;padding:16px 0;font-size:11px;">Nessun residuo</div>';
+  });
+  document.getElementById('totale-entrate').textContent=fmt(totaleFull);
+  const inizio=eps[0].mese.inizio.toLocaleDateString('it-IT');
+  const fine=eps[2].mese.fine.toLocaleDateString('it-IT');
+  document.getElementById('periodo-entrate').textContent=`${inizio} – ${fine}`;
 }
 
 function setFiltro(f){
