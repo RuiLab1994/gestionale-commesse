@@ -839,24 +839,32 @@ async function caricaTransazioniWallet(giorni = 180) {
   if (btn) { btn.innerHTML = '<span class="spinner"></span> Sincronizzando...'; btn.disabled = true; }
   const dataIso = `${new Date().getFullYear()}-01-01`;
   try {
+    const anno = new Date().getFullYear();
+    const trimestri = [
+      { from: `${anno}-01-01`, to: `${anno}-04-01` },
+      { from: `${anno}-04-01`, to: `${anno}-07-01` },
+      { from: `${anno}-07-01`, to: `${anno}-10-01` },
+      { from: `${anno}-10-01`, to: `${anno+1}-01-01` },
+    ];
     let allRecords = [];
-    let offset = 0;
-    const limit = 200;
-    let page = 0;
-    while (true) {
-      page++;
-      const url = `${WALLET_API_URL}/wallet/v1/api/records?recordDate=gte.${dataIso}&limit=${limit}&offset=${offset}`;
-      const response = await fetch(url, {
-        headers: { 'Authorization': `Bearer ${WALLET_TOKEN}`, 'Content-Type': 'application/json' }
-      });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = await response.json();
-      console.log(`Pagina ${page}: offset=${offset} nextOffset=${data.nextOffset} records=${data.records?.length} dateRange=${JSON.stringify(data.recordDateRange)}`);
-      if (!data.records || !Array.isArray(data.records) || data.records.length === 0) break;
-      allRecords = allRecords.concat(data.records);
-      if (data.nextOffset == null) break;
-      offset = data.nextOffset;
-      if (page > 20) break; // sicurezza
+    for (const trim of trimestri) {
+      let offset = 0;
+      const limit = 200;
+      let page = 0;
+      while (true) {
+        page++;
+        const url = `${WALLET_API_URL}/wallet/v1/api/records?recordDate=gte.${trim.from}&recordDate=lt.${trim.to}&limit=${limit}&offset=${offset}`;
+        const response = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${WALLET_TOKEN}`, 'Content-Type': 'application/json' }
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        if (!data.records || data.records.length === 0) break;
+        allRecords = allRecords.concat(data.records);
+        if (data.nextOffset == null) break;
+        offset = data.nextOffset;
+        if (page > 10) break;
+      }
     }
     console.log(`Totale scaricati: ${allRecords.length}`);
     const transazioni = allRecords.map(t => {
