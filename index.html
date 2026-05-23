@@ -107,7 +107,7 @@
   <h1><i class="ti ti-briefcase"></i> <span>Gestionale Commesse</span></h1>
   <div class="topnav-right">
     <div class="drive-status off" id="drive-status"><i class="ti ti-cloud-off"></i> Non connesso</div>
-    <button class="btn-nav green" onclick="caricaTransazioniWallet(30)" title="Importa transazioni Budget Bakers">
+    <button class="btn-nav green" onclick="caricaTransazioniWallet(180)" title="Importa transazioni Budget Bakers">
       <i class="ti ti-wallet"></i> Sincronizza Wallet
     </button>
     <button class="btn-nav" onclick="salvaTokenWallet()" title="Imposta token Budget Bakers">
@@ -829,13 +829,21 @@ async function caricaTransazioniWallet(giorni = 30) {
   dataInizio.setDate(dataInizio.getDate() - giorni);
   const dataIso = dataInizio.toISOString().split('T')[0];
   try {
-    const response = await fetch(`${WALLET_API_URL}/wallet/v1/api/records?recordDate=gte.${dataIso}&limit=200`, {
-      headers: { 'Authorization': `Bearer ${WALLET_TOKEN}`, 'Content-Type': 'application/json' }
-    });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const data = await response.json();
-    if (data.records && Array.isArray(data.records)) {
-      const transazioni = data.records
+    let allRecords = [];
+    let offset = 0;
+    const limit = 200;
+    while (true) {
+      const response = await fetch(`${WALLET_API_URL}/wallet/v1/api/records?recordDate=gte.${dataIso}&limit=${limit}&offset=${offset}`, {
+        headers: { 'Authorization': `Bearer ${WALLET_TOKEN}`, 'Content-Type': 'application/json' }
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      if (!data.records || !Array.isArray(data.records)) break;
+      allRecords = allRecords.concat(data.records);
+      if (data.records.length < limit) break;
+      offset += limit;
+    }
+    const transazioni = allRecords
         .map(t => {
           const val = typeof t.amount === 'object' ? t.amount.value : t.amount;
           return {
@@ -855,7 +863,6 @@ async function caricaTransazioniWallet(giorni = 30) {
       aggiornaPortafoglioUI();
       showToast(`✓ Sincronizzate ${transazioni.length} transazioni`);
       return transazioni;
-    }
   } catch (error) {
     showToast('Errore Wallet: ' + error.message, '#dc2626');
     console.error(error);
