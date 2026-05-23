@@ -832,13 +832,13 @@ async function caricaTransazioniWallet(giorni = 30) {
   dataInizio.setDate(dataInizio.getDate() - giorni);
   const dataIso = dataInizio.toISOString().split('T')[0];
   try {
-    const response = await fetch(`${WALLET_API_URL}/records?recordDate=gte.${dataIso}&limit=200`, {
+    const response = await fetch(`${WALLET_API_URL}/v1/api/records?recordDate=gte.${dataIso}&limit=200`, {
       headers: { 'Authorization': `Bearer ${WALLET_TOKEN}`, 'Content-Type': 'application/json' }
     });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
-    if (data.data && Array.isArray(data.data)) {
-      const transazioni = data.data
+    if (data.records && Array.isArray(data.records)) {
+      const transazioni = data.records
         .map(t => ({
           data: t.recordDate?.split('T')[0] || t.createdAt?.split('T')[0],
           categoria: t.category?.name || 'Vario',
@@ -884,6 +884,7 @@ async function testApiPaths() {
 }
 
 
+function aggiornaPortafoglioUI() {
   caricaPortafoglio();
   const oggi = new Date();
   const trenta = new Date(oggi.getTime() - 30*24*60*60*1000);
