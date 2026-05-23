@@ -837,9 +837,7 @@ async function caricaTransazioniWallet(giorni = 180) {
   if (!WALLET_TOKEN) { salvaTokenWallet(); return; }
   const btn = event?.target?.closest('.btn-nav');
   if (btn) { btn.innerHTML = '<span class="spinner"></span> Sincronizzando...'; btn.disabled = true; }
-  const dataInizio = new Date();
-  dataInizio.setDate(dataInizio.getDate() - giorni);
-  const dataIso = dataInizio.toISOString().split('T')[0];
+  const dataIso = `${new Date().getFullYear()}-01-01`;
   try {
     let allRecords = [];
     let offset = 0;
@@ -850,10 +848,10 @@ async function caricaTransazioniWallet(giorni = 180) {
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
-      if (!data.records || !Array.isArray(data.records)) break;
+      if (!data.records || !Array.isArray(data.records) || data.records.length === 0) break;
       allRecords = allRecords.concat(data.records);
-      if (data.records.length < limit) break;
-      offset += limit;
+      if (data.nextOffset == null || data.records.length < limit) break;
+      offset = data.nextOffset;
     }
     const transazioni = allRecords.map(t => {
       const val = typeof t.amount === 'object' ? t.amount.value : t.amount;
@@ -939,7 +937,8 @@ function aggiornaPortafoglioUI() {
     const totN = portatofolio.transazioni.length;
     const primaData = portatofolio.transazioni.slice().sort((a,b)=>a.data.localeCompare(b.data))[0]?.data;
     const ultimaData = portatofolio.transazioni.slice().sort((a,b)=>b.data.localeCompare(a.data))[0]?.data;
-    dbg.textContent = `Tot: ${totN} | Anno ${oggi.getFullYear()}: ${transakzioniAnno.length} (E:${entN} U:${uscN}) | Date: ${primaData} → ${ultimaData}`;
+    const campione = portatofolio.transazioni.slice(0,5).map(t=>`${t.data} ${t.tipo} €${t.importo}`).join(' | ');
+    dbg.innerHTML = `Tot: ${totN} | Anno ${oggi.getFullYear()}: ${transakzioniAnno.length} (E:${entN} U:${uscN}) | Date: ${primaData} → ${ultimaData}<br>Campione: ${campione}`;
   }
   document.getElementById('wallet-chart').innerHTML = mesiAnno.map((g,i) => {
     const alt = Math.abs(g.netto) / maxVal * 100;
