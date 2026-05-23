@@ -198,8 +198,8 @@
         </div>
       </div>
       <div style="margin-top:12px;padding-top:12px;border-top:0.5px solid #e9d5ff;">
-        <p style="font-size:11px;color:#888;margin-bottom:8px;font-weight:600;">Ultimi 30 giorni — Andamento</p>
-        <div id="wallet-chart" style="display:grid;grid-template-columns:repeat(30,1fr);gap:2px;height:80px;align-items:flex-end;"></div>
+        <p style="font-size:11px;color:#888;margin-bottom:8px;font-weight:600;">Andamento mensile 2026</p>
+        <div id="wallet-chart" style="display:grid;grid-template-columns:repeat(12,1fr);gap:4px;height:80px;align-items:flex-end;"></div>
         <div style="margin-top:10px;font-size:11px;color:#888;" id="wallet-debug"></div>
         <div style="margin-top:10px;">
           <button class="btn" onclick="testApiPaths()" style="font-size:12px;background:#f3e8ff;color:#7c3aed;border-color:#c4b5fd;">🔍 Test percorsi API</button>
@@ -912,34 +912,43 @@ function aggiornaPortafoglioUI() {
   const entrate30 = transakzioniAnno.filter(t => t.tipo === 'entrata').reduce((s,t) => s+t.importo, 0);
   const uscite30  = transakzioniAnno.filter(t => t.tipo === 'uscita').reduce((s,t) => s+t.importo, 0);
   const netto30   = entrate30 - uscite30;
-  const entrateTot = portatofolio.transazioni.filter(t => t.tipo === 'entrata').reduce((s,t) => s+t.importo, 0);
-  const usciteTot  = portatofolio.transazioni.filter(t => t.tipo === 'uscita').reduce((s,t) => s+t.importo, 0);
+  const entrateTot = transakzioniAnno.filter(t => t.tipo === 'entrata').reduce((s,t) => s+t.importo, 0);
+  const usciteTot  = transakzioniAnno.filter(t => t.tipo === 'uscita').reduce((s,t) => s+t.importo, 0);
   const nettoTot   = entrateTot - usciteTot;
+  const giorniAnno = Math.max(1, Math.round((oggi - inizioAnno) / 864e5));
   document.getElementById('saldo-netto').textContent = fmt(nettoTot);
   document.getElementById('saldo-netto').style.color = nettoTot >= 0 ? '#7c3aed' : '#dc2626';
   document.getElementById('entrate-30').textContent = fmt(entrate30);
   document.getElementById('num-entrate').textContent = transakzioniAnno.filter(t => t.tipo==='entrata').length + ' transazioni';
   document.getElementById('uscite-30').textContent = fmt(uscite30);
   document.getElementById('num-uscite').textContent = transakzioniAnno.filter(t => t.tipo==='uscita').length + ' transazioni';
-  document.getElementById('liquidita-media').textContent = fmt(netto30 / 30);
-  const giorni = [];
-  for (let i = 29; i >= 0; i--) {
-    const d = new Date(oggi.getTime() - i*24*60*60*1000);
-    const dat = d.toISOString().split('T')[0];
-    const e = transazioni30.filter(t => t.data===dat && t.tipo==='entrata').reduce((s,t) => s+t.importo, 0);
-    const u = transazioni30.filter(t => t.data===dat && t.tipo==='uscita').reduce((s,t) => s+t.importo, 0);
-    giorni.push({ netto: e-u });
+  document.getElementById('liquidita-media').textContent = fmt(nettoTot / giorniAnno);
+  // Grafico mensile anno corrente (un punto per mese)
+  const mesiAnno = [];
+  for (let i = 0; i < 12; i++) {
+    const meseStr = `${oggi.getFullYear()}-${String(i+1).padStart(2,'0')}`;
+    const e = transakzioniAnno.filter(t => t.data?.startsWith(meseStr) && t.tipo==='entrata').reduce((s,t) => s+t.importo, 0);
+    const u = transakzioniAnno.filter(t => t.data?.startsWith(meseStr) && t.tipo==='uscita').reduce((s,t) => s+t.importo, 0);
+    mesiAnno.push({ netto: e-u, mese: meseStr });
   }
-  const maxVal = Math.max(...giorni.map(g => Math.abs(g.netto)), 100);
+  const maxVal = Math.max(...mesiAnno.map(g => Math.abs(g.netto)), 100);
   const dbg = document.getElementById('wallet-debug');
   if (dbg) {
-    const primo = portatofolio.transazioni[0];
-    dbg.textContent = `Tot: ${portatofolio.transazioni.length} | 30gg: ${transazioni30.length} | Prima data: ${primo?.data || '—'} | Es: ${primo?.importo} (${primo?.tipo})`;
+    const entN = transakzioniAnno.filter(t => t.tipo==='entrata').length;
+    const uscN = transakzioniAnno.filter(t => t.tipo==='uscita').length;
+    const totN = portatofolio.transazioni.length;
+    const primaData = portatofolio.transazioni.slice().sort((a,b)=>a.data.localeCompare(b.data))[0]?.data;
+    const ultimaData = portatofolio.transazioni.slice().sort((a,b)=>b.data.localeCompare(a.data))[0]?.data;
+    dbg.textContent = `Tot: ${totN} | Anno ${oggi.getFullYear()}: ${transakzioniAnno.length} (E:${entN} U:${uscN}) | Date: ${primaData} → ${ultimaData}`;
   }
-  document.getElementById('wallet-chart').innerHTML = giorni.map(g => {
+  document.getElementById('wallet-chart').innerHTML = mesiAnno.map((g,i) => {
     const alt = Math.abs(g.netto) / maxVal * 100;
     const col = g.netto >= 0 ? '#10b981' : '#ef4444';
-    return `<div style="display:flex;align-items:flex-end;justify-content:center;height:100%;"><div style="width:80%;background:${col};height:${alt}%;border-radius:2px;opacity:0.8;" title="${fmt(g.netto)}"></div></div>`;
+    const label = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'][i];
+    return `<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:2px;">
+      <div style="width:80%;background:${col};height:${alt}%;border-radius:2px;opacity:0.8;min-height:${g.netto!==0?2:0}px;" title="${label}: ${fmt(g.netto)}"></div>
+      <div style="font-size:9px;color:#aaa;">${label}</div>
+    </div>`;
   }).join('');
 }
 
