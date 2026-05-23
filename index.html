@@ -113,9 +113,6 @@
     <button class="btn-nav" onclick="salvaTokenWallet()" title="Imposta token Budget Bakers">
       <i class="ti ti-key"></i>
     </button>
-    <button class="btn-nav" onclick="salvaTokenWallet()" title="Imposta token Budget Bakers">
-      <i class="ti ti-key"></i>
-    </button>
     <button class="btn-nav green" id="btn-sync" onclick="sincronizzaDrive()" style="display:none;"><i class="ti ti-refresh"></i> Sincronizza</button>
     <button class="btn-nav" onclick="esportaDati()"><i class="ti ti-download"></i> Backup</button>
     <button class="btn-nav" onclick="document.getElementById('import-input').click()"><i class="ti ti-upload"></i> Importa</button>
@@ -832,7 +829,7 @@ async function caricaTransazioniWallet(giorni = 30) {
   dataInizio.setDate(dataInizio.getDate() - giorni);
   const dataIso = dataInizio.toISOString().split('T')[0];
   try {
-    const response = await fetch(`${WALLET_API_URL}/v1/api/records?recordDate=gte.${dataIso}&limit=200`, {
+    const response = await fetch(`${WALLET_API_URL}/wallet/v1/api/records?recordDate=gte.${dataIso}&limit=200`, {
       headers: { 'Authorization': `Bearer ${WALLET_TOKEN}`, 'Content-Type': 'application/json' }
     });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
