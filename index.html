@@ -182,12 +182,12 @@
           <div style="font-size:10px;color:#aaa;margin-top:4px;">Entrate - Uscite</div>
         </div>
         <div style="background:#fff;border-radius:8px;padding:12px;border:0.5px solid #e9d5ff;">
-          <div style="font-size:11px;color:#059669;margin-bottom:6px;display:flex;align-items:center;gap:5px;font-weight:600;"><i class="ti ti-arrow-up"></i> Entrate (30gg)</div>
+          <div style="font-size:11px;color:#059669;margin-bottom:6px;display:flex;align-items:center;gap:5px;font-weight:600;"><i class="ti ti-arrow-up"></i> Entrate 2026</div>
           <div style="font-size:24px;font-weight:700;color:#059669;" id="entrate-30">€ 0</div>
           <div style="font-size:10px;color:#aaa;margin-top:4px;" id="num-entrate">0 transazioni</div>
         </div>
         <div style="background:#fff;border-radius:8px;padding:12px;border:0.5px solid #e9d5ff;">
-          <div style="font-size:11px;color:#dc2626;margin-bottom:6px;display:flex;align-items:center;gap:5px;font-weight:600;"><i class="ti ti-arrow-down"></i> Uscite (30gg)</div>
+          <div style="font-size:11px;color:#dc2626;margin-bottom:6px;display:flex;align-items:center;gap:5px;font-weight:600;"><i class="ti ti-arrow-down"></i> Uscite 2026</div>
           <div style="font-size:24px;font-weight:700;color:#dc2626;" id="uscite-30">€ 0</div>
           <div style="font-size:10px;color:#aaa;margin-top:4px;" id="num-uscite">0 transazioni</div>
         </div>
@@ -902,11 +902,15 @@ async function testApiPaths() {
 
 function aggiornaPortafoglioUI() {
   const oggi = new Date();
+  const inizioAnno = new Date(oggi.getFullYear(), 0, 1);
+  const inizioAnnoStr = inizioAnno.toISOString().split('T')[0];
   const trenta = new Date(oggi.getTime() - 30*24*60*60*1000);
   const trentaStr = trenta.toISOString().split('T')[0];
+
+  const transakzioniAnno = portatofolio.transazioni.filter(t => t.data >= inizioAnnoStr);
   const transazioni30 = portatofolio.transazioni.filter(t => t.data >= trentaStr);
-  const entrate30 = transazioni30.filter(t => t.tipo === 'entrata').reduce((s,t) => s+t.importo, 0);
-  const uscite30  = transazioni30.filter(t => t.tipo === 'uscita').reduce((s,t) => s+t.importo, 0);
+  const entrate30 = transakzioniAnno.filter(t => t.tipo === 'entrata').reduce((s,t) => s+t.importo, 0);
+  const uscite30  = transakzioniAnno.filter(t => t.tipo === 'uscita').reduce((s,t) => s+t.importo, 0);
   const netto30   = entrate30 - uscite30;
   const entrateTot = portatofolio.transazioni.filter(t => t.tipo === 'entrata').reduce((s,t) => s+t.importo, 0);
   const usciteTot  = portatofolio.transazioni.filter(t => t.tipo === 'uscita').reduce((s,t) => s+t.importo, 0);
@@ -914,9 +918,9 @@ function aggiornaPortafoglioUI() {
   document.getElementById('saldo-netto').textContent = fmt(nettoTot);
   document.getElementById('saldo-netto').style.color = nettoTot >= 0 ? '#7c3aed' : '#dc2626';
   document.getElementById('entrate-30').textContent = fmt(entrate30);
-  document.getElementById('num-entrate').textContent = transazioni30.filter(t => t.tipo==='entrata').length + ' transazioni';
+  document.getElementById('num-entrate').textContent = transakzioniAnno.filter(t => t.tipo==='entrata').length + ' transazioni';
   document.getElementById('uscite-30').textContent = fmt(uscite30);
-  document.getElementById('num-uscite').textContent = transazioni30.filter(t => t.tipo==='uscita').length + ' transazioni';
+  document.getElementById('num-uscite').textContent = transakzioniAnno.filter(t => t.tipo==='uscita').length + ' transazioni';
   document.getElementById('liquidita-media').textContent = fmt(netto30 / 30);
   const giorni = [];
   for (let i = 29; i >= 0; i--) {
