@@ -130,15 +130,6 @@
   <!-- DASHBOARD -->
   <div id="pannello-vuoto">
 
-    <!-- BLOCCO 1: DA INCASSARE (priorità massima) -->
-    <div class="card" style="border-left:3px solid #dc2626;margin-bottom:12px;">
-      <p class="card-hdr" style="justify-content:space-between;">
-        <span><i class="ti ti-coin"></i> Da incassare — priorità</span>
-        <span style="font-size:13px;font-weight:700;color:#dc2626;" id="k-residuo-header">€ 0</span>
-      </p>
-      <div id="incasso-list"><div style="color:#aaa;font-size:12px;padding:8px 0;text-align:center;">Nessun residuo aperto</div></div>
-    </div>
-
     <!-- BLOCCO 2: CONSEGNE IMMINENTI -->
     <div class="card" style="border-left:3px solid #f59e0b;margin-bottom:12px;">
       <p class="card-hdr"><i class="ti ti-calendar-event"></i> Consegne imminenti</p>
@@ -452,27 +443,6 @@ function refreshDashboard(){
   document.getElementById('k-saldate').textContent=ordini.filter(o=>o.stato==='saldato').length;
   document.getElementById('k-residuo').textContent=fmtShort(totRes);
   const hdr=document.getElementById('k-residuo-header');if(hdr)hdr.textContent=fmtShort(totRes);
-
-  // BLOCCO 1: Da incassare — ordinati per residuo decrescente
-  const daIncassare=ordini.filter(o=>o.res>0.001).sort((a,b)=>b.res-a.res).slice(0,8);
-  const incEl=document.getElementById('incasso-list');
-  if(!daIncassare.length){
-    incEl.innerHTML='<div style="color:#aaa;font-size:12px;padding:8px 0;text-align:center;">Nessun residuo aperto — tutto incassato!</div>';
-  } else {
-    incEl.innerHTML=daIncassare.map(o=>{
-      const giorni=o.cliente.data?Math.round((new Date()-new Date(o.cliente.data))/864e5):null;
-      const etichetta=giorni!==null?(giorni===0?'oggi':giorni===1?'ieri':giorni+'gg fa'):'';
-      const urgenza=giorni!==null&&giorni>60?'color:#dc2626;font-weight:600':giorni>30?'color:#92400e;font-weight:500':'color:#888';
-      return `<div onclick="apriCommessa('${esc(o.nome)}')" style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:0.5px solid #f0f0f0;gap:8px;cursor:pointer;">
-        <div style="flex:1;min-width:0;">
-          <div style="font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(o.nome)}</div>
-          <div style="font-size:11px;color:#888;margin-top:1px;">${esc(o.cliente.nome||'—')}</div>
-        </div>
-        <div style="font-size:11px;${urgenza};white-space:nowrap;">${etichetta}</div>
-        <div style="font-size:15px;font-weight:700;color:#dc2626;white-space:nowrap;">${fmt(o.res)}</div>
-      </div>`;
-    }).join('');
-  }
 
   // BLOCCO 2: Consegne imminenti (non saldate, con data consegna)
   const oggi=new Date();oggi.setHours(0,0,0,0);
