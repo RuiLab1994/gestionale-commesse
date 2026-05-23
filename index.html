@@ -834,18 +834,20 @@ async function caricaTransazioniWallet(giorni = 30) {
     });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
-    console.log('BudgetBakers raw response:', JSON.stringify(data).slice(0, 500));
     if (data.records && Array.isArray(data.records)) {
       const transazioni = data.records
-        .map(t => ({
-          data: t.recordDate?.split('T')[0] || t.createdAt?.split('T')[0],
-          categoria: t.category?.name || 'Vario',
-          importo: Math.abs(t.amount || 0),
-          metodo: t.account?.name || 'N/A',
-          descrizione: t.note || t.payee || '',
-          tipo: (t.amount >= 0) ? 'entrata' : 'uscita',
-          fonte: 'BudgetBakers'
-        }))
+        .map(t => {
+          const val = typeof t.amount === 'object' ? t.amount.value : t.amount;
+          return {
+            data: t.recordDate?.split('T')[0],
+            categoria: t.category?.name || 'Vario',
+            importo: Math.abs(val || 0),
+            metodo: t.account?.name || 'N/A',
+            descrizione: t.note || t.payee || '',
+            tipo: (val >= 0) ? 'entrata' : 'uscita',
+            fonte: 'BudgetBakers'
+          };
+        })
         .filter(t => t.data && t.importo > 0);
       portatofolio.transazioni = transazioni;
       portatofolio.ultimoAggiornamento = new Date().toISOString();
