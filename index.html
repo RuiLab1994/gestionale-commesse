@@ -834,6 +834,7 @@ async function caricaTransazioniWallet(giorni = 30) {
     });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
+    console.log('BudgetBakers raw response:', JSON.stringify(data).slice(0, 500));
     if (data.records && Array.isArray(data.records)) {
       const transazioni = data.records
         .map(t => ({
