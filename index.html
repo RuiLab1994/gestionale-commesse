@@ -828,7 +828,7 @@ async function caricaTransazioniWallet(giorni = 30) {
   dataInizio.setDate(dataInizio.getDate() - giorni);
   const dataIso = dataInizio.toISOString().split('T')[0];
   try {
-    const response = await fetch(`${WALLET_API_URL}/transactions?from=${dataIso}`, {
+    const response = await fetch(`${WALLET_API_URL}/records?recordDate=gte.${dataIso}&limit=200`, {
       headers: { 'Authorization': `Bearer ${WALLET_TOKEN}`, 'Content-Type': 'application/json' }
     });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -836,11 +836,11 @@ async function caricaTransazioniWallet(giorni = 30) {
     if (data.data && Array.isArray(data.data)) {
       const transazioni = data.data
         .map(t => ({
-          data: t.date || t.createdAt?.split('T')[0],
+          data: t.recordDate?.split('T')[0] || t.createdAt?.split('T')[0],
           categoria: t.category?.name || 'Vario',
           importo: Math.abs(t.amount || 0),
-          metodo: t.account?.name || t.paymentMethod || 'N/A',
-          descrizione: t.description || '',
+          metodo: t.account?.name || 'N/A',
+          descrizione: t.note || t.payee || '',
           tipo: (t.amount >= 0) ? 'entrata' : 'uscita',
           fonte: 'BudgetBakers'
         }))
