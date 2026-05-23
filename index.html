@@ -895,7 +895,9 @@ function aggiornaPortafoglioUI() {
   caricaPortafoglio();
   const oggi = new Date();
   const trenta = new Date(oggi.getTime() - 30*24*60*60*1000);
-  const transazioni30 = portatofolio.transazioni.filter(t => new Date(t.data) >= trenta);
+  const trentaStr = trenta.toISOString().split('T')[0];
+
+  const transazioni30 = portatofolio.transazioni.filter(t => t.data >= trentaStr);
   const entrate30 = transazioni30.filter(t => t.tipo === 'entrata').reduce((s,t) => s+t.importo, 0);
   const uscite30  = transazioni30.filter(t => t.tipo === 'uscita').reduce((s,t) => s+t.importo, 0);
   const netto30   = entrate30 - uscite30;
