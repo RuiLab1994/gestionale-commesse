@@ -110,6 +110,12 @@
     <button class="btn-nav green" onclick="caricaTransazioniWallet(30)" title="Importa transazioni Budget Bakers">
       <i class="ti ti-wallet"></i> Sincronizza Wallet
     </button>
+    <button class="btn-nav" onclick="salvaTokenWallet()" title="Imposta token Budget Bakers">
+      <i class="ti ti-key"></i>
+    </button>
+    <button class="btn-nav" onclick="salvaTokenWallet()" title="Imposta token Budget Bakers">
+      <i class="ti ti-key"></i>
+    </button>
     <button class="btn-nav green" id="btn-sync" onclick="sincronizzaDrive()" style="display:none;"><i class="ti ti-refresh"></i> Sincronizza</button>
     <button class="btn-nav" onclick="esportaDati()"><i class="ti ti-download"></i> Backup</button>
     <button class="btn-nav" onclick="document.getElementById('import-input').click()"><i class="ti ti-upload"></i> Importa</button>
@@ -788,7 +794,6 @@ function importaDati(event){
 
 /* ── BUDGET BAKERS ── */
 const WALLET_API_URL = 'https://rest.budgetbakers.com/wallet';
-const WALLET_JWT_TOKEN = 'eyJraWQiOiI1NmYxZjE1ZS1hZTllLTQzMzQtYjUzYS0zNGM1YWYyMzBiNjMiLCJhbGciOiJSUzI1NiJ9.eyJmbGF2b3IiOiJXYWxsZXQiLCJzdWIiOiI5MDYyMjI5ZC1jZTRiLTQ4YWQtYjBjNC04ZWY5NzVjODUwZWUiLCJhdWQiOiJmMzE2MmFkNS00NmIwLTRiYTctYThmMy0yMzkxMTBkNzhkNjgiLCJpc3MiOiJXYWxsZXQtYXV0aCIsImV4cCI6MTgxMTA2NTM0MiwiZ3JhbnQiOiJhcGkiLCJpYXQiOjE3Nzk1MjkzNDIsImp0aSI6IjBiMWM1Y2E4LTQ1ODctNGJiYS1iNDYwLTY1ZGIzNWU0MjgzMSIsImVtYWlsIjoiY3RiZ25yYm55ZEBwcml2YXRlcmVsYXkuYXBwbGVpZC5jb20ifQ.CFGzcGsYep0uaOziLPpHb8pt3XZinNFTJRVm1g1cCk1_7QiHouEe3JiRIwWivp7vqLVFYjcTR34sOX6boKgwarUruORs2QeId3zkn7zgHJtBXNFIxvZVMZt-mynCEWvJaLpAO0J8liMyfoOUbxJWTMQpqiB10uGHX_8Sb5AEkzgoIE_YzYCyamvFBF1p47z0-vEachnu3NttYkyW-Q37j82CqxKq_y13NpK8R7f-lKBRrc62-K4_JDBKLiSXB6VG4Grk8DL3oW7qfi9OOC_DXbwTv4IvJ50ccYmLWKeKRhB71bueELGxlhMPIez2KqM3HTJyPW7txmlSPbDaaFOaGg';
 
 let portatofolio = { transazioni: [], ultimoAggiornamento: null };
 
@@ -803,16 +808,28 @@ function caricaPortafoglio() {
   } catch(e) {}
 }
 
+function salvaTokenWallet() {
+  const token = prompt('Incolla il tuo JWT Token di Budget Bakers:');
+  if (token) {
+    localStorage.setItem('wallet_token', token);
+    showToast('Token salvato!');
+  }
+}
+
 async function caricaTransazioniWallet(giorni = 30) {
+  const WALLET_TOKEN = localStorage.getItem('wallet_token');
+  if (!WALLET_TOKEN) {
+    salvaTokenWallet();
+    return;
+  }
   const btn = event?.target?.closest('.btn-nav');
   if (btn) { btn.innerHTML = '<span class="spinner"></span> Sincronizzando...'; btn.disabled = true; }
   const dataInizio = new Date();
   dataInizio.setDate(dataInizio.getDate() - giorni);
   const dataIso = dataInizio.toISOString().split('T')[0];
-  const token = localStorage.getItem('wallet_token') || WALLET_JWT_TOKEN;
   try {
     const response = await fetch(`${WALLET_API_URL}/transactions?from=${dataIso}`, {
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+      headers: { 'Authorization': `Bearer ${WALLET_TOKEN}`, 'Content-Type': 'application/json' }
     });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
