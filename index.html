@@ -107,6 +107,9 @@
   <h1><i class="ti ti-briefcase"></i> <span>Gestionale Commesse</span></h1>
   <div class="topnav-right">
     <div class="drive-status off" id="drive-status"><i class="ti ti-cloud-off"></i> Non connesso</div>
+    <button class="btn-nav green" onclick="caricaTransazioniWallet(30)" title="Importa transazioni Budget Bakers">
+      <i class="ti ti-wallet"></i> Sincronizza Wallet
+    </button>
     <button class="btn-nav green" id="btn-sync" onclick="sincronizzaDrive()" style="display:none;"><i class="ti ti-refresh"></i> Sincronizza</button>
     <button class="btn-nav" onclick="esportaDati()"><i class="ti ti-download"></i> Backup</button>
     <button class="btn-nav" onclick="document.getElementById('import-input').click()"><i class="ti ti-upload"></i> Importa</button>
@@ -163,6 +166,37 @@
         <div style="font-size:11px;color:#888;margin-bottom:6px;display:flex;align-items:center;gap:5px;"><i class="ti ti-coin"></i> Totale da incassare</div>
         <div style="font-size:24px;font-weight:700;color:#dc2626;" id="k-residuo">€ 0</div>
         <div style="font-size:11px;color:#aaa;margin-top:2px;">saldi aperti</div>
+      </div>
+    </div>
+
+    <!-- BUDGET BAKERS -->
+    <div class="card" style="margin-bottom:12px;border-left:3px solid #8b5cf6;background:linear-gradient(135deg,#faf5ff 0%,#f3e8ff 100%);">
+      <p class="card-hdr" style="color:#7c3aed;"><i class="ti ti-wallet"></i> Budget Bakers — Situazione Finanziaria</p>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;">
+        <div style="background:#fff;border-radius:8px;padding:12px;border:0.5px solid #e9d5ff;">
+          <div style="font-size:11px;color:#7c3aed;margin-bottom:6px;display:flex;align-items:center;gap:5px;font-weight:600;"><i class="ti ti-building-bank"></i> Saldo Netto</div>
+          <div style="font-size:24px;font-weight:700;color:#7c3aed;" id="saldo-netto">€ 0</div>
+          <div style="font-size:10px;color:#aaa;margin-top:4px;">Entrate - Uscite</div>
+        </div>
+        <div style="background:#fff;border-radius:8px;padding:12px;border:0.5px solid #e9d5ff;">
+          <div style="font-size:11px;color:#059669;margin-bottom:6px;display:flex;align-items:center;gap:5px;font-weight:600;"><i class="ti ti-arrow-up"></i> Entrate (30gg)</div>
+          <div style="font-size:24px;font-weight:700;color:#059669;" id="entrate-30">€ 0</div>
+          <div style="font-size:10px;color:#aaa;margin-top:4px;" id="num-entrate">0 transazioni</div>
+        </div>
+        <div style="background:#fff;border-radius:8px;padding:12px;border:0.5px solid #e9d5ff;">
+          <div style="font-size:11px;color:#dc2626;margin-bottom:6px;display:flex;align-items:center;gap:5px;font-weight:600;"><i class="ti ti-arrow-down"></i> Uscite (30gg)</div>
+          <div style="font-size:24px;font-weight:700;color:#dc2626;" id="uscite-30">€ 0</div>
+          <div style="font-size:10px;color:#aaa;margin-top:4px;" id="num-uscite">0 transazioni</div>
+        </div>
+        <div style="background:#fff;border-radius:8px;padding:12px;border:0.5px solid #e9d5ff;">
+          <div style="font-size:11px;color:#f59e0b;margin-bottom:6px;display:flex;align-items:center;gap:5px;font-weight:600;"><i class="ti ti-cash"></i> Liquidità Media</div>
+          <div style="font-size:24px;font-weight:700;color:#f59e0b;" id="liquidita-media">€ 0</div>
+          <div style="font-size:10px;color:#aaa;margin-top:4px;">Per giorno</div>
+        </div>
+      </div>
+      <div style="margin-top:12px;padding-top:12px;border-top:0.5px solid #e9d5ff;">
+        <p style="font-size:11px;color:#888;margin-bottom:8px;font-weight:600;">Ultimi 30 giorni — Andamento</p>
+        <div id="wallet-chart" style="display:grid;grid-template-columns:repeat(30,1fr);gap:2px;height:80px;align-items:flex-end;"></div>
       </div>
     </div>
 
@@ -752,9 +786,105 @@ function importaDati(event){
   reader.readAsText(file);
 }
 
+/* ── BUDGET BAKERS ── */
+const WALLET_API_URL = 'https://rest.budgetbakers.com/wallet';
+const WALLET_JWT_TOKEN = 'eyJraWQiOiI1NmYxZjE1ZS1hZTllLTQzMzQtYjUzYS0zNGM1YWYyMzBiNjMiLCJhbGciOiJSUzI1NiJ9.eyJmbGF2b3IiOiJXYWxsZXQiLCJzdWIiOiI5MDYyMjI5ZC1jZTRiLTQ4YWQtYjBjNC04ZWY5NzVjODUwZWUiLCJhdWQiOiJmMzE2MmFkNS00NmIwLTRiYTctYThmMy0yMzkxMTBkNzhkNjgiLCJpc3MiOiJXYWxsZXQtYXV0aCIsImV4cCI6MTgxMTA2NTM0MiwiZ3JhbnQiOiJhcGkiLCJpYXQiOjE3Nzk1MjkzNDIsImp0aSI6IjBiMWM1Y2E4LTQ1ODctNGJiYS1iNDYwLTY1ZGIzNWU0MjgzMSIsImVtYWlsIjoiY3RiZ25yYm55ZEBwcml2YXRlcmVsYXkuYXBwbGVpZC5jb20ifQ.CFGzcGsYep0uaOziLPpHb8pt3XZinNFTJRVm1g1cCk1_7QiHouEe3JiRIwWivp7vqLVFYjcTR34sOX6boKgwarUruORs2QeId3zkn7zgHJtBXNFIxvZVMZt-mynCEWvJaLpAO0J8liMyfoOUbxJWTMQpqiB10uGHX_8Sb5AEkzgoIE_YzYCyamvFBF1p47z0-vEachnu3NttYkyW-Q37j82CqxKq_y13NpK8R7f-lKBRrc62-K4_JDBKLiSXB6VG4Grk8DL3oW7qfi9OOC_DXbwTv4IvJ50ccYmLWKeKRhB71bueELGxlhMPIez2KqM3HTJyPW7txmlSPbDaaFOaGg';
+
+let portatofolio = { transazioni: [], ultimoAggiornamento: null };
+
+function salvaPortafoglio() {
+  localStorage.setItem('budgetbakers_portfolio', JSON.stringify(portatofolio));
+}
+
+function caricaPortafoglio() {
+  try {
+    const raw = localStorage.getItem('budgetbakers_portfolio');
+    if (raw) portatofolio = JSON.parse(raw);
+  } catch(e) {}
+}
+
+async function caricaTransazioniWallet(giorni = 30) {
+  const btn = event?.target?.closest('.btn-nav');
+  if (btn) { btn.innerHTML = '<span class="spinner"></span> Sincronizzando...'; btn.disabled = true; }
+  const dataInizio = new Date();
+  dataInizio.setDate(dataInizio.getDate() - giorni);
+  const dataIso = dataInizio.toISOString().split('T')[0];
+  const token = localStorage.getItem('wallet_token') || WALLET_JWT_TOKEN;
+  try {
+    const response = await fetch(`${WALLET_API_URL}/transactions?from=${dataIso}`, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    if (data.data && Array.isArray(data.data)) {
+      const transazioni = data.data
+        .map(t => ({
+          data: t.date || t.createdAt?.split('T')[0],
+          categoria: t.category?.name || 'Vario',
+          importo: Math.abs(t.amount || 0),
+          metodo: t.account?.name || t.paymentMethod || 'N/A',
+          descrizione: t.description || '',
+          tipo: (t.amount >= 0) ? 'entrata' : 'uscita',
+          fonte: 'BudgetBakers'
+        }))
+        .filter(t => t.data && t.importo > 0);
+      portatofolio.transazioni = transazioni;
+      portatofolio.ultimoAggiornamento = new Date().toISOString();
+      salvaPortafoglio();
+      aggiornaPortafoglioUI();
+      showToast(`✓ Sincronizzate ${transazioni.length} transazioni`);
+      return transazioni;
+    }
+  } catch (error) {
+    showToast('Errore Wallet: ' + error.message, '#dc2626');
+    console.error(error);
+  } finally {
+    if (btn) { btn.innerHTML = '<i class="ti ti-wallet"></i> Sincronizza Wallet'; btn.disabled = false; }
+  }
+}
+
+function aggiornaPortafoglioUI() {
+  caricaPortafoglio();
+  const oggi = new Date();
+  const trenta = new Date(oggi.getTime() - 30*24*60*60*1000);
+  const transazioni30 = portatofolio.transazioni.filter(t => new Date(t.data) >= trenta);
+  const entrate30 = transazioni30.filter(t => t.tipo === 'entrata').reduce((s,t) => s+t.importo, 0);
+  const uscite30  = transazioni30.filter(t => t.tipo === 'uscita').reduce((s,t) => s+t.importo, 0);
+  const netto30   = entrate30 - uscite30;
+  const entrateTot = portatofolio.transazioni.filter(t => t.tipo === 'entrata').reduce((s,t) => s+t.importo, 0);
+  const usciteTot  = portatofolio.transazioni.filter(t => t.tipo === 'uscita').reduce((s,t) => s+t.importo, 0);
+  const nettoTot   = entrateTot - usciteTot;
+
+  document.getElementById('saldo-netto').textContent = fmt(nettoTot);
+  document.getElementById('saldo-netto').style.color = nettoTot >= 0 ? '#7c3aed' : '#dc2626';
+  document.getElementById('entrate-30').textContent = fmt(entrate30);
+  document.getElementById('num-entrate').textContent = transazioni30.filter(t => t.tipo==='entrata').length + ' transazioni';
+  document.getElementById('uscite-30').textContent = fmt(uscite30);
+  document.getElementById('num-uscite').textContent = transazioni30.filter(t => t.tipo==='uscita').length + ' transazioni';
+  document.getElementById('liquidita-media').textContent = fmt(netto30 / 30);
+
+  // Grafico 30 giorni
+  const giorni = [];
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(oggi.getTime() - i*24*60*60*1000);
+    const dat = d.toISOString().split('T')[0];
+    const e = transazioni30.filter(t => t.data===dat && t.tipo==='entrata').reduce((s,t) => s+t.importo, 0);
+    const u = transazioni30.filter(t => t.data===dat && t.tipo==='uscita').reduce((s,t) => s+t.importo, 0);
+    giorni.push({ netto: e-u });
+  }
+  const maxVal = Math.max(...giorni.map(g => Math.abs(g.netto)), 100);
+  document.getElementById('wallet-chart').innerHTML = giorni.map(g => {
+    const alt = Math.abs(g.netto) / maxVal * 100;
+    const col = g.netto >= 0 ? '#10b981' : '#ef4444';
+    return `<div style="display:flex;align-items:flex-end;justify-content:center;height:100%;"><div style="width:80%;background:${col};height:${alt}%;border-radius:2px;opacity:0.8;" title="${fmt(g.netto)}"></div></div>`;
+  }).join('');
+}
+
 /* ── AVVIO ── */
 setFiltro('tutti');
 caricaListaOrdini();
+caricaPortafoglio();
+aggiornaPortafoglioUI();
 refreshDashboard();
 const params=new URLSearchParams(window.location.search);
 const qc=params.get('commessa');
