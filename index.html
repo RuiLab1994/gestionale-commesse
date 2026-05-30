@@ -869,8 +869,16 @@ Fai un'analisi approfondita in italiano su:
 Usa un tono diretto e pratico. Rispondi in HTML semplice con tag <strong>, <br>, liste <ul><li>. Max 400 parole.`;
 }
 
-async function callGemini(prompt){
+async function callGemini(prompt, opts={}){
   if(!geminiKey) throw new Error('API key non configurata');
+  const generationConfig = {
+    temperature: 0.7,
+    maxOutputTokens: opts.maxTokens || 2048,
+    // gemini-2.5-flash è un modello "thinking": senza questo il ragionamento
+    // interno consuma il budget di token e la risposta esce troncata.
+    thinkingConfig: { thinkingBudget: 0 }
+  };
+  if(opts.json) generationConfig.responseMimeType = 'application/json';
   const resp = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,
     {
@@ -878,7 +886,7 @@ async function callGemini(prompt){
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         contents:[{parts:[{text:prompt}]}],
-        generationConfig:{temperature:0.7,maxOutputTokens:600}
+        generationConfig
       })
     }
   );
@@ -887,7 +895,10 @@ async function callGemini(prompt){
     throw new Error(err?.error?.message || 'Errore API Gemini');
   }
   const data = await resp.json();
-  return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  const cand = data.candidates?.[0];
+  const text = cand?.content?.parts?.map(p=>p.text).filter(Boolean).join('') || '';
+  if(!text && cand?.finishReason === 'MAX_TOKENS') throw new Error('Risposta troncata: riprova');
+  return text;
 }
 
 async function runAIAnalysis(){
@@ -897,7 +908,7 @@ async function runAIAnalysis(){
   out.innerHTML = `<div class="ai-thinking"><div class="ai-dots"><span></span><span></span><span></span></div> Analizzo i dati...</div>`;
   try {
     const prompt = buildAIPrompt(true);
-    const raw = await callGemini(prompt);
+    const raw = await callGemini(prompt, {json:true, maxTokens:1024});
     const clean = raw.replace(/```json|```/g,'').trim();
     const parsed = JSON.parse(clean);
     const items = (parsed.punti||[]).map(p=>`<div class="ai-item">${p}</div>`).join('');
@@ -918,7 +929,7 @@ async function runAIFullAnalysis(){
   out.innerHTML = `<div class="ai-thinking"><div class="ai-dots"><span></span><span></span><span></span></div> Elaborazione analisi completa in corso...</div>`;
   try {
     const prompt = buildAIPrompt(false);
-    const raw = await callGemini(prompt);
+    const raw = await callGemini(prompt, {maxTokens:2048});
     out.innerHTML = `<div class="ai-content" style="font-size:12px;line-height:1.8">${raw}</div>`;
   } catch(e){
     out.innerHTML = `<div style="font-size:12px;color:var(--red)"><i class="ti ti-alert-triangle"></i> Errore: ${e.message}</div>`;
