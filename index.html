@@ -822,7 +822,7 @@ Usa un tono diretto e pratico. Rispondi in HTML semplice con tag <strong>, <br>,
 async function callGemini(prompt){
   if(!geminiKey) throw new Error('API key non configurata');
   const resp = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,
     {
       method:'POST',
       headers:{'Content-Type':'application/json'},
