@@ -344,9 +344,6 @@ td input[type=number]{text-align:right}
     <button class="nav-item" id="nav-previsioni" onclick="showPage('previsioni')">
       <i class="ti ti-chart-line"></i> Previsioni
     </button>
-    <button class="nav-item" id="nav-wallet" onclick="showPage('wallet')">
-      <i class="ti ti-wallet"></i> Wallet
-    </button>
     <div class="nav-section">AI</div>
     <button class="nav-item" id="nav-ai" onclick="showPage('ai')">
       <i class="ti ti-brain"></i> Analisi AI
@@ -428,7 +425,7 @@ td input[type=number]{text-align:right}
           <div class="ai-hdr">
             <div class="ai-pulse"></div>
             <span class="ai-title">Analisi AI</span>
-            <span class="ai-badge">Gemini 2.5 Flash</span>
+            <span class="ai-badge">Gemini 2.0</span>
             <button class="ai-refresh-btn" id="ai-refresh-btn" onclick="runAIAnalysis()" style="margin-left:8px"><i class="ti ti-refresh"></i> Aggiorna</button>
           </div>
           <div id="ai-output">
@@ -544,18 +541,12 @@ td input[type=number]{text-align:right}
           <div class="panel-hdr"><span class="panel-title"><i class="ti ti-notes"></i> Note ordine</span></div>
           <div class="field"><textarea id="note-ordine" placeholder="Personalizzazioni, variazioni, comunicazioni con il cliente..."></textarea></div>
         </div>
-        <!-- Link -->
-        <div class="panel" style="margin-bottom:12px">
-          <div class="panel-hdr"><span class="panel-title"><i class="ti ti-link"></i> Link commessa</span></div>
-          <p style="font-size:12px;color:var(--text2);margin-bottom:6px">Link diretto a questa commessa, utile per monday.com o altri strumenti.</p>
-          <div class="link-box"><span id="link-val" style="flex:1">—</span><button class="btn" onclick="copiaLink()" style="flex-shrink:0"><i class="ti ti-copy"></i> Copia</button></div>
-        </div>
         <!-- Actions -->
         <div class="btn-row">
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <button class="btn" onclick="showPage('dashboard')"><i class="ti ti-arrow-left"></i> Dashboard</button>
             <button class="btn" onclick="copiaRiepilogo()"><i class="ti ti-copy"></i> Riepilogo</button>
-            <button class="btn" onclick="window.print()"><i class="ti ti-printer"></i> Stampa</button>
+            <button class="btn" onclick="stampaPDF()"><i class="ti ti-file-type-pdf"></i> Stampa PDF</button>
           </div>
           <button class="btn btn-save" onclick="salva()"><i class="ti ti-device-floppy"></i> Salva &amp; Sincronizza</button>
         </div>
@@ -630,57 +621,11 @@ td input[type=number]{text-align:right}
       </div>
     </div>
 
-    <!-- ══ PAGE: WALLET (Budget Bakers) ══ -->
-    <div class="page" id="page-wallet">
-      <div class="page-hdr">
-        <h1>Wallet — Budget Bakers</h1>
-        <p>Situazione finanziaria sincronizzata dal tuo account Budget Bakers</p>
-      </div>
-      <div class="search-bar">
-        <button class="btn btn-save" id="btn-wallet-sync" onclick="caricaTransazioniWallet(180)"><i class="ti ti-wallet"></i> Sincronizza Wallet</button>
-        <button class="btn" onclick="salvaTokenWallet()"><i class="ti ti-key"></i> Imposta token</button>
-        <span id="wallet-last" style="font-size:11px;color:var(--text3);margin-left:auto"></span>
-      </div>
-      <div class="kpi-row">
-        <div class="kpi">
-          <div class="kpi-label"><i class="ti ti-building-bank"></i> Saldo netto</div>
-          <div class="kpi-val" id="saldo-netto">€ 0</div>
-          <div class="kpi-sub">Entrate − Uscite</div>
-        </div>
-        <div class="kpi success">
-          <div class="kpi-label"><i class="ti ti-arrow-up"></i> Entrate</div>
-          <div class="kpi-val" id="entrate-30">€ 0</div>
-          <div class="kpi-sub" id="num-entrate">0 transazioni</div>
-        </div>
-        <div class="kpi danger">
-          <div class="kpi-label"><i class="ti ti-arrow-down"></i> Uscite</div>
-          <div class="kpi-val" id="uscite-30">€ 0</div>
-          <div class="kpi-sub" id="num-uscite">0 transazioni</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-label"><i class="ti ti-cash"></i> Liquidità media</div>
-          <div class="kpi-val" id="liquidita-media">€ 0</div>
-          <div class="kpi-sub">al giorno</div>
-        </div>
-      </div>
-      <div class="panel">
-        <div class="panel-hdr">
-          <span class="panel-title"><i class="ti ti-chart-bar"></i> Andamento mensile <span id="wallet-anno"></span></span>
-        </div>
-        <div id="wallet-chart" style="display:grid;grid-template-columns:repeat(12,1fr);gap:4px;height:90px;align-items:flex-end;margin-top:10px"></div>
-        <div style="margin-top:10px;font-size:11px;color:var(--text3)" id="wallet-debug"></div>
-        <div style="margin-top:14px;padding-top:12px;border-top:0.5px solid var(--border)">
-          <button class="btn" onclick="testApiPaths()"><i class="ti ti-search"></i> Test percorsi API</button>
-          <div id="api-test-result" style="margin-top:8px;font-size:12px;font-family:var(--mono);line-height:1.8;color:var(--text2)"></div>
-        </div>
-      </div>
-    </div>
-
     <!-- ══ PAGE: AI ANALYSIS ══ -->
     <div class="page" id="page-ai">
       <div class="page-hdr">
         <h1>Analisi AI</h1>
-        <p>Gemini 2.5 Flash analizza le tue finanze ogni giorno</p>
+        <p>Gemini 2.0 Flash analizza le tue finanze ogni giorno</p>
       </div>
       <div id="ai-key-warning" style="display:none">
         <div class="ai-panel" style="margin-bottom:16px">
@@ -694,7 +639,7 @@ td input[type=number]{text-align:right}
           <div class="ai-hdr">
             <div class="ai-pulse"></div>
             <span class="ai-title">Report giornaliero</span>
-            <span class="ai-badge">Gemini 2.5 Flash</span>
+            <span class="ai-badge">Gemini 2.0 Flash</span>
             <button class="ai-refresh-btn" onclick="runAIFullAnalysis()" style="margin-left:auto"><i class="ti ti-refresh"></i> Aggiorna analisi</button>
           </div>
           <div id="ai-full-output">
@@ -778,7 +723,6 @@ function showPage(id){
   if(id==='dashboard') refreshDashboard();
   if(id==='pagamenti') refreshPagamenti();
   if(id==='previsioni') refreshPrevisioni();
-  if(id==='wallet') aggiornaPortafoglioUI();
   if(id==='ai') refreshAIPage();
 }
 
@@ -869,24 +813,16 @@ Fai un'analisi approfondita in italiano su:
 Usa un tono diretto e pratico. Rispondi in HTML semplice con tag <strong>, <br>, liste <ul><li>. Max 400 parole.`;
 }
 
-async function callGemini(prompt, opts={}){
+async function callGemini(prompt){
   if(!geminiKey) throw new Error('API key non configurata');
-  const generationConfig = {
-    temperature: 0.7,
-    maxOutputTokens: opts.maxTokens || 2048,
-    // gemini-2.5-flash è un modello "thinking": senza questo il ragionamento
-    // interno consuma il budget di token e la risposta esce troncata.
-    thinkingConfig: { thinkingBudget: 0 }
-  };
-  if(opts.json) generationConfig.responseMimeType = 'application/json';
   const resp = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
     {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         contents:[{parts:[{text:prompt}]}],
-        generationConfig
+        generationConfig:{temperature:0.7,maxOutputTokens:600}
       })
     }
   );
@@ -895,10 +831,7 @@ async function callGemini(prompt, opts={}){
     throw new Error(err?.error?.message || 'Errore API Gemini');
   }
   const data = await resp.json();
-  const cand = data.candidates?.[0];
-  const text = cand?.content?.parts?.map(p=>p.text).filter(Boolean).join('') || '';
-  if(!text && cand?.finishReason === 'MAX_TOKENS') throw new Error('Risposta troncata: riprova');
-  return text;
+  return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 }
 
 async function runAIAnalysis(){
@@ -908,7 +841,7 @@ async function runAIAnalysis(){
   out.innerHTML = `<div class="ai-thinking"><div class="ai-dots"><span></span><span></span><span></span></div> Analizzo i dati...</div>`;
   try {
     const prompt = buildAIPrompt(true);
-    const raw = await callGemini(prompt, {json:true, maxTokens:1024});
+    const raw = await callGemini(prompt);
     const clean = raw.replace(/```json|```/g,'').trim();
     const parsed = JSON.parse(clean);
     const items = (parsed.punti||[]).map(p=>`<div class="ai-item">${p}</div>`).join('');
@@ -929,7 +862,7 @@ async function runAIFullAnalysis(){
   out.innerHTML = `<div class="ai-thinking"><div class="ai-dots"><span></span><span></span><span></span></div> Elaborazione analisi completa in corso...</div>`;
   try {
     const prompt = buildAIPrompt(false);
-    const raw = await callGemini(prompt, {maxTokens:2048});
+    const raw = await callGemini(prompt);
     out.innerHTML = `<div class="ai-content" style="font-size:12px;line-height:1.8">${raw}</div>`;
   } catch(e){
     out.innerHTML = `<div style="font-size:12px;color:var(--red)"><i class="ti ti-alert-triangle"></i> Errore: ${e.message}</div>`;
@@ -1443,7 +1376,6 @@ function onSelChange(){
   renderPannello(raw ? JSON.parse(raw) : null);
   document.getElementById('pannello-vuoto').style.display = 'none';
   document.getElementById('pannello').style.display = 'block';
-  aggiornaLink();
 }
 
 function renderPannello(dati){
@@ -1546,7 +1478,6 @@ function aggiornaLink(){
   const base = window.location.href.split('?')[0];
   document.getElementById('link-val').textContent = base+'?commessa='+encodeURIComponent(ordineAttivo||'');
 }
-function copiaLink(){ navigator.clipboard.writeText(document.getElementById('link-val').textContent).then(()=>showToast('Link copiato!')); }
 
 function copiaRiepilogo(){
   if(!ordineAttivo) return;
@@ -1566,160 +1497,6 @@ function copiaRiepilogo(){
     txt += `• ${ins[0].value} | ${sels[0].value} | ${sels[1].value} | € ${parseFloat(ins[1].value||0).toFixed(2)}\n`;
   });
   navigator.clipboard.writeText(txt).then(()=>showToast('Riepilogo copiato!'));
-}
-
-/* ═══════════════════════════════════════════════════
-   WALLET — BUDGET BAKERS
-═══════════════════════════════════════════════════ */
-const WALLET_API_URL = 'https://wallet.inforuilab.workers.dev';
-let portafoglio = { transazioni: [], ultimoAggiornamento: null };
-
-function salvaPortafoglio(){
-  try{ localStorage.setItem('budgetbakers_portfolio', JSON.stringify(portafoglio)); }
-  catch(e){ showToast('Errore salvataggio dati wallet','error'); }
-}
-
-function caricaPortafoglio(){
-  try{
-    const raw = localStorage.getItem('budgetbakers_portfolio');
-    if(raw){
-      const parsed = JSON.parse(raw);
-      portafoglio = (parsed.transazioni && Array.isArray(parsed.transazioni)) ? parsed : { transazioni: [], ultimoAggiornamento: null };
-    }
-  }catch(e){ portafoglio = { transazioni: [], ultimoAggiornamento: null }; }
-}
-
-function salvaTokenWallet(){
-  const token = prompt('Incolla il tuo JWT Token di Budget Bakers:');
-  if(token){ localStorage.setItem('wallet_token', token); showToast('Token salvato!'); }
-}
-
-async function caricaTransazioniWallet(giorni = 180){
-  const WALLET_TOKEN = localStorage.getItem('wallet_token');
-  if(!WALLET_TOKEN){ salvaTokenWallet(); return; }
-  const btn = document.getElementById('btn-wallet-sync');
-  if(btn){ btn.innerHTML = '<span class="spinner"></span> Sincronizzando...'; btn.disabled = true; }
-  try{
-    const anno = new Date().getFullYear();
-    const trimestri = [
-      { from:`${anno}-01-01`, to:`${anno}-04-01` },
-      { from:`${anno}-04-01`, to:`${anno}-07-01` },
-      { from:`${anno}-07-01`, to:`${anno}-10-01` },
-      { from:`${anno}-10-01`, to:`${anno+1}-01-01` },
-    ];
-    let allRecords = [];
-    for(const trim of trimestri){
-      let offset = 0; const limit = 200; let page = 0;
-      while(true){
-        page++;
-        const url = `${WALLET_API_URL}/wallet/v1/api/records?recordDate=gte.${trim.from}&recordDate=lt.${trim.to}&limit=${limit}&offset=${offset}`;
-        const response = await fetch(url, { headers:{ 'Authorization':`Bearer ${WALLET_TOKEN}`, 'Content-Type':'application/json' } });
-        if(!response.ok) throw new Error(`HTTP ${response.status}`);
-        const data = await response.json();
-        if(!data.records || data.records.length === 0) break;
-        allRecords = allRecords.concat(data.records);
-        if(data.nextOffset == null) break;
-        offset = data.nextOffset;
-        if(page > 10) break;
-      }
-    }
-    const transazioni = allRecords.map(t=>{
-      const val = typeof t.amount === 'object' ? t.amount.value : t.amount;
-      return {
-        data: t.recordDate?.split('T')[0],
-        categoria: t.category?.name || 'Vario',
-        importo: Math.abs(val || 0),
-        metodo: t.account?.name || 'N/A',
-        descrizione: t.note || t.payee || '',
-        tipo: (val >= 0) ? 'entrata' : 'uscita',
-        fonte: 'BudgetBakers'
-      };
-    }).filter(t=>t.data && t.importo > 0);
-    portafoglio.transazioni = transazioni;
-    portafoglio.ultimoAggiornamento = new Date().toISOString();
-    salvaPortafoglio();
-    aggiornaPortafoglioUI();
-    showToast(`Sincronizzate ${transazioni.length} transazioni ✓`);
-    return transazioni;
-  }catch(error){
-    showToast('Errore Wallet: '+error.message,'error');
-    console.error('Errore wallet:', error);
-  }finally{
-    if(btn){ btn.innerHTML = '<i class="ti ti-wallet"></i> Sincronizza Wallet'; btn.disabled = false; }
-  }
-}
-
-async function testApiPaths(){
-  const token = localStorage.getItem('wallet_token');
-  const base = WALLET_API_URL;
-  const paths = ['/wallet/v1/api/records','/records','/v1/records','/v1/api/records'];
-  const el = document.getElementById('api-test-result');
-  el.innerHTML = 'Test in corso...';
-  const results = await Promise.all(paths.map(async p=>{
-    try{
-      const r = await fetch(base + p + '?limit=1', { headers:{ 'Authorization':'Bearer '+token } });
-      const txt = await r.text();
-      const preview = txt.slice(0,80).replace(/</g,'&lt;');
-      return `<div><b>${p}</b> → <span style="color:${r.status===200?'var(--green)':'var(--red)'}">${r.status}</span> ${preview}</div>`;
-    }catch(e){
-      return `<div><b>${p}</b> → <span style="color:var(--red)">errore: ${e.message}</span></div>`;
-    }
-  }));
-  el.innerHTML = results.join('');
-}
-
-function aggiornaPortafoglioUI(){
-  if(!document.getElementById('saldo-netto')) return;
-  const oggi = new Date();
-  const inizioAnno = new Date(oggi.getFullYear(), 0, 1);
-  const inizioAnnoStr = inizioAnno.toISOString().split('T')[0];
-
-  const transAnno = portafoglio.transazioni.filter(t=>t.data >= inizioAnnoStr);
-  const entrate = transAnno.filter(t=>t.tipo === 'entrata').reduce((s,t)=>s+t.importo, 0);
-  const uscite  = transAnno.filter(t=>t.tipo === 'uscita').reduce((s,t)=>s+t.importo, 0);
-  const netto   = entrate - uscite;
-  const giorniAnno = Math.max(1, Math.round((oggi - inizioAnno) / 864e5));
-
-  const sn = document.getElementById('saldo-netto');
-  sn.textContent = fmt(netto);
-  sn.style.color = netto >= 0 ? 'var(--text)' : 'var(--red)';
-  document.getElementById('entrate-30').textContent = fmt(entrate);
-  document.getElementById('num-entrate').textContent = transAnno.filter(t=>t.tipo==='entrata').length + ' transazioni';
-  document.getElementById('uscite-30').textContent = fmt(uscite);
-  document.getElementById('num-uscite').textContent = transAnno.filter(t=>t.tipo==='uscita').length + ' transazioni';
-  document.getElementById('liquidita-media').textContent = fmt(netto / giorniAnno);
-  document.getElementById('wallet-anno').textContent = oggi.getFullYear();
-  const lastEl = document.getElementById('wallet-last');
-  if(lastEl) lastEl.textContent = portafoglio.ultimoAggiornamento ? 'Aggiornato il '+new Date(portafoglio.ultimoAggiornamento).toLocaleString('it-IT') : 'Mai sincronizzato';
-
-  // Grafico mensile anno corrente
-  const mesiAnno = [];
-  for(let i=0;i<12;i++){
-    const meseStr = `${oggi.getFullYear()}-${String(i+1).padStart(2,'0')}`;
-    const e = transAnno.filter(t=>t.data?.startsWith(meseStr) && t.tipo==='entrata').reduce((s,t)=>s+t.importo, 0);
-    const u = transAnno.filter(t=>t.data?.startsWith(meseStr) && t.tipo==='uscita').reduce((s,t)=>s+t.importo, 0);
-    mesiAnno.push({ netto: e-u, mese: meseStr });
-  }
-  const maxVal = Math.max(...mesiAnno.map(g=>Math.abs(g.netto)), 100);
-  const dbg = document.getElementById('wallet-debug');
-  if(dbg){
-    const entN = transAnno.filter(t=>t.tipo==='entrata').length;
-    const uscN = transAnno.filter(t=>t.tipo==='uscita').length;
-    const totN = portafoglio.transazioni.length;
-    const sorted = portafoglio.transazioni.slice().filter(t=>t.data);
-    const primaData = sorted.slice().sort((a,b)=>a.data.localeCompare(b.data))[0]?.data || '—';
-    const ultimaData = sorted.slice().sort((a,b)=>b.data.localeCompare(a.data))[0]?.data || '—';
-    dbg.innerHTML = `Tot: ${totN} | Anno ${oggi.getFullYear()}: ${transAnno.length} (E:${entN} U:${uscN}) | Date: ${primaData} → ${ultimaData}`;
-  }
-  const mNames = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
-  document.getElementById('wallet-chart').innerHTML = mesiAnno.map((g,i)=>{
-    const alt = Math.abs(g.netto) / maxVal * 100;
-    const col = g.netto >= 0 ? 'var(--green)' : 'var(--red)';
-    return `<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:3px">
-      <div style="width:80%;background:${col};height:${alt}%;border-radius:3px 3px 0 0;opacity:.85;min-height:${g.netto!==0?2:0}px" title="${mNames[i]}: ${fmt(g.netto)}"></div>
-      <div style="font-size:9px;color:var(--text3)">${mNames[i]}</div>
-    </div>`;
-  }).join('');
 }
 
 /* ═══════════════════════════════════════════════════
@@ -1758,14 +1535,187 @@ function importaDati(event){
 }
 
 /* ═══════════════════════════════════════════════════
+   STAMPA PDF
+═══════════════════════════════════════════════════ */
+function stampaPDF(){
+  if(!ordineAttivo) return;
+  const dati = raccogliDati();
+  const oggi = new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'});
+
+  let tot = 0, inc = 0;
+  dati.statue.forEach(s=>{ tot += (parseFloat(s.qty)||0)*(parseFloat(s.prezzo)||0); });
+  dati.pagamenti.forEach(p=>{ inc += parseFloat(p.importo)||0; });
+  const res = Math.max(0, tot - inc);
+  const stato = res<=0.001 ? 'SALDATO' : inc>0.001 ? 'PARZIALMENTE SALDATO' : 'APERTO';
+  const statoColor = res<=0.001 ? '#166534' : inc>0.001 ? '#1e40af' : '#92400e';
+  const statoBg = res<=0.001 ? '#dcfce7' : inc>0.001 ? '#dbeafe' : '#fef3c7';
+  const pct = tot>0 ? Math.round(inc/tot*100) : 0;
+  const barColor = res<=0 ? '#22c55e' : inc>0 ? '#3b82f6' : '#f59e0b';
+
+  const righeStatue = dati.statue.filter(s=>s.desc||s.prezzo).map(s=>{
+    const tot_r = (parseFloat(s.qty)||0)*(parseFloat(s.prezzo)||0);
+    const cons = s.consegna ? s.consegna.split('-').reverse().join('/') : '—';
+    return `<tr>
+      <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb">${s.desc||'—'}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:center">${s.qty||1}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:right">€ ${parseFloat(s.prezzo||0).toFixed(2).replace('.',',')}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:center">${cons}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:600">€ ${tot_r.toFixed(2).replace('.',',')}</td>
+    </tr>`;
+  }).join('');
+
+  const righePag = dati.pagamenti.filter(p=>p.importo).map(p=>{
+    const data = p.data ? p.data.split('-').reverse().join('/') : '—';
+    return `<tr>
+      <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb">${data}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb">${p.tipo||'—'}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb">${p.metodo||'—'}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:600;color:#166534">€ ${parseFloat(p.importo||0).toFixed(2).replace('.',',')}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;color:#6b7280">${p.note||''}</td>
+    </tr>`;
+  }).join('');
+
+  const noteHtml = dati.note ? `
+    <div style="margin-top:28px">
+      <div style="font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #e5e7eb">Note ordine</div>
+      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px 16px;font-size:13px;color:#374151;line-height:1.6;white-space:pre-wrap">${dati.note}</div>
+    </div>` : '';
+
+  const resColor = res>0 ? '#c2410c' : '#166534';
+  const resBg = res>0 ? '#fff7ed' : '#f0fdf4';
+  const resBorder = res>0 ? '#fed7aa' : '#bbf7d0';
+
+  const html = `<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Commessa ${ordineAttivo}</title>
+<style>
+  @page{margin:20mm 18mm;size:A4}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#111827;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  @media screen{body{max-width:800px;margin:0 auto;padding:32px 24px;background:#f3f4f6}}
+  @media screen{.page{background:#fff;padding:36px 40px;border-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,.12)}}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:18px;border-bottom:2.5px solid #1e3a5f;margin-bottom:22px}
+  .brand{color:#1e3a5f;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+  .brand-sub{color:#9ca3af;font-size:10px;margin-top:3px}
+  .commessa-title{font-size:20px;font-weight:800;color:#1e3a5f;letter-spacing:.02em;margin-bottom:5px}
+  .stato-badge{display:inline-block;padding:3px 12px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.04em}
+  .section-title{font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.08em;margin-bottom:9px;margin-top:22px;padding-bottom:5px;border-bottom:1px solid #e5e7eb}
+  .cliente-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;background:#f8faff;border:1px solid #dbeafe;border-radius:8px;padding:13px 16px}
+  .cliente-field label{font-size:9px;color:#9ca3af;display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em}
+  .cliente-field span{font-size:13px;font-weight:600;color:#111827}
+  .kpi-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:14px 0}
+  .kpi{border-radius:8px;padding:13px 15px;border:1px solid}
+  .kpi label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;opacity:.7}
+  .kpi span{font-size:19px;font-weight:800;display:block;font-variant-numeric:tabular-nums}
+  .kpi.tot{background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8}
+  .kpi.inc{background:#f0fdf4;border-color:#bbf7d0;color:#166534}
+  .progress-bar-wrap{background:rgba(0,0,0,.1);border-radius:99px;height:5px;overflow:hidden;margin-top:8px}
+  .progress-bar-fill{height:100%;border-radius:99px;width:${pct}%}
+  .pct-label{font-size:9px;margin-top:3px;opacity:.65}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  thead tr{background:#1e3a5f}
+  thead th{padding:9px 10px;text-align:left;font-weight:500;font-size:10px;color:#fff;letter-spacing:.04em;text-transform:uppercase}
+  tbody td{color:#374151}
+  tbody tr:nth-child(even) td{background:#f9fafb}
+  tfoot tr td{padding:10px 10px;border-top:2px solid #d1d5db;font-size:12px;font-weight:700;background:#f3f4f6}
+  .footer{margin-top:32px;padding-top:12px;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between;font-size:10px;color:#9ca3af}
+  .print-btn{display:block;text-align:center;margin-top:24px}
+  .print-btn button{background:#1e3a5f;color:#fff;border:none;border-radius:8px;padding:11px 28px;font-size:13px;cursor:pointer;font-family:inherit;font-weight:600}
+  @media print{.print-btn{display:none}}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="header">
+  <div>
+    <div class="brand">Gestionale Commesse Statue</div>
+    <div class="brand-sub">Riepilogo commessa &middot; stampato il ${oggi}</div>
+  </div>
+  <div style="text-align:right">
+    <div class="commessa-title">${ordineAttivo}</div>
+    <span class="stato-badge" style="background:${statoBg};color:${statoColor};border:1px solid ${statoColor}40">${stato}</span>
+  </div>
+</div>
+
+<div class="section-title">Dati cliente</div>
+<div class="cliente-grid">
+  <div class="cliente-field"><label>Nome e cognome</label><span>${dati.cliente.nome||'—'}</span></div>
+  <div class="cliente-field"><label>Telefono / WhatsApp</label><span>${dati.cliente.tel||'—'}</span></div>
+  <div class="cliente-field"><label>Data apertura ordine</label><span>${dati.cliente.data?dati.cliente.data.split('-').reverse().join('/'):'—'}</span></div>
+</div>
+
+<div class="kpi-row">
+  <div class="kpi tot"><label>Totale ordine</label><span>€ ${tot.toFixed(2).replace('.',',')}</span></div>
+  <div class="kpi inc"><label>Totale incassato</label><span>€ ${inc.toFixed(2).replace('.',',')}</span></div>
+  <div class="kpi" style="background:${resBg};border-color:${resBorder};color:${resColor}">
+    <label>Saldo residuo</label>
+    <span>€ ${res.toFixed(2).replace('.',',')}</span>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" style="background:${barColor}"></div></div>
+    <div class="pct-label">${pct}% incassato</div>
+  </div>
+</div>
+
+<div class="section-title">Statue prenotate</div>
+<table>
+  <thead><tr>
+    <th style="width:38%">Descrizione statua</th>
+    <th style="width:7%;text-align:center">Qtà</th>
+    <th style="width:15%;text-align:right">Prezzo</th>
+    <th style="width:16%;text-align:center">Consegna</th>
+    <th style="width:16%;text-align:right">Totale riga</th>
+  </tr></thead>
+  <tbody>${righeStatue||'<tr><td colspan="5" style="padding:12px 10px;color:#9ca3af;text-align:center">Nessuna statua registrata</td></tr>'}</tbody>
+  <tfoot><tr>
+    <td colspan="4" style="text-align:right;color:#6b7280;font-size:11px;font-weight:600">Totale ordine</td>
+    <td style="text-align:right;color:#1d4ed8;font-size:14px">€ ${tot.toFixed(2).replace('.',',')}</td>
+  </tr></tfoot>
+</table>
+
+<div class="section-title">Pagamenti ricevuti</div>
+<table>
+  <thead><tr>
+    <th style="width:12%">Data</th>
+    <th style="width:20%">Tipo pagamento</th>
+    <th style="width:16%">Metodo</th>
+    <th style="width:15%;text-align:right">Importo</th>
+    <th>Note</th>
+  </tr></thead>
+  <tbody>${righePag||'<tr><td colspan="5" style="padding:12px 10px;color:#9ca3af;text-align:center">Nessun pagamento registrato</td></tr>'}</tbody>
+  <tfoot><tr>
+    <td colspan="3" style="text-align:right;color:#6b7280;font-size:11px;font-weight:600">Totale incassato</td>
+    <td style="text-align:right;color:#166534;font-size:14px">€ ${inc.toFixed(2).replace('.',',')}</td>
+    <td></td>
+  </tr></tfoot>
+</table>
+
+${noteHtml}
+
+<div class="footer">
+  <span>Commessa: <strong>${ordineAttivo}</strong> &nbsp;&middot;&nbsp; ${dati.cliente.nome||''} ${dati.cliente.tel?'&nbsp;&middot;&nbsp;'+dati.cliente.tel:''}</span>
+  <span>Generato il ${oggi}</span>
+</div>
+
+</div>
+<div class="print-btn"><button onclick="window.print()">🖨&nbsp; Stampa / Salva PDF</button></div>
+</body>
+</html>`;
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  setTimeout(()=>win.print(), 500);
+}
+
+/* ═══════════════════════════════════════════════════
    INIT
 ═══════════════════════════════════════════════════ */
 document.getElementById('dash-date').textContent = new Date().toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'});
 document.getElementById('dash-greeting').textContent = greet();
 setFiltro('tutti');
 caricaListaOrdini();
-caricaPortafoglio();
-aggiornaPortafoglioUI();
 refreshDashboard();
 updateAIUI();
 
