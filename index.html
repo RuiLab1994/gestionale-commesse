@@ -784,9 +784,9 @@ Commesse aperte: ${aperti.length} | Scadute: ${scaduti.length} | In scadenza 7gg
 Top commesse aperte:
 ${dettaglio}
 
-Rispondi in italiano con 3 punti sintetici (max 2 righe ciascuno) in questo formato JSON:
-{"punti":["punto1","punto2","punto3"],"priorita":"nome commessa più urgente","richiama":"nome cliente da richiamare"}
-Solo JSON, niente altro.`;
+ISTRUZIONE CRITICA: rispondi SOLO con un oggetto JSON valido, senza testo prima o dopo, senza markdown, senza backtick.
+Il JSON deve avere esattamente questa struttura con stringhe brevi (max 120 caratteri per punto):
+{"punti":["osservazione 1","osservazione 2","osservazione 3"],"priorita":"nome commessa urgente o nessuna","richiama":"nome cliente da richiamare o nessuno"}`;
   }
 
   return `Sei un consulente finanziario esperto per un artigiano italiano che produce statue religiose. Data odierna: ${today}
@@ -822,7 +822,7 @@ async function callGemini(prompt){
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         contents:[{parts:[{text:prompt}]}],
-        generationConfig:{temperature:0.7,maxOutputTokens:600}
+        generationConfig:{temperature:0.4,maxOutputTokens:1200}
       })
     }
   );
@@ -842,18 +842,43 @@ async function runAIAnalysis(){
   try {
     const prompt = buildAIPrompt(true);
     const raw = await callGemini(prompt);
-    const clean = raw.replace(/```json|```/g,'').trim();
-    const parsed = JSON.parse(clean);
+    const parsed = parseGeminiJSON(raw);
     const items = (parsed.punti||[]).map(p=>`<div class="ai-item">${p}</div>`).join('');
-    out.innerHTML = `<div class="ai-content">${items}</div>`;
-    // Update side panels
+    out.innerHTML = items
+      ? `<div class="ai-content">${items}</div>`
+      : `<div class="ai-content" style="font-size:12px">${raw}</div>`;
     const pr = document.getElementById('ai-priorita');
     const ri = document.getElementById('ai-richiama');
-    if(pr && parsed.priorita) pr.textContent = parsed.priorita;
-    if(ri && parsed.richiama) ri.textContent = parsed.richiama;
+    if(pr) pr.textContent = parsed.priorita||'—';
+    if(ri) ri.textContent = parsed.richiama||'—';
   } catch(e){
     out.innerHTML = `<div style="font-size:11px;color:var(--red)"><i class="ti ti-alert-triangle"></i> ${e.message}</div>`;
   }
+}
+
+/* Estrae e parsa JSON da testo Gemini in modo robusto */
+function parseGeminiJSON(raw){
+  if(!raw) return {};
+  // Rimuove fences markdown
+  let clean = raw.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+  // Prova parse diretto
+  try{ return JSON.parse(clean); } catch(e1){}
+  // Cerca il primo { ... } con regex
+  const m = clean.match(/\{[\s\S]*\}/);
+  if(m){
+    let candidate = m[0];
+    // Prova parse
+    try{ return JSON.parse(candidate); } catch(e2){
+      // Prova a troncare all'ultima virgola valida e chiudere
+      try{
+        // Rimuove trailing comma prima di }
+        candidate = candidate.replace(/,\s*\}/g,'}').replace(/,\s*\]/g,']');
+        return JSON.parse(candidate);
+      } catch(e3){}
+    }
+  }
+  // Fallback: costruisci oggetto manuale dai punti trovati nel testo
+  return { punti: [clean.slice(0,200)], priorita:'—', richiama:'—' };
 }
 
 async function runAIFullAnalysis(){
