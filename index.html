@@ -425,7 +425,7 @@ td input[type=number]{text-align:right}
           <div class="ai-hdr">
             <div class="ai-pulse"></div>
             <span class="ai-title">Analisi AI</span>
-            <span class="ai-badge">Gemini 2.0</span>
+            <span class="ai-badge">Gemini 2.5</span>
             <button class="ai-refresh-btn" id="ai-refresh-btn" onclick="runAIAnalysis()" style="margin-left:8px"><i class="ti ti-refresh"></i> Aggiorna</button>
           </div>
           <div id="ai-output">
@@ -625,7 +625,7 @@ td input[type=number]{text-align:right}
     <div class="page" id="page-ai">
       <div class="page-hdr">
         <h1>Analisi AI</h1>
-        <p>Gemini 2.0 Flash analizza le tue finanze ogni giorno</p>
+        <p>Gemini 2.5 Flash analizza le tue finanze ogni giorno</p>
       </div>
       <div id="ai-key-warning" style="display:none">
         <div class="ai-panel" style="margin-bottom:16px">
@@ -639,7 +639,7 @@ td input[type=number]{text-align:right}
           <div class="ai-hdr">
             <div class="ai-pulse"></div>
             <span class="ai-title">Report giornaliero</span>
-            <span class="ai-badge">Gemini 2.0 Flash</span>
+            <span class="ai-badge">Gemini 2.5 Flash</span>
             <button class="ai-refresh-btn" onclick="runAIFullAnalysis()" style="margin-left:auto"><i class="ti ti-refresh"></i> Aggiorna analisi</button>
           </div>
           <div id="ai-full-output">
@@ -816,7 +816,7 @@ Usa un tono diretto e pratico. Rispondi in HTML semplice con tag <strong>, <br>,
 async function callGemini(prompt){
   if(!geminiKey) throw new Error('API key non configurata');
   const resp = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,
     {
       method:'POST',
       headers:{'Content-Type':'application/json'},
