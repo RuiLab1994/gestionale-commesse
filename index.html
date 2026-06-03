@@ -251,6 +251,21 @@ td input[type=number]{text-align:right}
 .metric.info .metric-val{color:var(--blue)}
 .metric.success .metric-val{color:var(--green)}
 .metric.danger .metric-val{color:var(--red)}
+/* ── SEZIONI SCHEDA COMMESSA (gerarchia visiva) ── */
+#pannello .sec{--sec:var(--border2);--sec-bg:var(--bg3);margin-bottom:18px;border-left:3px solid var(--sec);box-shadow:0 1px 3px rgba(0,0,0,.18)}
+#pannello .sec-cliente{--sec:var(--blue);--sec-bg:rgba(88,166,255,.13)}
+#pannello .sec-prod{--sec:var(--purple);--sec-bg:rgba(188,140,255,.13)}
+#pannello .sec-statue{--sec:var(--amber);--sec-bg:rgba(210,153,34,.13)}
+#pannello .sec-pag{--sec:var(--green);--sec-bg:rgba(63,185,80,.13)}
+#pannello .sec-note{--sec:var(--text3);--sec-bg:rgba(139,148,158,.13)}
+#pannello .sec .panel-hdr{margin-bottom:14px;padding-bottom:11px;border-bottom:0.5px solid var(--border)}
+#pannello .sec .panel-title{font-size:13px;font-weight:600;gap:9px}
+#pannello .sec .panel-title i{width:28px;height:28px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:16px;background:var(--sec-bg);color:var(--sec)}
+#pannello .metrics-row{margin-bottom:18px}
+#pannello .metric{border-left:3px solid var(--border2)}
+#pannello .metric.info{border-left-color:var(--blue)}
+#pannello .metric.success{border-left-color:var(--green)}
+#pannello .metric.danger{border-left-color:var(--red)}
 
 /* ── BUTTONS ── */
 .btn{background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--radius);color:var(--text2);padding:7px 13px;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-family:var(--font);transition:var(--transition)}
@@ -581,7 +596,7 @@ td input[type=number]{text-align:right}
           <button class="btn" onclick="stampaPDF()"><i class="ti ti-receipt"></i> Stampa ricevuta</button>
         </div>
         <!-- Dati cliente -->
-        <div class="panel" style="margin-bottom:12px">
+        <div class="panel sec sec-cliente">
           <div class="panel-hdr"><span class="panel-title"><i class="ti ti-user"></i> Dati cliente</span></div>
           <div class="comm-grid">
             <div class="field"><label>Nome e cognome</label><input type="text" id="cl-nome" placeholder="Mario Rossi"></div>
@@ -590,7 +605,7 @@ td input[type=number]{text-align:right}
           </div>
         </div>
         <!-- Stato lavorazione / Produzione -->
-        <div class="panel" style="margin-bottom:12px">
+        <div class="panel sec sec-prod">
           <div class="panel-hdr">
             <span class="panel-title"><i class="ti ti-progress"></i> Stato lavorazione</span>
             <button class="btn" style="padding:4px 10px;font-size:11px" onclick="apriConfig()"><i class="ti ti-adjustments"></i> Configura</button>
@@ -609,7 +624,7 @@ td input[type=number]{text-align:right}
           <div class="metric danger"><div class="metric-label">Saldo residuo</div><div class="metric-val" id="m-res">€ 0,00</div></div>
         </div>
         <!-- Statue -->
-        <div class="panel" style="margin-bottom:12px">
+        <div class="panel sec sec-statue">
           <div class="panel-hdr"><span class="panel-title"><i class="ti ti-package"></i> Statue prenotate</span></div>
           <div class="table-wrap">
             <table>
@@ -624,7 +639,7 @@ td input[type=number]{text-align:right}
           <button class="btn-add" onclick="aggStatua()"><i class="ti ti-plus"></i> Aggiungi statua</button>
         </div>
         <!-- Pagamenti -->
-        <div class="panel" style="margin-bottom:12px">
+        <div class="panel sec sec-pag">
           <div class="panel-hdr"><span class="panel-title"><i class="ti ti-cash"></i> Pagamenti ricevuti</span></div>
           <div class="table-wrap">
             <table>
@@ -640,7 +655,7 @@ td input[type=number]{text-align:right}
         </div>
         <div class="avviso" id="avviso"><i class="ti ti-alert-triangle"></i> Attenzione: saldo residuo ancora da incassare prima della consegna.</div>
         <!-- Note -->
-        <div class="panel" style="margin-bottom:12px">
+        <div class="panel sec sec-note">
           <div class="panel-hdr"><span class="panel-title"><i class="ti ti-notes"></i> Note ordine</span></div>
           <div class="field"><textarea id="note-ordine" placeholder="Personalizzazioni, variazioni, comunicazioni con il cliente..."></textarea></div>
         </div>
