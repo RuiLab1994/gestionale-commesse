@@ -47,8 +47,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .login-note{margin-top:14px;font-size:11px;color:var(--text3)}
 
 /* ── SETUP API KEY ── */
-#setup-overlay,#negozio-overlay{position:fixed;inset:0;background:rgba(13,17,23,.9);display:flex;align-items:center;justify-content:center;z-index:900;backdrop-filter:blur(4px)}
-#setup-overlay.hidden,#negozio-overlay.hidden{display:none}
+#setup-overlay,#negozio-overlay,#config-overlay{position:fixed;inset:0;background:rgba(13,17,23,.9);display:flex;align-items:center;justify-content:center;z-index:900;backdrop-filter:blur(4px)}
+#setup-overlay.hidden,#negozio-overlay.hidden,#config-overlay.hidden{display:none}
 .setup-card{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-xl);padding:32px;max-width:420px;width:90%}
 .setup-card h3{font-size:16px;font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:8px}
 .setup-card p{font-size:12px;color:var(--text2);margin-bottom:20px;line-height:1.6}
