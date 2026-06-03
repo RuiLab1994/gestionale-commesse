@@ -963,7 +963,8 @@ function setProdTab(t){
 function ultimaFaseNome(cfg){ cfg=cfg||getConfig(); return cfg.fasi.length ? cfg.fasi[cfg.fasi.length-1].nome : ''; }
 function aggiornaBadgeProd(){
   const last = ultimaFaseNome();
-  const n = ordiniAttivi().filter(o=>o.fase!==last).length;
+  // conta solo le commesse con una fase impostata e non ancora all'ultima fase
+  const n = ordiniAttivi().filter(o=>o.fase && o.fase!==last).length;
   const b = document.getElementById('nav-badge-prod');
   if(b){ b.textContent = n; b.style.display = n>0 ? 'inline' : 'none'; }
 }
