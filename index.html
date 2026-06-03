@@ -47,8 +47,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .login-note{margin-top:14px;font-size:11px;color:var(--text3)}
 
 /* ── SETUP API KEY ── */
-#setup-overlay{position:fixed;inset:0;background:rgba(13,17,23,.9);display:flex;align-items:center;justify-content:center;z-index:900;backdrop-filter:blur(4px)}
-#setup-overlay.hidden{display:none}
+#setup-overlay,#negozio-overlay{position:fixed;inset:0;background:rgba(13,17,23,.9);display:flex;align-items:center;justify-content:center;z-index:900;backdrop-filter:blur(4px)}
+#setup-overlay.hidden,#negozio-overlay.hidden{display:none}
 .setup-card{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-xl);padding:32px;max-width:420px;width:90%}
 .setup-card h3{font-size:16px;font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:8px}
 .setup-card p{font-size:12px;color:var(--text2);margin-bottom:20px;line-height:1.6}
@@ -203,6 +203,40 @@ td input,td select{background:var(--bg3);border:0.5px solid var(--border);border
 td input:focus,td select:focus{outline:none;border-color:var(--blue)}
 td input[type=number]{text-align:right}
 .row-total{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--blue);white-space:nowrap}
+.consegna-chk{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);cursor:pointer;white-space:nowrap}
+.consegna-chk input{width:auto!important;margin:0;cursor:pointer;accent-color:var(--green);flex-shrink:0}
+.consegna-chk input:checked + span{color:var(--green);font-weight:500}
+/* ── PRODUZIONE / PROGETTO ── */
+.prod-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.prod-grid .field select{transition:border-color .18s ease}
+.fase-badge{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500;border:0.5px solid var(--border)}
+/* ── CONFIG EDITOR ── */
+.cfg-sec{margin-bottom:14px}
+.cfg-sec-hdr{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+.cfg-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.cfg-row input[type=color]{width:32px;height:32px;padding:0;border:0.5px solid var(--border);border-radius:6px;background:var(--bg3);cursor:pointer;flex-shrink:0}
+.cfg-row .setup-input{margin:0;flex:1}
+/* ── PAGE PRODUZIONE (BOARD) ── */
+.prod-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.filter-sel{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);color:var(--text2);padding:6px 10px;font-size:12px;font-family:var(--font);cursor:pointer;transition:var(--transition)}
+.filter-sel:focus{outline:none;border-color:var(--blue)}
+.prod-group{margin-bottom:18px}
+.prod-group-hdr{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.fase-pill{display:inline-flex;align-items:center;gap:6px;padding:3px 12px;border-radius:20px;font-size:11px;font-weight:600}
+.prod-group-count{font-size:11px;color:var(--text3)}
+.prod-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.prod-card{background:var(--bg2);border:0.5px solid var(--border);border-left:3px solid var(--fasecol,var(--border2));border-radius:var(--radius-lg);padding:12px 14px;transition:var(--transition)}
+.prod-card:hover{border-color:var(--border2)}
+.prod-card-name{font-size:13px;font-weight:600;cursor:pointer;line-height:1.3}
+.prod-card-name:hover{color:var(--blue)}
+.prod-card-cli{font-size:11px;color:var(--text2);margin:3px 0 9px}
+.prod-chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px}
+.prod-chip{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:2px 8px;border-radius:20px;border:0.5px solid var(--border);color:var(--text2);white-space:nowrap}
+.prod-chip i{font-size:12px}
+.prod-card-foot{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.prod-card-foot select{font-size:11px;padding:4px 6px;background:var(--bg3);border:0.5px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--font);max-width:140px}
+.prod-scad{font-size:10px;color:var(--text3);white-space:nowrap}
+.prod-scad.over{color:var(--red);font-weight:500}
 
 /* ── COMMESSA PANEL ── */
 .comm-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px}
@@ -241,9 +275,6 @@ td input[type=number]{text-align:right}
 
 /* ── AVVISO ── */
 .avviso{background:rgba(210,153,34,.08);border:0.5px solid rgba(210,153,34,.3);border-radius:var(--radius);padding:10px 14px;font-size:12px;color:var(--amber);display:none;align-items:center;gap:8px;margin:10px 0}
-
-/* ── LINK BOX ── */
-.link-box{background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--radius);padding:8px 12px;font-size:11px;font-family:var(--mono);color:var(--text2);display:flex;align-items:center;justify-content:space-between;gap:8px;word-break:break-all;margin-top:6px}
 
 /* ── TOAST ── */
 .toast{position:fixed;bottom:24px;right:24px;background:var(--bg3);border:0.5px solid var(--border2);color:var(--text);border-radius:var(--radius-lg);padding:11px 18px;font-size:12px;display:none;align-items:center;gap:8px;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.4)}
@@ -307,6 +338,48 @@ td input[type=number]{text-align:right}
   </div>
 </div>
 
+<div id="negozio-overlay" class="hidden">
+  <div class="setup-card">
+    <h3><i class="ti ti-building-store" style="color:var(--blue)"></i> Dati del negozio</h3>
+    <p>Questi dati appaiono nell'intestazione delle ricevute stampate. Vengono salvati solo in questo browser.</p>
+    <input class="setup-input" id="neg-nome" style="font-family:var(--font)" placeholder="Nome attività / laboratorio">
+    <input class="setup-input" id="neg-indirizzo" style="font-family:var(--font)" placeholder="Indirizzo (opzionale)">
+    <input class="setup-input" id="neg-tel" style="font-family:var(--font)" placeholder="Telefono (opzionale)">
+    <input class="setup-input" id="neg-piva" style="font-family:var(--font)" placeholder="P. IVA (opzionale)">
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn-primary" onclick="salvaNegozio()"><i class="ti ti-check"></i> Salva</button>
+      <button class="btn-skip" onclick="chiudiNegozio()">Annulla</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIG FASI / TECNICHE / PERSONE -->
+<div id="config-overlay" class="hidden">
+  <div class="setup-card" style="max-width:560px;max-height:88vh;overflow-y:auto">
+    <h3><i class="ti ti-adjustments" style="color:var(--blue)"></i> Fasi, stampanti e persone</h3>
+    <p>Personalizza le liste usate nelle commesse: aggiungi voci, rinominale e scegli i colori. Salvate in questo browser.</p>
+    <div class="cfg-sec">
+      <div class="cfg-sec-hdr">Fasi di lavorazione</div>
+      <div id="cfg-fasi"></div>
+      <button class="btn-add" onclick="aggConfigRow('fasi')"><i class="ti ti-plus"></i> Aggiungi fase</button>
+    </div>
+    <div class="cfg-sec">
+      <div class="cfg-sec-hdr">Tecniche / Stampanti</div>
+      <div id="cfg-tecniche"></div>
+      <button class="btn-add" onclick="aggConfigRow('tecniche')"><i class="ti ti-plus"></i> Aggiungi tecnica</button>
+    </div>
+    <div class="cfg-sec">
+      <div class="cfg-sec-hdr">Persone</div>
+      <div id="cfg-persone"></div>
+      <button class="btn-add" onclick="aggConfigRow('persone')"><i class="ti ti-plus"></i> Aggiungi persona</button>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+      <button class="btn-primary" onclick="salvaConfig()"><i class="ti ti-check"></i> Salva</button>
+      <button class="btn-skip" onclick="chiudiConfig()">Annulla</button>
+    </div>
+  </div>
+</div>
+
 <!-- APP SHELL -->
 <div id="app">
 
@@ -319,6 +392,8 @@ td input[type=number]{text-align:right}
     <div class="topbar-right">
       <span class="chip chip-off" id="drive-status"><i class="ti ti-cloud-off"></i> Non connesso</span>
       <button class="topbar-btn sync" id="btn-sync" onclick="sincronizzaDrive()" style="display:none"><i class="ti ti-refresh"></i> Sync</button>
+      <button class="topbar-btn" onclick="apriConfig()" title="Configura fasi, stampanti e persone"><i class="ti ti-adjustments"></i></button>
+      <button class="topbar-btn" onclick="apriNegozio()" title="Dati del negozio"><i class="ti ti-building-store"></i></button>
       <button class="topbar-btn" onclick="apriSetupAI()" title="Configura Gemini AI"><i class="ti ti-brain"></i></button>
       <button class="topbar-btn" onclick="esportaDati()"><i class="ti ti-download"></i> Backup</button>
       <button class="topbar-btn" onclick="document.getElementById('import-input').click()"><i class="ti ti-upload"></i></button>
@@ -336,6 +411,10 @@ td input[type=number]{text-align:right}
       <i class="ti ti-checklist"></i> Commesse
       <span class="nav-badge amber" id="nav-badge-aperte" style="display:none">0</span>
     </button>
+    <button class="nav-item" id="nav-produzione" onclick="showPage('produzione')">
+      <i class="ti ti-layout-kanban"></i> Produzione
+      <span class="nav-badge amber" id="nav-badge-prod" style="display:none">0</span>
+    </button>
     <div class="nav-section">Finanza</div>
     <button class="nav-item" id="nav-pagamenti" onclick="showPage('pagamenti')">
       <i class="ti ti-coin"></i> Chi deve pagare
@@ -348,6 +427,8 @@ td input[type=number]{text-align:right}
     <button class="nav-item" id="nav-ai" onclick="showPage('ai')">
       <i class="ti ti-brain"></i> Analisi AI
     </button>
+    <div class="nav-section" id="archived-section" style="display:none">Archiviate</div>
+    <div id="archived-list"></div>
   </nav>
 
   <!-- MAIN CONTENT -->
@@ -499,6 +580,20 @@ td input[type=number]{text-align:right}
             <div class="field"><label>Data apertura ordine</label><input type="date" id="cl-data"></div>
           </div>
         </div>
+        <!-- Stato lavorazione / Produzione -->
+        <div class="panel" style="margin-bottom:12px">
+          <div class="panel-hdr">
+            <span class="panel-title"><i class="ti ti-progress"></i> Stato lavorazione</span>
+            <button class="btn" style="padding:4px 10px;font-size:11px" onclick="apriConfig()"><i class="ti ti-adjustments"></i> Configura</button>
+          </div>
+          <div class="prod-grid">
+            <div class="field"><label>Fase <span class="dot" id="pr-fase-dot" style="margin-left:4px"></span></label><select id="pr-fase" onchange="aggiornaFaseColore()"></select></div>
+            <div class="field"><label>Tecnica / Stampante</label><select id="pr-tecnica"></select></div>
+            <div class="field"><label>Assegnato a</label><select id="pr-assegnato"></select></div>
+            <div class="field"><label>Dimensione (cm)</label><input type="text" id="pr-dim" placeholder="es. 35 · 30/40 · 80+BASE"></div>
+            <div class="field"><label>Scadenza consegna</label><input type="date" id="pr-scadenza"></div>
+          </div>
+        </div>
         <!-- Metriche -->
         <div class="metrics-row">
           <div class="metric info"><div class="metric-label">Totale ordine</div><div class="metric-val" id="m-tot">€ 0,00</div></div>
@@ -511,9 +606,9 @@ td input[type=number]{text-align:right}
           <div class="table-wrap">
             <table>
               <thead><tr>
-                <th style="width:36%">Descrizione</th><th style="width:7%">Qtà</th>
-                <th style="width:15%">Prezzo (€)</th><th style="width:16%">Consegna</th>
-                <th style="width:16%">Totale riga</th><th style="width:6%"></th>
+                <th style="width:30%">Descrizione</th><th style="width:6%">Qtà</th>
+                <th style="width:13%">Prezzo (€)</th><th style="width:15%">Consegna</th>
+                <th style="width:14%">Stato</th><th style="width:16%">Totale riga</th><th style="width:6%"></th>
               </tr></thead>
               <tbody id="statue-body"></tbody>
             </table>
@@ -546,7 +641,8 @@ td input[type=number]{text-align:right}
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <button class="btn" onclick="showPage('dashboard')"><i class="ti ti-arrow-left"></i> Dashboard</button>
             <button class="btn" onclick="copiaRiepilogo()"><i class="ti ti-copy"></i> Riepilogo</button>
-            <button class="btn" onclick="stampaPDF()"><i class="ti ti-file-type-pdf"></i> Stampa PDF</button>
+            <button class="btn" onclick="stampaPDF()"><i class="ti ti-receipt"></i> Stampa ricevuta</button>
+            <button class="btn" id="btn-archivia" onclick="toggleArchivia()"><i class="ti ti-archive"></i> Archivia</button>
           </div>
           <button class="btn btn-save" onclick="salva()"><i class="ti ti-device-floppy"></i> Salva &amp; Sincronizza</button>
         </div>
@@ -659,6 +755,24 @@ td input[type=number]{text-align:right}
       </div>
     </div>
 
+    <!-- ══ PAGE: PRODUZIONE ══ -->
+    <div class="page" id="page-produzione">
+      <div class="page-hdr">
+        <h1>Produzione</h1>
+        <p>Tutte le commesse per fase di lavorazione — filtra per stampante, persona o "cosa fare"</p>
+      </div>
+      <div class="prod-toolbar">
+        <input class="search-input" id="prod-search" placeholder="Cerca commessa o cliente..." oninput="refreshProduzione()" style="min-width:170px;flex:0 1 220px">
+        <select class="filter-sel" id="prod-fase" onchange="refreshProduzione()"></select>
+        <select class="filter-sel" id="prod-tecnica" onchange="refreshProduzione()"></select>
+        <select class="filter-sel" id="prod-persona" onchange="refreshProduzione()"></select>
+        <button class="filter-btn on" id="prod-tab-tutte" onclick="setProdTab('tutte')">Tutte</button>
+        <button class="filter-btn" id="prod-tab-dafare" onclick="setProdTab('dafare')">Da fare</button>
+      </div>
+      <div id="prod-board"></div>
+      <div class="empty" id="prod-empty" style="display:none"><i class="ti ti-layout-kanban"></i><p>Nessuna commessa con questi filtri</p></div>
+    </div>
+
   </main>
 </div>
 
@@ -681,6 +795,108 @@ let driveFileId  = null;
 let ordineAttivo = null;
 let filtroStato  = 'tutti';
 let geminiKey    = localStorage.getItem('gemini_api_key') || '';
+function getNegozio(){
+  let n = {};
+  try{ n = JSON.parse(localStorage.getItem('negozio_info')||'{}'); }catch(e){}
+  return {
+    nome: n.nome || '',
+    indirizzo: n.indirizzo || '',
+    tel: n.tel || '',
+    piva: n.piva || ''
+  };
+}
+
+/* ═══════════════════════════════════════════════════
+   CONFIG PROGETTO — fasi / tecniche / persone
+═══════════════════════════════════════════════════ */
+function getConfig(){
+  const def = {
+    fasi:[
+      {nome:'In attesa',col:'#8b949e'},
+      {nome:'Da stampare',col:'#d29922'},
+      {nome:'In modellazione',col:'#db61a2'},
+      {nome:'Modellato',col:'#58a6ff'},
+      {nome:'In decorazione',col:'#2ea043'},
+      {nome:'In consegna',col:'#7ee787'},
+      {nome:'Consegnata',col:'#3fb950'}
+    ],
+    tecniche:[
+      {nome:'Resina',col:'#3fb950'},
+      {nome:'Bambu Lab',col:'#d29922'},
+      {nome:'Orange',col:'#f85149'}
+    ],
+    persone:[
+      {nome:'Enrico',col:'#58a6ff'},
+      {nome:'Socio',col:'#bc8cff'}
+    ]
+  };
+  let c={};
+  try{ c=JSON.parse(localStorage.getItem('config_progetto')||'{}'); }catch(e){}
+  return {
+    fasi:     Array.isArray(c.fasi)&&c.fasi.length ? c.fasi : def.fasi,
+    tecniche: Array.isArray(c.tecniche)&&c.tecniche.length ? c.tecniche : def.tecniche,
+    persone:  Array.isArray(c.persone)&&c.persone.length ? c.persone : def.persone
+  };
+}
+function faseColore(nome){ const f=getConfig().fasi.find(x=>x.nome===nome); return f?f.col:''; }
+
+/* Popola le select del pannello "Stato lavorazione" dai dati della commessa */
+function popolaSelectProgetto(dati){
+  const cfg = getConfig();
+  const blank = '<option value="">—</option>';
+  const opts = (list,sel)=> list.map(x=>`<option value="${esc(x.nome)}"${sel===x.nome?' selected':''}>${esc(x.nome)}</option>`).join('');
+  document.getElementById('pr-fase').innerHTML      = blank + opts(cfg.fasi,     dati?.fase||'');
+  document.getElementById('pr-tecnica').innerHTML   = blank + opts(cfg.tecniche, dati?.tecnica||'');
+  document.getElementById('pr-assegnato').innerHTML = blank + opts(cfg.persone,  dati?.assegnato||'');
+  document.getElementById('pr-dim').value      = dati?.dim||'';
+  document.getElementById('pr-scadenza').value = dati?.scadenza||'';
+  aggiornaFaseColore();
+}
+function aggiornaFaseColore(){
+  const sel=document.getElementById('pr-fase'), dot=document.getElementById('pr-fase-dot');
+  if(!sel||!dot) return;
+  const col=faseColore(sel.value);
+  dot.style.background = col||'transparent';
+  sel.style.borderColor = col||'var(--border)';
+}
+
+/* Editor configurazione */
+function cfgRowHtml(item){
+  return `<div class="cfg-row">
+    <input type="color" value="${item&&item.col?item.col:'#58a6ff'}">
+    <input type="text" class="setup-input" value="${esc(item&&item.nome||'')}" placeholder="Nome">
+    <button class="btn-del" onclick="this.closest('.cfg-row').remove()">×</button>
+  </div>`;
+}
+function renderConfigEditor(){
+  const cfg=getConfig();
+  document.getElementById('cfg-fasi').innerHTML     = cfg.fasi.map(cfgRowHtml).join('');
+  document.getElementById('cfg-tecniche').innerHTML = cfg.tecniche.map(cfgRowHtml).join('');
+  document.getElementById('cfg-persone').innerHTML  = cfg.persone.map(cfgRowHtml).join('');
+}
+function aggConfigRow(tipo){
+  const map={fasi:'cfg-fasi',tecniche:'cfg-tecniche',persone:'cfg-persone'};
+  document.getElementById(map[tipo]).insertAdjacentHTML('beforeend', cfgRowHtml({nome:'',col:'#58a6ff'}));
+}
+function apriConfig(){ renderConfigEditor(); document.getElementById('config-overlay').classList.remove('hidden'); }
+function chiudiConfig(){ document.getElementById('config-overlay').classList.add('hidden'); }
+function readCfgSection(id){
+  return [...document.querySelectorAll('#'+id+' .cfg-row')].map(r=>{
+    const col=r.querySelector('input[type=color]').value;
+    const nome=r.querySelector('input[type=text]').value.trim();
+    return nome ? {nome,col} : null;
+  }).filter(Boolean);
+}
+function salvaConfig(){
+  const cfg={ fasi:readCfgSection('cfg-fasi'), tecniche:readCfgSection('cfg-tecniche'), persone:readCfgSection('cfg-persone') };
+  localStorage.setItem('config_progetto', JSON.stringify(cfg));
+  chiudiConfig();
+  showToast('Configurazione salvata!');
+  if(ordineAttivo){
+    const raw=localStorage.getItem(storageKey(ordineAttivo));
+    popolaSelectProgetto(raw?JSON.parse(raw):null);
+  }
+}
 
 /* ═══════════════════════════════════════════════════
    UTILS
@@ -721,9 +937,117 @@ function showPage(id){
   document.getElementById('page-'+id)?.classList.add('active');
   document.getElementById('nav-'+id)?.classList.add('active');
   if(id==='dashboard') refreshDashboard();
+  if(id==='produzione') refreshProduzione();
   if(id==='pagamenti') refreshPagamenti();
   if(id==='previsioni') refreshPrevisioni();
   if(id==='ai') refreshAIPage();
+}
+
+/* ═══════════════════════════════════════════════════
+   PAGE: PRODUZIONE (board filtrabile)
+═══════════════════════════════════════════════════ */
+let prodTab = 'tutte';
+function setProdTab(t){
+  prodTab = t;
+  document.getElementById('prod-tab-tutte').classList.toggle('on', t==='tutte');
+  document.getElementById('prod-tab-dafare').classList.toggle('on', t==='dafare');
+  refreshProduzione();
+}
+function ultimaFaseNome(cfg){ cfg=cfg||getConfig(); return cfg.fasi.length ? cfg.fasi[cfg.fasi.length-1].nome : ''; }
+function aggiornaBadgeProd(){
+  const last = ultimaFaseNome();
+  const n = ordiniAttivi().filter(o=>o.fase!==last).length;
+  const b = document.getElementById('nav-badge-prod');
+  if(b){ b.textContent = n; b.style.display = n>0 ? 'inline' : 'none'; }
+}
+function popolaFiltriProduzione(cfg){
+  const setSel = (id,list,blank)=>{
+    const sel = document.getElementById(id);
+    const cur = sel.value;
+    sel.innerHTML = `<option value="">${blank}</option>` + list.map(x=>`<option value="${esc(x.nome)}">${esc(x.nome)}</option>`).join('');
+    sel.value = cur;
+  };
+  setSel('prod-fase', cfg.fasi, '— tutte le fasi —');
+  setSel('prod-tecnica', cfg.tecniche, '— tutte le stampanti —');
+  setSel('prod-persona', cfg.persone, '— tutte le persone —');
+}
+function refreshProduzione(){
+  const cfg = getConfig();
+  popolaFiltriProduzione(cfg);
+  const fFase = document.getElementById('prod-fase').value;
+  const fTec  = document.getElementById('prod-tecnica').value;
+  const fPer  = document.getElementById('prod-persona').value;
+  const q     = (document.getElementById('prod-search').value||'').toLowerCase();
+  const last  = ultimaFaseNome(cfg);
+
+  const ordini = ordiniAttivi().filter(o=>{
+    if(q && !(o.nome.toLowerCase().includes(q) || (o.cliente?.nome||'').toLowerCase().includes(q))) return false;
+    if(fTec && o.tecnica!==fTec) return false;
+    if(fPer && o.assegnato!==fPer) return false;
+    if(prodTab==='dafare' && o.fase===last) return false;
+    return true;
+  });
+
+  aggiornaBadgeProd();
+
+  let gruppi = cfg.fasi.map(f=>({nome:f.nome, col:f.col}));
+  if(fFase) gruppi = gruppi.filter(g=>g.nome===fFase);
+
+  let html = '', tot = 0;
+  gruppi.forEach(g=>{
+    const items = ordini.filter(o=>o.fase===g.nome);
+    if(!items.length) return;
+    tot += items.length;
+    html += prodGruppoHtml(g.nome, g.col, items, cfg);
+  });
+  if(!fFase){
+    const senza = ordini.filter(o=>!o.fase);
+    if(senza.length){ tot += senza.length; html += prodGruppoHtml('Senza fase', '', senza, cfg); }
+  }
+  document.getElementById('prod-board').innerHTML = html;
+  document.getElementById('prod-empty').style.display = tot ? 'none' : 'block';
+}
+function prodGruppoHtml(nome, col, items, cfg){
+  const pill = `<span class="fase-pill" style="background:${col?col+'22':'var(--bg3)'};color:${col||'var(--text2)'};border:0.5px solid ${col||'var(--border)'}">${esc(nome)}</span>`;
+  const cards = items.map(o=>prodCardHtml(o, cfg)).join('');
+  return `<div class="prod-group">
+    <div class="prod-group-hdr">${pill}<span class="prod-group-count">${items.length}</span></div>
+    <div class="prod-cards">${cards}</div>
+  </div>`;
+}
+function prodCardHtml(o, cfg){
+  const tecCol  = (cfg.tecniche.find(t=>t.nome===o.tecnica)||{}).col || '';
+  const perCol  = (cfg.persone.find(p=>p.nome===o.assegnato)||{}).col || '';
+  const faseCol = (cfg.fasi.find(f=>f.nome===o.fase)||{}).col || 'var(--border2)';
+  const oggi = new Date(); oggi.setHours(0,0,0,0);
+  const scad = o.scadenza || o.prossima;
+  const over = scad && new Date(scad) < oggi;
+  const scadHtml = scad ? `<span class="prod-scad${over?' over':''}">${over?'⚠ ':''}${fmtDate(scad)}</span>` : '<span></span>';
+  const chips = [];
+  if(o.tecnica)   chips.push(`<span class="prod-chip" style="border-color:${tecCol};color:${tecCol||'var(--text2)'}"><i class="ti ti-printer"></i>${esc(o.tecnica)}</span>`);
+  if(o.assegnato) chips.push(`<span class="prod-chip" style="border-color:${perCol};color:${perCol||'var(--text2)'}"><i class="ti ti-user"></i>${esc(o.assegnato)}</span>`);
+  if(o.dim)       chips.push(`<span class="prod-chip"><i class="ti ti-ruler-2"></i>${esc(o.dim)}</span>`);
+  const faseOpts = `<option value="">— fase —</option>` + cfg.fasi.map(f=>`<option value="${esc(f.nome)}"${o.fase===f.nome?' selected':''}>${esc(f.nome)}</option>`).join('');
+  return `<div class="prod-card" style="--fasecol:${faseCol}">
+    <div class="prod-card-name" data-open="${esc(o.nome)}">${esc(o.nome)}</div>
+    <div class="prod-card-cli">${esc(o.cliente?.nome||'—')}${o.res>0?' · '+fmt(o.res)+' residuo':''}</div>
+    <div class="prod-chips">${chips.join('')}</div>
+    <div class="prod-card-foot">
+      <select data-fase-for="${esc(o.nome)}" title="Cambia fase">${faseOpts}</select>
+      ${scadHtml}
+    </div>
+  </div>`;
+}
+async function cambiaFaseRapida(nome, fase){
+  const raw = localStorage.getItem(storageKey(nome));
+  if(!raw) return;
+  let d; try{ d = JSON.parse(raw); }catch(e){ return; }
+  d.fase = fase;
+  localStorage.setItem(storageKey(nome), JSON.stringify(d));
+  showToast('Fase aggiornata' + (fase?': '+fase:''));
+  refreshProduzione();
+  if(ordineAttivo===nome){ const s=document.getElementById('pr-fase'); if(s){ s.value=fase; aggiornaFaseColore(); } }
+  await salvaSuDrive();
 }
 
 /* ═══════════════════════════════════════════════════
@@ -747,6 +1071,30 @@ function salvaGeminiKey(){
   runAIAnalysis();
 }
 
+function apriNegozio(){
+  const n = getNegozio();
+  document.getElementById('neg-nome').value      = n.nome;
+  document.getElementById('neg-indirizzo').value = n.indirizzo;
+  document.getElementById('neg-tel').value       = n.tel;
+  document.getElementById('neg-piva').value      = n.piva;
+  document.getElementById('negozio-overlay').classList.remove('hidden');
+}
+function chiudiNegozio(){
+  document.getElementById('negozio-overlay').classList.add('hidden');
+}
+function salvaNegozio(){
+  const info = {
+    nome:      document.getElementById('neg-nome').value.trim(),
+    indirizzo: document.getElementById('neg-indirizzo').value.trim(),
+    tel:       document.getElementById('neg-tel').value.trim(),
+    piva:      document.getElementById('neg-piva').value.trim()
+  };
+  if(!info.nome){ showToast('Inserisci il nome del negozio','error'); return; }
+  localStorage.setItem('negozio_info', JSON.stringify(info));
+  chiudiNegozio();
+  showToast('Dati negozio salvati!');
+}
+
 function updateAIUI(){
   const hasKey = !!geminiKey;
   const hint = document.getElementById('ai-setup-hint');
@@ -758,7 +1106,7 @@ function updateAIUI(){
 }
 
 function buildAIPrompt(short=false){
-  const ordini = tuttiGliOrdini();
+  const ordini = ordiniAttivi();
   const oggi = new Date(); oggi.setHours(0,0,0,0);
   const totRes = ordini.reduce((s,o)=>s+o.res,0);
   const totInc = ordini.reduce((s,o)=>s+o.inc,0);
@@ -971,6 +1319,17 @@ async function scrivisuDrive(data){
   }
 }
 
+/* Chiavi sincronizzate: commesse + configurazioni (fasi/tecniche/persone, dati negozio) */
+const EXTRA_SYNC_KEYS = ['config_progetto','negozio_info'];
+function isSyncKey(k){ return k.startsWith('commessa__') || EXTRA_SYNC_KEYS.includes(k); }
+function buildBackup(){
+  const b={};
+  Object.keys(localStorage).filter(isSyncKey).forEach(k=>{
+    try{ b[k]=JSON.parse(localStorage.getItem(k)); }catch(e){}
+  });
+  return b;
+}
+
 async function sincronizzaDrive(){
   if(!accessToken){ showToast('Non connesso a Drive','error'); return; }
   const btn = document.getElementById('btn-sync');
@@ -983,20 +1342,16 @@ async function sincronizzaDrive(){
       if(remoto){
         let n = 0;
         Object.keys(remoto).forEach(k=>{
-          if(k.startsWith('commessa__')){
+          if(isSyncKey(k)){
             const loc = localStorage.getItem(k);
             const rs = JSON.stringify(remoto[k]);
             if(loc!==rs){ localStorage.setItem(k,rs); n++; }
           }
         });
-        showToast(n>0 ? `${n} commesse sincronizzate ✓` : 'Dati già aggiornati ✓');
+        showToast(n>0 ? `${n} elementi sincronizzati ✓` : 'Dati già aggiornati ✓');
       }
     } else {
-      const backup = {};
-      Object.keys(localStorage).filter(k=>k.startsWith('commessa__')).forEach(k=>{
-        try{ backup[k] = JSON.parse(localStorage.getItem(k)); }catch(e){}
-      });
-      await scrivisuDrive(backup);
+      await scrivisuDrive(buildBackup());
       showToast('Dati caricati su Drive ✓');
     }
   } catch(e){ showToast('Errore sync: '+e.message,'error'); }
@@ -1008,12 +1363,8 @@ async function sincronizzaDrive(){
 
 async function salvaSuDrive(){
   if(!accessToken) return;
-  const backup = {};
-  Object.keys(localStorage).filter(k=>k.startsWith('commessa__')).forEach(k=>{
-    try{ backup[k] = JSON.parse(localStorage.getItem(k)); }catch(e){}
-  });
   if(!driveFileId) driveFileId = await trovaDriveFile();
-  await scrivisuDrive(backup);
+  await scrivisuDrive(buildBackup());
 }
 
 /* ═══════════════════════════════════════════════════
@@ -1024,12 +1375,49 @@ function caricaListaOrdini(){
   const corrente = sel.value;
   while(sel.options.length>1) sel.remove(1);
   Object.keys(localStorage).filter(k=>k.startsWith('commessa__')).sort().forEach(k=>{
+    let arch=false; try{ arch=!!JSON.parse(localStorage.getItem(k)||'{}').archiviata; }catch(e){}
+    if(arch) return;
     const nome = k.replace('commessa__','');
     const opt = document.createElement('option');
     opt.value = nome; opt.textContent = nome;
     sel.appendChild(opt);
   });
   if(corrente) sel.value = corrente;
+  renderArchiviate();
+}
+
+/* ═══════════════════════════════════════════════════
+   COMMESSE ARCHIVIATE
+═══════════════════════════════════════════════════ */
+function renderArchiviate(){
+  const wrap = document.getElementById('archived-list');
+  const sec = document.getElementById('archived-section');
+  if(!wrap) return;
+  const arch = tuttiGliOrdini().filter(o=>o.archiviata).sort((a,b)=>a.nome.localeCompare(b.nome));
+  if(!arch.length){ wrap.innerHTML=''; if(sec) sec.style.display='none'; return; }
+  if(sec) sec.style.display='block';
+  wrap.innerHTML = arch.map(o=>`<button class="nav-item" data-open="${esc(o.nome)}" title="${esc(o.nome)}"><i class="ti ti-archive"></i> <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left">${esc(o.nome)}</span></button>`).join('');
+}
+
+async function toggleArchivia(){
+  if(!ordineAttivo) return;
+  const dati = raccogliDati();          // raccoglie anche le modifiche correnti
+  dati.archiviata = !dati.archiviata;   // inverte lo stato salvato
+  localStorage.setItem(storageKey(ordineAttivo), JSON.stringify(dati));
+  showToast(dati.archiviata ? 'Commessa archiviata 📦' : 'Commessa riattivata');
+  await salvaSuDrive();
+  caricaListaOrdini();
+  aggiornaBtnArchivia(dati.archiviata);
+  refreshDashboard();
+}
+
+function aggiornaBtnArchivia(archiviata){
+  const b = document.getElementById('btn-archivia');
+  if(!b) return;
+  b.innerHTML = archiviata
+    ? '<i class="ti ti-archive-off"></i> Riattiva'
+    : '<i class="ti ti-archive"></i> Archivia';
+  b.classList.toggle('btn-save', !!archiviata);
 }
 
 /* ═══════════════════════════════════════════════════
@@ -1047,15 +1435,22 @@ function tuttiGliOrdini(){
     const stato = res<=0.001 ? 'saldato' : inc>0.001 ? 'parziale' : 'aperto';
     let prossima = null;
     (d.statue||[]).forEach(s=>{ if(s.consegna&&(!prossima||s.consegna<prossima)) prossima=s.consegna; });
-    return {nome, cliente:d.cliente||{}, statue:d.statue||[], pagamenti:d.pagamenti||[], tot, inc, res, stato, prossima};
+    const voci = (d.statue||[]).filter(s=>s.desc||s.prezzo);
+    const daConsegnare = voci.filter(s=>!s.consegnato).length;
+    const tuttoConsegnato = voci.length>0 && daConsegnare===0;
+    return {nome, cliente:d.cliente||{}, statue:d.statue||[], pagamenti:d.pagamenti||[], note:d.note||'', tot, inc, res, stato, prossima, archiviata:!!d.archiviata, daConsegnare, tuttoConsegnato,
+      fase:d.fase||'', tecnica:d.tecnica||'', assegnato:d.assegnato||'', dim:d.dim||'', scadenza:d.scadenza||''};
   });
 }
+
+/* Solo commesse non archiviate — usate in dashboard, pagamenti, previsioni, AI */
+function ordiniAttivi(){ return tuttiGliOrdini().filter(o=>!o.archiviata); }
 
 /* ═══════════════════════════════════════════════════
    DASHBOARD
 ═══════════════════════════════════════════════════ */
 function refreshDashboard(){
-  const ordini = tuttiGliOrdini();
+  const ordini = ordiniAttivi();
   const oggi = new Date(); oggi.setHours(0,0,0,0);
 
   // Greeting
@@ -1064,15 +1459,16 @@ function refreshDashboard(){
 
   // KPIs
   const aperti = ordini.filter(o=>o.stato!=='saldato');
+  const daLavorare = aperti.filter(o=>o.daConsegnare>0);
   const totRes = ordini.reduce((s,o)=>s+o.res,0);
   const totOrd = ordini.reduce((s,o)=>s+o.tot,0);
-  const scadUrgenti = aperti.filter(o=>{
+  const scadUrgenti = daLavorare.filter(o=>{
     if(!o.prossima) return false;
     const d=new Date(o.prossima); d.setHours(0,0,0,0);
     return Math.round((d-oggi)/864e5)<=7;
   });
 
-  document.getElementById('k-attivi').textContent = aperti.length;
+  document.getElementById('k-attivi').textContent = daLavorare.length;
   document.getElementById('k-attivi-sub').className = 'kpi-sub '+(scadUrgenti.length>0?'warn':'');
   document.getElementById('k-attivi-sub').textContent = scadUrgenti.length>0 ? scadUrgenti.length+' in scadenza 7gg' : 'nessuna urgenza';
   document.getElementById('k-residuo').textContent = fmtShort(totRes);
@@ -1094,15 +1490,15 @@ function refreshDashboard(){
   const nbR = document.getElementById('nav-badge-residuo');
   nbR.style.display = inRitardo.length>0 ? 'inline' : 'none';
 
-  // Task list
+  // Task list — solo commesse con voci ancora da produrre
   const taskList = document.getElementById('task-list');
-  const urgenti = aperti.sort((a,b)=>{
+  const urgenti = daLavorare.slice().sort((a,b)=>{
     const da = a.prossima ? new Date(a.prossima) : new Date('9999-01-01');
     const db = b.prossima ? new Date(b.prossima) : new Date('9999-01-01');
     return da-db;
   }).slice(0,5);
   if(!urgenti.length){
-    taskList.innerHTML = '<div class="empty"><i class="ti ti-mood-happy"></i><p>Nessuna commessa aperta</p></div>';
+    taskList.innerHTML = '<div class="empty"><i class="ti ti-mood-happy"></i><p>Niente da produrre oggi</p></div>';
   } else {
     const urgCount = urgenti.filter(o=>{
       if(!o.prossima) return false;
@@ -1120,7 +1516,7 @@ function refreshDashboard(){
       const dateLabel = o.prossima ? (isOverdue?'<span style="color:var(--red)">Scaduta '+fmtDate(o.prossima)+'</span>':'consegna '+fmtDate(o.prossima)) : 'nessuna data';
       return `<div class="task-row">
         <div class="task-left">
-          <div class="task-name" style="cursor:pointer" onclick="apriCommessa('${esc(o.nome)}')">${esc(o.nome)}</div>
+          <div class="task-name" style="cursor:pointer" data-open="${esc(o.nome)}">${esc(o.nome)}</div>
           <div class="task-sub">${esc(o.cliente?.nome||'—')} · ${fmt(o.res)} residuo</div>
           <div class="prog-wrap"><div class="prog-bar" style="width:${pct}%;background:${color}"></div></div>
         </div>
@@ -1142,7 +1538,7 @@ function refreshDashboard(){
     pagList.innerHTML = conRes.map(o=>{
       const isOver = o.prossima && new Date(o.prossima)<oggi;
       const dueTxt = o.prossima ? fmtDate(o.prossima) : 'nessuna data';
-      return `<div class="client-row" onclick="apriCommessa('${esc(o.nome)}')">
+      return `<div class="client-row" data-open="${esc(o.nome)}">
         <div>
           <div class="client-name">${esc(o.cliente?.nome||o.nome)}</div>
           <div class="client-due${isOver?' overdue':''}">${isOver?'⚠ Scaduto ':'Consegna: '}${dueTxt}</div>
@@ -1167,7 +1563,7 @@ function buildForecastBars(barsId, labelsId, ordini, pastMonths, futureMonths){
   }
   // Real income per month from pagamenti
   const realMap = {};
-  tuttiGliOrdini().forEach(o=>{
+  ordiniAttivi().forEach(o=>{
     (o.pagamenti||[]).forEach(p=>{
       if(!p.data||!p.importo) return;
       const d = new Date(p.data);
@@ -1217,7 +1613,7 @@ function setFiltro(f){
 }
 
 function renderTabella(ordini){
-  ordini = ordini||tuttiGliOrdini();
+  ordini = ordini||ordiniAttivi();
   const q = (document.getElementById('dash-search')?.value||'').toLowerCase();
   const rows = ordini.filter(o=>{
     const mQ = !q || o.nome.toLowerCase().includes(q)||(o.cliente?.nome||'').toLowerCase().includes(q);
@@ -1235,7 +1631,7 @@ function renderTabella(ordini){
   tbody.innerHTML = rows.map(o=>{
     const pct = o.tot>0 ? Math.round(o.inc/o.tot*100) : 0;
     const bc = o.stato==='saldato'?'var(--green)':o.stato==='parziale'?'var(--blue)':'var(--amber)';
-    return `<tr class="clickable" onclick="apriCommessa('${esc(o.nome)}')">
+    return `<tr class="clickable" data-open="${esc(o.nome)}">
       <td style="font-weight:500;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(o.nome)}</td>
       <td style="color:var(--text2)">${esc(o.cliente?.nome||'—')}</td>
       <td style="color:var(--text3)">${fmtDate(o.cliente?.data)}</td>
@@ -1252,7 +1648,7 @@ function renderTabella(ordini){
    PAGE: PAGAMENTI
 ═══════════════════════════════════════════════════ */
 function refreshPagamenti(){
-  const ordini = tuttiGliOrdini();
+  const ordini = ordiniAttivi();
   const oggi = new Date(); oggi.setHours(0,0,0,0);
   const conRes = ordini.filter(o=>o.res>0).sort((a,b)=>b.res-a.res);
   const totRes = conRes.reduce((s,o)=>s+o.res,0);
@@ -1273,7 +1669,7 @@ function refreshPagamenti(){
   tbody.innerHTML = conRes.map(o=>{
     const isOver = o.prossima && new Date(o.prossima)<oggi;
     const dateColor = isOver ? 'var(--red)' : 'var(--text2)';
-    return `<tr class="clickable" onclick="apriCommessa('${esc(o.nome)}')">
+    return `<tr class="clickable" data-open="${esc(o.nome)}">
       <td style="font-weight:500">${esc(o.nome)}</td>
       <td>${esc(o.cliente?.nome||'—')}</td>
       <td style="font-family:var(--mono);font-size:11px">${esc(o.cliente?.tel||'—')}</td>
@@ -1290,7 +1686,7 @@ function refreshPagamenti(){
    PAGE: PREVISIONI
 ═══════════════════════════════════════════════════ */
 function refreshPrevisioni(){
-  const ordini = tuttiGliOrdini();
+  const ordini = ordiniAttivi();
   const oggi = new Date(); oggi.setHours(0,0,0,0);
   const thisMonth = oggi.getMonth(), thisYear = oggi.getFullYear();
   const nextMonth = new Date(thisYear, thisMonth+1, 1);
@@ -1323,7 +1719,7 @@ function refreshPrevisioni(){
     const d=new Date(o.prossima); d.setHours(0,0,0,0);
     const diff=Math.round((d-oggi)/864e5);
     const urgColor = diff<=7?'var(--amber)':diff<=30?'var(--blue)':'var(--text2)';
-    return `<tr class="clickable" onclick="apriCommessa('${esc(o.nome)}')">
+    return `<tr class="clickable" data-open="${esc(o.nome)}">
       <td style="font-weight:500">${esc(o.nome)}</td>
       <td>${esc(o.cliente?.nome||'—')}</td>
       <td style="color:${urgColor}">${fmtDate(o.prossima)} <span style="font-size:10px;color:var(--text3)">(${diff}gg)</span></td>
@@ -1339,7 +1735,13 @@ function refreshPrevisioni(){
 function apriCommessa(nome){
   showPage('commesse');
   caricaListaOrdini();
-  document.getElementById('ord-sel').value = nome;
+  const sel = document.getElementById('ord-sel');
+  if(![...sel.options].some(o=>o.value===nome)){   // commessa archiviata: aggiungi opzione
+    const opt = document.createElement('option');
+    opt.value = nome; opt.textContent = nome+' (archiviata)';
+    sel.appendChild(opt);
+  }
+  sel.value = nome;
   onSelChange();
   window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -1362,7 +1764,7 @@ function confermaNuovo(){
   const nome = document.getElementById('nuovo-input').value.trim().toUpperCase();
   if(!nome){ alert('Inserisci il nome della commessa'); return; }
   if(localStorage.getItem(storageKey(nome))){ alert('Esiste già una commessa con questo nome'); return; }
-  localStorage.setItem(storageKey(nome), JSON.stringify({cliente:{nome:'',tel:'',data:today},statue:[],pagamenti:[],note:''}));
+  localStorage.setItem(storageKey(nome), JSON.stringify({cliente:{nome:'',tel:'',data:today},statue:[],pagamenti:[],note:'',fase:'',tecnica:'',assegnato:'',dim:'',scadenza:''}));
   document.getElementById('nuovo-input').value = '';
   document.getElementById('nuovo-input').style.display = 'none';
   document.getElementById('btn-conferma').style.display = 'none';
@@ -1412,6 +1814,8 @@ function renderPannello(dati){
   document.getElementById('pag-body').innerHTML = '';
   (dati?.statue?.length ? dati.statue : [{}]).forEach(s=>_addStatuaRow(s));
   (dati?.pagamenti?.length ? dati.pagamenti : [{}]).forEach(p=>_addPagRow(p));
+  popolaSelectProgetto(dati);
+  aggiornaBtnArchivia(!!dati?.archiviata);
   aggiornaTotali();
 }
 
@@ -1424,9 +1828,14 @@ function _addStatuaRow(s){
     <td><input type="number" value="${s.qty||1}" min="1" style="width:52px;text-align:center" oninput="aggiornaTotali()"></td>
     <td><input type="number" value="${s.prezzo||''}" placeholder="0.00" step="0.01" oninput="aggiornaTotali()"></td>
     <td><input type="date" value="${s.consegna||''}"></td>
+    <td style="text-align:center"><label class="consegna-chk"><input type="checkbox" ${s.consegnato?'checked':''} onchange="onConsegnaToggle(this)"><span>${s.consegnato?'Consegnato':'Da consegnare'}</span></label></td>
     <td class="row-total">€ 0,00</td>
     <td><button class="btn-del" onclick="this.closest('tr').remove();aggiornaTotali()">×</button></td>`;
   document.getElementById('statue-body').appendChild(tr);
+}
+function onConsegnaToggle(cb){
+  const span = cb.parentElement.querySelector('span');
+  if(span) span.textContent = cb.checked ? 'Consegnato' : 'Da consegnare';
 }
 
 function aggPag(){ _addPagRow({}); }
@@ -1477,7 +1886,7 @@ function raccogliDati(){
   const statue = [];
   document.querySelectorAll('#statue-body tr').forEach(tr=>{
     const ins = tr.querySelectorAll('input');
-    statue.push({desc:ins[0].value,qty:ins[1].value,prezzo:ins[2].value,consegna:ins[3].value});
+    statue.push({desc:ins[0].value,qty:ins[1].value,prezzo:ins[2].value,consegna:ins[3].value,consegnato:ins[4]?ins[4].checked:false});
   });
   const pagamenti = [];
   document.querySelectorAll('#pag-body tr').forEach(tr=>{
@@ -1485,9 +1894,16 @@ function raccogliDati(){
     const sels = tr.querySelectorAll('select');
     pagamenti.push({data:ins[0].value,tipo:sels[0].value,metodo:sels[1].value,importo:ins[1].value,note:ins[2].value});
   });
+  let archiviata = false;
+  try{ archiviata = !!(JSON.parse(localStorage.getItem(storageKey(ordineAttivo))||'{}').archiviata); }catch(e){}
   return {
     cliente:{nome:document.getElementById('cl-nome').value,tel:document.getElementById('cl-tel').value,data:document.getElementById('cl-data').value},
-    statue, pagamenti, note:document.getElementById('note-ordine').value
+    statue, pagamenti, note:document.getElementById('note-ordine').value, archiviata,
+    fase:      document.getElementById('pr-fase').value,
+    tecnica:   document.getElementById('pr-tecnica').value,
+    assegnato: document.getElementById('pr-assegnato').value,
+    dim:       document.getElementById('pr-dim').value,
+    scadenza:  document.getElementById('pr-scadenza').value
   };
 }
 
@@ -1499,11 +1915,6 @@ async function salva(){
   showToast('Salvato e sincronizzato ✓');
 }
 
-function aggiornaLink(){
-  const base = window.location.href.split('?')[0];
-  document.getElementById('link-val').textContent = base+'?commessa='+encodeURIComponent(ordineAttivo||'');
-}
-
 function copiaRiepilogo(){
   if(!ordineAttivo) return;
   const cl = document.getElementById('cl-nome').value;
@@ -1512,7 +1923,8 @@ function copiaRiepilogo(){
   document.querySelectorAll('#statue-body tr').forEach(tr=>{
     const ins = tr.querySelectorAll('input');
     if(!ins[0].value) return;
-    txt += `• ${ins[0].value} x${ins[1].value} = ${tr.querySelector('.row-total').textContent}\n`;
+    const mark = ins[4] && ins[4].checked ? ' ✓ consegnato' : ' ⏳ da consegnare';
+    txt += `• ${ins[0].value} x${ins[1].value} = ${tr.querySelector('.row-total').textContent}${mark}\n`;
   });
   txt += '\nPAGAMENTI:\n';
   document.querySelectorAll('#pag-body tr').forEach(tr=>{
@@ -1528,10 +1940,7 @@ function copiaRiepilogo(){
    BACKUP / IMPORT
 ═══════════════════════════════════════════════════ */
 function esportaDati(){
-  const backup = {};
-  Object.keys(localStorage).filter(k=>k.startsWith('commessa__')).forEach(k=>{
-    try{ backup[k] = JSON.parse(localStorage.getItem(k)); }catch(e){}
-  });
+  const backup = buildBackup();
   if(!Object.keys(backup).length){ showToast('Nessun dato da esportare','error'); return; }
   const blob = new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});
   const url = URL.createObjectURL(blob);
@@ -1549,7 +1958,7 @@ function importaDati(event){
       const backup = JSON.parse(e.target.result);
       let count = 0;
       Object.keys(backup).forEach(k=>{
-        if(k.startsWith('commessa__')){ localStorage.setItem(k, JSON.stringify(backup[k])); count++; }
+        if(isSyncKey(k)){ localStorage.setItem(k, JSON.stringify(backup[k])); if(k.startsWith('commessa__')) count++; }
       });
       caricaListaOrdini(); refreshDashboard();
       showToast(`Importate ${count} commesse!`);
@@ -1565,173 +1974,116 @@ function importaDati(event){
 function stampaPDF(){
   if(!ordineAttivo) return;
   const dati = raccogliDati();
+  const negozio = getNegozio();
+  const negSub = [negozio.indirizzo, negozio.tel, negozio.piva ? 'P.IVA '+negozio.piva : ''].filter(Boolean).join(' &middot; ');
   const oggi = new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'});
 
+  const eur = n => '€ '+(parseFloat(n)||0).toFixed(2).replace('.',',');
   let tot = 0, inc = 0;
   dati.statue.forEach(s=>{ tot += (parseFloat(s.qty)||0)*(parseFloat(s.prezzo)||0); });
   dati.pagamenti.forEach(p=>{ inc += parseFloat(p.importo)||0; });
   const res = Math.max(0, tot - inc);
-  const stato = res<=0.001 ? 'SALDATO' : inc>0.001 ? 'PARZIALMENTE SALDATO' : 'APERTO';
-  const statoColor = res<=0.001 ? '#166534' : inc>0.001 ? '#1e40af' : '#92400e';
-  const statoBg = res<=0.001 ? '#dcfce7' : inc>0.001 ? '#dbeafe' : '#fef3c7';
-  const pct = tot>0 ? Math.round(inc/tot*100) : 0;
-  const barColor = res<=0 ? '#22c55e' : inc>0 ? '#3b82f6' : '#f59e0b';
+  const saldoLabel = res<=0.001 ? 'SALDATO' : 'SALDO DA PAGARE';
 
-  const righeStatue = dati.statue.filter(s=>s.desc||s.prezzo).map(s=>{
-    const tot_r = (parseFloat(s.qty)||0)*(parseFloat(s.prezzo)||0);
+  const righe = dati.statue.filter(s=>s.desc||s.prezzo).map(s=>{
+    const tr = (parseFloat(s.qty)||0)*(parseFloat(s.prezzo)||0);
     const cons = s.consegna ? s.consegna.split('-').reverse().join('/') : '—';
+    const stato = s.consegnato
+      ? '<span style="color:#15803d;font-weight:600">&#10003; Consegnato</span>'
+      : '<span style="color:#b45309">Da consegnare</span>';
     return `<tr>
-      <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb">${s.desc||'—'}</td>
-      <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:center">${s.qty||1}</td>
-      <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:right">€ ${parseFloat(s.prezzo||0).toFixed(2).replace('.',',')}</td>
-      <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:center">${cons}</td>
-      <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:600">€ ${tot_r.toFixed(2).replace('.',',')}</td>
+      <td class="d">${esc(s.desc||'—')}</td>
+      <td class="c">${esc(s.qty||1)}</td>
+      <td class="r">${eur(s.prezzo)}</td>
+      <td class="c">${cons}</td>
+      <td class="c">${stato}</td>
+      <td class="r b">${eur(tr)}</td>
     </tr>`;
   }).join('');
 
-  const righePag = dati.pagamenti.filter(p=>p.importo).map(p=>{
+  const pagati = dati.pagamenti.filter(p=>p.importo).map(p=>{
     const data = p.data ? p.data.split('-').reverse().join('/') : '—';
-    return `<tr>
-      <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb">${data}</td>
-      <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb">${p.tipo||'—'}</td>
-      <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb">${p.metodo||'—'}</td>
-      <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:600;color:#166534">€ ${parseFloat(p.importo||0).toFixed(2).replace('.',',')}</td>
-      <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;color:#6b7280">${p.note||''}</td>
-    </tr>`;
+    return `<tr><td>${data}</td><td>${esc(p.tipo||'—')}</td><td>${esc(p.metodo||'—')}</td><td class="r b" style="color:#15803d">${eur(p.importo)}</td></tr>`;
   }).join('');
 
-  const noteHtml = dati.note ? `
-    <div style="margin-top:28px">
-      <div style="font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #e5e7eb">Note ordine</div>
-      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px 16px;font-size:13px;color:#374151;line-height:1.6;white-space:pre-wrap">${dati.note}</div>
-    </div>` : '';
-
-  const resColor = res>0 ? '#c2410c' : '#166534';
-  const resBg = res>0 ? '#fff7ed' : '#f0fdf4';
-  const resBorder = res>0 ? '#fed7aa' : '#bbf7d0';
+  const noteHtml = dati.note ? `<div class="note"><div class="lbl">Note</div><div>${esc(dati.note)}</div></div>` : '';
 
   const html = `<!DOCTYPE html>
-<html lang="it">
-<head>
-<meta charset="UTF-8">
-<title>Commessa ${ordineAttivo}</title>
+<html lang="it"><head><meta charset="UTF-8"><title>Ricevuta ordine — ${esc(ordineAttivo)}</title>
 <style>
-  @page{margin:20mm 18mm;size:A4}
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#111827;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  @media screen{body{max-width:800px;margin:0 auto;padding:32px 24px;background:#f3f4f6}}
-  @media screen{.page{background:#fff;padding:36px 40px;border-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,.12)}}
-  .header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:18px;border-bottom:2.5px solid #1e3a5f;margin-bottom:22px}
-  .brand{color:#1e3a5f;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
-  .brand-sub{color:#9ca3af;font-size:10px;margin-top:3px}
-  .commessa-title{font-size:20px;font-weight:800;color:#1e3a5f;letter-spacing:.02em;margin-bottom:5px}
-  .stato-badge{display:inline-block;padding:3px 12px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.04em}
-  .section-title{font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.08em;margin-bottom:9px;margin-top:22px;padding-bottom:5px;border-bottom:1px solid #e5e7eb}
-  .cliente-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;background:#f8faff;border:1px solid #dbeafe;border-radius:8px;padding:13px 16px}
-  .cliente-field label{font-size:9px;color:#9ca3af;display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em}
-  .cliente-field span{font-size:13px;font-weight:600;color:#111827}
-  .kpi-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:14px 0}
-  .kpi{border-radius:8px;padding:13px 15px;border:1px solid}
-  .kpi label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;opacity:.7}
-  .kpi span{font-size:19px;font-weight:800;display:block;font-variant-numeric:tabular-nums}
-  .kpi.tot{background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8}
-  .kpi.inc{background:#f0fdf4;border-color:#bbf7d0;color:#166534}
-  .progress-bar-wrap{background:rgba(0,0,0,.1);border-radius:99px;height:5px;overflow:hidden;margin-top:8px}
-  .progress-bar-fill{height:100%;border-radius:99px;width:${pct}%}
-  .pct-label{font-size:9px;margin-top:3px;opacity:.65}
-  table{width:100%;border-collapse:collapse;font-size:12px}
-  thead tr{background:#1e3a5f}
-  thead th{padding:9px 10px;text-align:left;font-weight:500;font-size:10px;color:#fff;letter-spacing:.04em;text-transform:uppercase}
-  tbody td{color:#374151}
-  tbody tr:nth-child(even) td{background:#f9fafb}
-  tfoot tr td{padding:10px 10px;border-top:2px solid #d1d5db;font-size:12px;font-weight:700;background:#f3f4f6}
-  .footer{margin-top:32px;padding-top:12px;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between;font-size:10px;color:#9ca3af}
-  .print-btn{display:block;text-align:center;margin-top:24px}
-  .print-btn button{background:#1e3a5f;color:#fff;border:none;border-radius:8px;padding:11px 28px;font-size:13px;cursor:pointer;font-family:inherit;font-weight:600}
-  @media print{.print-btn{display:none}}
-</style>
-</head>
+@page{margin:16mm;size:A4}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#1a1a1a;line-height:1.5;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+@media screen{body{max-width:760px;margin:24px auto;padding:0 16px;background:#f3f4f6}}
+.doc{background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:28px 32px}
+.top{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #1a1a1a;padding-bottom:14px;margin-bottom:18px}
+.shop{font-size:16px;font-weight:700}
+.shop small{display:block;font-weight:400;color:#777;font-size:11px;margin-top:2px}
+.doctitle{text-align:right}
+.doctitle .t{font-size:12px;font-weight:700;letter-spacing:.08em;color:#666}
+.doctitle .n{font-size:18px;font-weight:800;margin-top:2px}
+.doctitle .dt{font-size:11px;color:#999;margin-top:2px}
+.cli{display:flex;gap:36px;flex-wrap:wrap;margin-bottom:8px}
+.cli div span{display:block;font-size:9px;color:#999;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
+.cli div b{font-weight:600;font-size:13px}
+.sec{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#999;margin:22px 0 8px}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:#fff;background:#1a1a1a;padding:7px 8px;font-weight:600}
+td{padding:7px 8px;border-bottom:1px solid #eee;font-size:12px;color:#333}
+td.c{text-align:center}td.r{text-align:right}td.b{font-weight:600}td.d{font-weight:500;color:#1a1a1a}
+.tot{margin-top:14px;margin-left:auto;width:280px}
+.tot div{display:flex;justify-content:space-between;padding:5px 2px;font-size:13px}
+.tot .line{border-top:1px solid #e5e7eb}
+.tot .big{border-top:2px solid #1a1a1a;margin-top:4px;padding-top:9px;font-size:15px;font-weight:800}
+.tot .big.due{color:#b45309}.tot .big.ok{color:#15803d}
+.note{margin-top:22px;background:#faf9f7;border:1px solid #eee;border-radius:6px;padding:12px 14px;font-size:12px;white-space:pre-wrap}
+.note .lbl{font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:#999;margin-bottom:4px}
+.foot{margin-top:28px;text-align:center;font-size:11px;color:#999;border-top:1px solid #eee;padding-top:12px}
+.btn{display:block;margin:20px auto 0;background:#1a1a1a;color:#fff;border:none;border-radius:6px;padding:10px 26px;font-size:13px;cursor:pointer}
+@media print{.btn{display:none}body{background:#fff}.doc{border:none;border-radius:0;padding:0}}
+</style></head>
 <body>
-<div class="page">
-
-<div class="header">
-  <div>
-    <div class="brand">Gestionale Commesse Statue</div>
-    <div class="brand-sub">Riepilogo commessa &middot; stampato il ${oggi}</div>
+<div class="doc">
+  <div class="top">
+    <div class="shop">${esc(negozio.nome||'Riepilogo ordine')}<small>${negSub ? negSub+'<br>' : ''}Ricevuta per il cliente</small></div>
+    <div class="doctitle"><div class="t">ORDINE</div><div class="n">${esc(ordineAttivo)}</div><div class="dt">${oggi}</div></div>
   </div>
-  <div style="text-align:right">
-    <div class="commessa-title">${ordineAttivo}</div>
-    <span class="stato-badge" style="background:${statoBg};color:${statoColor};border:1px solid ${statoColor}40">${stato}</span>
+
+  <div class="cli">
+    <div><span>Cliente</span><b>${esc(dati.cliente.nome||'—')}</b></div>
+    <div><span>Telefono</span><b>${esc(dati.cliente.tel||'—')}</b></div>
+    <div><span>Data ordine</span><b>${dati.cliente.data?dati.cliente.data.split('-').reverse().join('/'):'—'}</b></div>
   </div>
-</div>
 
-<div class="section-title">Dati cliente</div>
-<div class="cliente-grid">
-  <div class="cliente-field"><label>Nome e cognome</label><span>${dati.cliente.nome||'—'}</span></div>
-  <div class="cliente-field"><label>Telefono / WhatsApp</label><span>${dati.cliente.tel||'—'}</span></div>
-  <div class="cliente-field"><label>Data apertura ordine</label><span>${dati.cliente.data?dati.cliente.data.split('-').reverse().join('/'):'—'}</span></div>
-</div>
+  <div class="sec">Articoli ordinati</div>
+  <table>
+    <thead><tr><th>Descrizione</th><th style="text-align:center">Qtà</th><th style="text-align:right">Prezzo</th><th style="text-align:center">Consegna</th><th style="text-align:center">Stato</th><th style="text-align:right">Totale</th></tr></thead>
+    <tbody>${righe||'<tr><td colspan="6" style="text-align:center;color:#aaa;padding:14px">Nessun articolo</td></tr>'}</tbody>
+  </table>
 
-<div class="kpi-row">
-  <div class="kpi tot"><label>Totale ordine</label><span>€ ${tot.toFixed(2).replace('.',',')}</span></div>
-  <div class="kpi inc"><label>Totale incassato</label><span>€ ${inc.toFixed(2).replace('.',',')}</span></div>
-  <div class="kpi" style="background:${resBg};border-color:${resBorder};color:${resColor}">
-    <label>Saldo residuo</label>
-    <span>€ ${res.toFixed(2).replace('.',',')}</span>
-    <div class="progress-bar-wrap"><div class="progress-bar-fill" style="background:${barColor}"></div></div>
-    <div class="pct-label">${pct}% incassato</div>
+  <div class="tot">
+    <div><span>Totale ordine</span><b>${eur(tot)}</b></div>
+    <div class="line"><span>Acconti / pagamenti</span><b style="color:#15803d">− ${eur(inc)}</b></div>
+    <div class="big ${res>0.001?'due':'ok'}"><span>${saldoLabel}</span><span>${eur(res)}</span></div>
   </div>
+
+  ${pagati ? `<div class="sec">Pagamenti ricevuti</div>
+  <table>
+    <thead><tr><th>Data</th><th>Tipo</th><th>Metodo</th><th style="text-align:right">Importo</th></tr></thead>
+    <tbody>${pagati}</tbody>
+  </table>` : ''}
+
+  ${noteHtml}
+
+  <div class="foot">Grazie! &middot; Documento generato il ${oggi}${dati.cliente.tel?' &middot; '+esc(dati.cliente.tel):''}</div>
 </div>
-
-<div class="section-title">Statue prenotate</div>
-<table>
-  <thead><tr>
-    <th style="width:38%">Descrizione statua</th>
-    <th style="width:7%;text-align:center">Qtà</th>
-    <th style="width:15%;text-align:right">Prezzo</th>
-    <th style="width:16%;text-align:center">Consegna</th>
-    <th style="width:16%;text-align:right">Totale riga</th>
-  </tr></thead>
-  <tbody>${righeStatue||'<tr><td colspan="5" style="padding:12px 10px;color:#9ca3af;text-align:center">Nessuna statua registrata</td></tr>'}</tbody>
-  <tfoot><tr>
-    <td colspan="4" style="text-align:right;color:#6b7280;font-size:11px;font-weight:600">Totale ordine</td>
-    <td style="text-align:right;color:#1d4ed8;font-size:14px">€ ${tot.toFixed(2).replace('.',',')}</td>
-  </tr></tfoot>
-</table>
-
-<div class="section-title">Pagamenti ricevuti</div>
-<table>
-  <thead><tr>
-    <th style="width:12%">Data</th>
-    <th style="width:20%">Tipo pagamento</th>
-    <th style="width:16%">Metodo</th>
-    <th style="width:15%;text-align:right">Importo</th>
-    <th>Note</th>
-  </tr></thead>
-  <tbody>${righePag||'<tr><td colspan="5" style="padding:12px 10px;color:#9ca3af;text-align:center">Nessun pagamento registrato</td></tr>'}</tbody>
-  <tfoot><tr>
-    <td colspan="3" style="text-align:right;color:#6b7280;font-size:11px;font-weight:600">Totale incassato</td>
-    <td style="text-align:right;color:#166534;font-size:14px">€ ${inc.toFixed(2).replace('.',',')}</td>
-    <td></td>
-  </tr></tfoot>
-</table>
-
-${noteHtml}
-
-<div class="footer">
-  <span>Commessa: <strong>${ordineAttivo}</strong> &nbsp;&middot;&nbsp; ${dati.cliente.nome||''} ${dati.cliente.tel?'&nbsp;&middot;&nbsp;'+dati.cliente.tel:''}</span>
-  <span>Generato il ${oggi}</span>
-</div>
-
-</div>
-<div class="print-btn"><button onclick="window.print()">🖨&nbsp; Stampa / Salva PDF</button></div>
-</body>
-</html>`;
+<button class="btn" onclick="window.print()">🖨 Stampa / Salva PDF</button>
+</body></html>`;
 
   const win = window.open('', '_blank');
   win.document.write(html);
   win.document.close();
-  setTimeout(()=>win.print(), 500);
+  setTimeout(()=>win.print(), 400);
 }
 
 /* ═══════════════════════════════════════════════════
@@ -1743,22 +2095,30 @@ setFiltro('tutti');
 caricaListaOrdini();
 refreshDashboard();
 updateAIUI();
+aggiornaBadgeProd();
+
+// Board produzione: apertura commessa e cambio fase rapido (event delegation)
+document.getElementById('prod-board').addEventListener('click', e=>{
+  const el = e.target.closest('[data-open]');
+  if(el) apriCommessa(el.dataset.open);
+});
+document.getElementById('prod-board').addEventListener('change', e=>{
+  const sel = e.target.closest('[data-fase-for]');
+  if(sel) cambiaFaseRapida(sel.dataset.faseFor, sel.value);
+});
+
+// Apertura commessa da tabelle/liste (event delegation, regge i nomi con apostrofo)
+['archived-list','task-list','pagamenti-list','dash-tbody','pag-tbody','prev-tbody'].forEach(id=>{
+  const c = document.getElementById(id);
+  if(c) c.addEventListener('click', e=>{
+    const el = e.target.closest('[data-open]');
+    if(el && c.contains(el)) apriCommessa(el.dataset.open);
+  });
+});
 
 // Auto-run AI if key is present (after 1s)
 if(geminiKey){
   setTimeout(()=>runAIAnalysis(), 1200);
-}
-
-// Deep link
-const params = new URLSearchParams(window.location.search);
-const qc = params.get('commessa');
-if(qc){
-  if(!localStorage.getItem(storageKey(qc)))
-    localStorage.setItem(storageKey(qc), JSON.stringify({cliente:{nome:'',tel:'',data:today},statue:[{}],pagamenti:[{}],note:''}));
-  caricaListaOrdini();
-  showPage('commesse');
-  document.getElementById('ord-sel').value = qc;
-  onSelChange();
 }
 </script>
 </body>
