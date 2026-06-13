@@ -492,8 +492,11 @@ td input[type=number]{text-align:right}
     <button class="nav-item" id="nav-config" onclick="apriConfig()">
       <i class="ti ti-adjustments"></i> Fasi, stampanti e persone
     </button>
-    <div class="nav-section" id="archived-section" style="display:none">Archiviate</div>
-    <div id="archived-list"></div>
+    <button class="nav-item" id="archived-section" onclick="toggleArchived()" style="display:none;justify-content:space-between">
+      <span style="display:flex;align-items:center;gap:9px"><i class="ti ti-archive" style="font-size:15px"></i> Archiviate</span>
+      <i class="ti ti-chevron-down" id="archived-chevron" style="font-size:12px;color:var(--text3)"></i>
+    </button>
+    <div id="archived-list" style="display:none"></div>
   </nav>
 
   <!-- MAIN CONTENT -->
@@ -1614,9 +1617,18 @@ function renderArchiviate(){
   const sec = document.getElementById('archived-section');
   if(!wrap) return;
   const arch = tuttiGliOrdini().filter(o=>o.archiviata).sort((a,b)=>a.nome.localeCompare(b.nome));
-  if(!arch.length){ wrap.innerHTML=''; if(sec) sec.style.display='none'; return; }
-  if(sec) sec.style.display='block';
-  wrap.innerHTML = arch.map(o=>`<button class="nav-item" data-open="${esc(o.nome)}" title="${esc(o.nome)}"><i class="ti ti-archive"></i> <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left">${esc(o.nome)}</span></button>`).join('');
+  if(!arch.length){ wrap.innerHTML=''; wrap.style.display='none'; if(sec) sec.style.display='none'; return; }
+  if(sec) sec.style.display='flex';
+  wrap.innerHTML = arch.map(o=>`<button class="nav-item" data-open="${esc(o.nome)}" title="${esc(o.nome)}" style="padding-left:22px"><i class="ti ti-archive" style="font-size:13px;opacity:.6"></i> <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left">${esc(o.nome)}</span></button>`).join('');
+  // lista resta chiusa di default — non toccare display
+}
+
+function toggleArchived(){
+  const list = document.getElementById('archived-list');
+  const chev = document.getElementById('archived-chevron');
+  const open = list.style.display !== 'none';
+  list.style.display = open ? 'none' : 'block';
+  if(chev) chev.className = 'ti ti-chevron-'+(open?'down':'up');
 }
 
 async function toggleArchivia(){
