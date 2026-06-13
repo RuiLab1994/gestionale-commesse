@@ -506,29 +506,6 @@ td input[type=number]{text-align:right}
         <p id="dash-date" style="font-size:12px;color:var(--text2)"></p>
       </div>
 
-      <!-- KPI -->
-      <div class="kpi-row">
-        <div class="kpi">
-          <div class="kpi-label"><i class="ti ti-hammer"></i> Lavori attivi</div>
-          <div class="kpi-val" id="k-attivi">0</div>
-          <div class="kpi-sub" id="k-attivi-sub"></div>
-        </div>
-        <div class="kpi danger">
-          <div class="kpi-label"><i class="ti ti-clock-exclamation"></i> Da incassare</div>
-          <div class="kpi-val" id="k-residuo">€ 0</div>
-          <div class="kpi-sub danger" id="k-residuo-sub"></div>
-        </div>
-        <div class="kpi success">
-          <div class="kpi-label"><i class="ti ti-trending-up"></i> Prev. 30 giorni</div>
-          <div class="kpi-val" id="k-prev">€ 0</div>
-          <div class="kpi-sub up" id="k-prev-sub"></div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-label"><i class="ti ti-check"></i> Totale ordini</div>
-          <div class="kpi-val" id="k-tot">0</div>
-          <div class="kpi-sub" id="k-tot-sub"></div>
-        </div>
-      </div>
 
       <!-- TIMELINE PRINCIPALE -->
       <div class="panel" style="margin-bottom:14px">
@@ -551,84 +528,6 @@ td input[type=number]{text-align:right}
         </div>
       </div>
 
-      <div class="grid-2">
-        <!-- Cosa fare oggi -->
-        <div class="panel">
-          <div class="panel-hdr">
-            <span class="panel-title"><i class="ti ti-hammer"></i> A cosa lavorare oggi</span>
-            <span class="badge badge-urgent" id="badge-urgenti" style="display:none">0 urgenti</span>
-          </div>
-          <div id="task-list"><div class="empty"><i class="ti ti-mood-happy"></i><p>Nessuna commessa aperta</p></div></div>
-        </div>
-
-        <!-- Chi deve pagare -->
-        <div class="panel">
-          <div class="panel-hdr">
-            <span class="panel-title"><i class="ti ti-receipt"></i> Chi ti deve pagare</span>
-            <span class="badge badge-open" id="badge-residuo-tot">€ 0</span>
-          </div>
-          <div id="pagamenti-list"><div class="empty"><i class="ti ti-mood-happy"></i><p>Nessun residuo</p></div></div>
-        </div>
-      </div>
-
-      <div class="grid-2">
-        <!-- Forecast chart -->
-        <div class="panel">
-          <div class="panel-hdr">
-            <span class="panel-title"><i class="ti ti-chart-bar"></i> Previsione entrate</span>
-          </div>
-          <div class="forecast-wrap">
-            <div class="forecast-bars" id="forecast-bars"></div>
-            <div class="forecast-labels" id="forecast-labels"></div>
-          </div>
-          <div class="forecast-legend">
-            <div class="f-legend-item"><div class="f-legend-dot" style="background:var(--blue)"></div> Effettivo</div>
-            <div class="f-legend-item"><div class="f-legend-dot" style="background:var(--border2);border:0.5px dashed var(--border2)"></div> Stimato AI</div>
-          </div>
-        </div>
-
-        <!-- AI Panel -->
-        <div class="ai-panel">
-          <div class="ai-hdr">
-            <div class="ai-pulse"></div>
-            <span class="ai-title">Analisi AI</span>
-            <span class="ai-badge">Gemini 2.5</span>
-            <button class="ai-refresh-btn" id="ai-refresh-btn" onclick="runAIAnalysis()" style="margin-left:8px"><i class="ti ti-refresh"></i> Aggiorna</button>
-          </div>
-          <div id="ai-output">
-            <div class="ai-setup-hint" onclick="apriSetupAI()" id="ai-setup-hint">
-              <i class="ti ti-key" style="color:var(--blue)"></i>
-              <span>Configura la tua API key Gemini per attivare l'analisi intelligente →</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Tabella commesse -->
-      <div class="panel">
-        <div class="panel-hdr">
-          <span class="panel-title"><i class="ti ti-table"></i> Tutte le commesse</span>
-          <button class="btn" onclick="refreshDashboard()" style="padding:4px 10px;font-size:11px"><i class="ti ti-refresh"></i></button>
-        </div>
-        <div class="search-bar">
-          <input class="search-input" id="dash-search" placeholder="Cerca commessa o cliente..." oninput="renderTabella()">
-          <button class="filter-btn on" id="fb-all" onclick="setFiltro('tutti')">Tutti</button>
-          <button class="filter-btn" id="fb-aperto" onclick="setFiltro('aperto')">Aperti</button>
-          <button class="filter-btn" id="fb-parziale" onclick="setFiltro('parziale')">Parziali</button>
-          <button class="filter-btn" id="fb-saldato" onclick="setFiltro('saldato')">Saldati</button>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr>
-              <th>Commessa</th><th>Cliente</th><th>Apertura</th>
-              <th class="r">Totale</th><th class="r">Incassato</th><th class="r">Residuo</th>
-              <th style="min-width:80px">Avanzamento</th><th>Stato</th>
-            </tr></thead>
-            <tbody id="dash-tbody"></tbody>
-          </table>
-        </div>
-        <div class="empty" id="dash-empty" style="display:none"><i class="ti ti-mood-empty"></i><p>Nessuna commessa trovata</p></div>
-      </div>
     </div>
 
     <!-- ══ PAGE: COMMESSE ══ -->
@@ -1537,25 +1436,58 @@ function refreshAIPage(){
 /* ═══════════════════════════════════════════════════
    GOOGLE AUTH
 ═══════════════════════════════════════════════════ */
+function _setLoggedIn(token){
+  accessToken = token;
+  try{
+    sessionStorage.setItem('gis_token', token);
+    sessionStorage.setItem('gis_token_ts', Date.now().toString());
+  }catch(e){}
+  document.getElementById('login-overlay').classList.add('hidden');
+  document.getElementById('drive-status').className = 'chip chip-on';
+  document.getElementById('drive-status').innerHTML = '<i class="ti ti-cloud-check"></i> Drive connesso';
+  document.getElementById('btn-sync').style.display = 'inline-flex';
+  document.getElementById('btn-logout').style.display = 'inline-flex';
+}
+
+function _restoreToken(){
+  try{
+    const t  = sessionStorage.getItem('gis_token');
+    const ts = parseInt(sessionStorage.getItem('gis_token_ts')||'0');
+    if(t && (Date.now()-ts) < 55*60*1000) return t; // valido per 55 minuti
+  }catch(e){}
+  return null;
+}
+
 function avviaLogin(){
   const client = google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID, scope: SCOPES,
     callback: async(resp)=>{
       if(resp.error){ showToast('Errore login: '+resp.error,'error'); return; }
-      accessToken = resp.access_token;
-      document.getElementById('login-overlay').classList.add('hidden');
-      document.getElementById('drive-status').className = 'chip chip-on';
-      document.getElementById('drive-status').innerHTML = '<i class="ti ti-cloud-check"></i> Drive connesso';
-      document.getElementById('btn-sync').style.display = 'inline-flex';
-      document.getElementById('btn-logout').style.display = 'inline-flex';
+      _setLoggedIn(resp.access_token);
       await sincronizzaDrive();
     }
   });
   client.requestAccessToken();
 }
 
+function _tentaSilentLogin(){
+  try{
+    const client = google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID, scope: SCOPES, prompt:'',
+      callback: async(resp)=>{
+        if(!resp.error){
+          _setLoggedIn(resp.access_token);
+          await sincronizzaDrive();
+        }
+      }
+    });
+    client.requestAccessToken({prompt:''});
+  }catch(e){}
+}
+
 function logout(){
   if(!confirm('Esci dall\'account Google?')) return;
+  try{ sessionStorage.removeItem('gis_token'); sessionStorage.removeItem('gis_token_ts'); }catch(e){}
   accessToken = null; driveFileId = null;
   document.getElementById('login-overlay').classList.remove('hidden');
   document.getElementById('drive-status').className = 'chip chip-off';
@@ -2390,6 +2322,20 @@ caricaListaOrdini();
 refreshDashboard();
 updateAIUI();
 aggiornaBadgeProd();
+
+// Ripristina sessione Drive al ricaricamento (evita logout su F5)
+const _savedToken = _restoreToken();
+if(_savedToken){
+  _setLoggedIn(_savedToken);
+  sincronizzaDrive();
+} else {
+  // Tentativo silenzioso dopo caricamento script Google
+  if(typeof google !== 'undefined' && google.accounts){
+    _tentaSilentLogin();
+  } else {
+    window.addEventListener('load', ()=>{ if(typeof google!=='undefined') _tentaSilentLogin(); });
+  }
+}
 
 // Board produzione: apertura commessa e cambio fase rapido (event delegation)
 document.getElementById('prod-board').addEventListener('click', e=>{
