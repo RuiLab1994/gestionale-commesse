@@ -1017,7 +1017,7 @@ function buildTimeline(){
   const container = document.getElementById('tl-container');
   if(!container) return;
 
-  const ordini = ordiniAttivi().filter(o => o.stato !== 'saldato');
+  const ordini = ordiniAttivi().filter(o => o.stato !== 'saldato' && !o.tuttoConsegnato);
   const oggi = new Date(); oggi.setHours(0,0,0,0);
 
   if(!ordini.length){
