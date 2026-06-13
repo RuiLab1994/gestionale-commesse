@@ -1677,100 +1677,14 @@ function refreshDashboard(){
   document.getElementById('dash-greeting').textContent = greet();
   document.getElementById('dash-date').textContent = new Date().toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'});
 
-  // KPIs
+  // Badge nav sidebar
   const aperti = ordini.filter(o=>o.stato!=='saldato');
-  const daLavorare = aperti.filter(o=>o.daConsegnare>0);
-  const totRes = ordini.reduce((s,o)=>s+o.res,0);
-  const totOrd = ordini.reduce((s,o)=>s+o.tot,0);
-  const scadUrgenti = daLavorare.filter(o=>{
-    if(!o.prossima) return false;
-    const d=new Date(o.prossima); d.setHours(0,0,0,0);
-    return Math.round((d-oggi)/864e5)<=7;
-  });
-
-  document.getElementById('k-attivi').textContent = daLavorare.length;
-  document.getElementById('k-attivi-sub').className = 'kpi-sub '+(scadUrgenti.length>0?'warn':'');
-  document.getElementById('k-attivi-sub').textContent = scadUrgenti.length>0 ? scadUrgenti.length+' in scadenza 7gg' : 'nessuna urgenza';
-  document.getElementById('k-residuo').textContent = fmtShort(totRes);
   const inRitardo = aperti.filter(o=>o.prossima && new Date(o.prossima)<oggi && o.res>0);
-  document.getElementById('k-residuo-sub').textContent = inRitardo.length>0 ? inRitardo.length+' clienti in ritardo' : '';
-
-  // Previsione 30gg
-  const in30 = new Date(oggi); in30.setDate(in30.getDate()+30);
-  const prev30 = aperti.filter(o=>o.prossima && new Date(o.prossima)<=in30).reduce((s,o)=>s+o.res,0);
-  document.getElementById('k-prev').textContent = fmtShort(prev30);
-  document.getElementById('k-prev-sub').textContent = 'da consegne programmate';
-  document.getElementById('k-tot').textContent = ordini.length;
-  document.getElementById('k-tot-sub').textContent = ordini.filter(o=>o.stato==='saldato').length+' saldati';
-
-  // Badge nav
   const nbA = document.getElementById('nav-badge-aperte');
-  nbA.textContent = aperti.length;
-  nbA.style.display = aperti.length>0 ? 'inline' : 'none';
+  if(nbA){ nbA.textContent = aperti.length; nbA.style.display = aperti.length>0?'inline':'none'; }
   const nbR = document.getElementById('nav-badge-residuo');
-  nbR.style.display = inRitardo.length>0 ? 'inline' : 'none';
+  if(nbR) nbR.style.display = inRitardo.length>0?'inline':'none';
 
-  // Task list — solo commesse con voci ancora da produrre
-  const taskList = document.getElementById('task-list');
-  const urgenti = daLavorare.slice().sort((a,b)=>{
-    const da = a.prossima ? new Date(a.prossima) : new Date('9999-01-01');
-    const db = b.prossima ? new Date(b.prossima) : new Date('9999-01-01');
-    return da-db;
-  }).slice(0,5);
-  if(!urgenti.length){
-    taskList.innerHTML = '<div class="empty"><i class="ti ti-mood-happy"></i><p>Niente da produrre oggi</p></div>';
-  } else {
-    const urgCount = urgenti.filter(o=>{
-      if(!o.prossima) return false;
-      const d=new Date(o.prossima); d.setHours(0,0,0,0);
-      return Math.round((d-oggi)/864e5)<=3;
-    }).length;
-    const bu = document.getElementById('badge-urgenti');
-    bu.style.display = urgCount>0 ? 'inline-flex':'none';
-    bu.textContent = urgCount+' urgenti';
-    taskList.innerHTML = urgenti.map(o=>{
-      const pct = o.tot>0 ? Math.round(o.inc/o.tot*100) : 0;
-      const isOverdue = o.prossima && new Date(o.prossima)<oggi;
-      const isNear = o.prossima && !isOverdue && Math.round((new Date(o.prossima)-oggi)/864e5)<=7;
-      const color = isOverdue?'var(--red)':isNear?'var(--amber)':'var(--blue)';
-      const dateLabel = o.prossima ? (isOverdue?'<span style="color:var(--red)">Scaduta '+fmtDate(o.prossima)+'</span>':'consegna '+fmtDate(o.prossima)) : 'nessuna data';
-      return `<div class="task-row">
-        <div class="task-left">
-          <div class="task-name" style="cursor:pointer" data-open="${esc(o.nome)}">${esc(o.nome)}</div>
-          <div class="task-sub">${esc(o.cliente?.nome||'—')} · ${fmt(o.res)} residuo</div>
-          <div class="prog-wrap"><div class="prog-bar" style="width:${pct}%;background:${color}"></div></div>
-        </div>
-        <div class="task-right">
-          <div class="task-date">${dateLabel}</div>
-          <div style="margin-top:4px"><span class="badge" style="font-size:9px">${pct}%</span></div>
-        </div>
-      </div>`;
-    }).join('');
-  }
-
-  // Pagamenti list
-  const pagList = document.getElementById('pagamenti-list');
-  const conRes = ordini.filter(o=>o.res>0).sort((a,b)=>b.res-a.res).slice(0,5);
-  document.getElementById('badge-residuo-tot').textContent = fmtShort(totRes);
-  if(!conRes.length){
-    pagList.innerHTML = '<div class="empty"><i class="ti ti-mood-happy"></i><p>Nessun residuo aperto</p></div>';
-  } else {
-    pagList.innerHTML = conRes.map(o=>{
-      const isOver = o.prossima && new Date(o.prossima)<oggi;
-      const dueTxt = o.prossima ? fmtDate(o.prossima) : 'nessuna data';
-      return `<div class="client-row" data-open="${esc(o.nome)}">
-        <div>
-          <div class="client-name">${esc(o.cliente?.nome||o.nome)}</div>
-          <div class="client-due${isOver?' overdue':''}">${isOver?'⚠ Scaduto ':'Consegna: '}${dueTxt}</div>
-        </div>
-        <div class="client-amount">${fmt(o.res)}</div>
-      </div>`;
-    }).join('');
-  }
-
-  // Forecast bars
-  buildForecastBars('forecast-bars','forecast-labels', ordini, 4, 3);
-  renderTabella(ordini);
   updateAIUI();
   buildTimeline();
 }
