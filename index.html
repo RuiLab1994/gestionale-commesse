@@ -26,6 +26,18 @@
   --sidebar:220px; --topbar:52px;
   --transition:all .18s ease;
 }
+/* ── LIGHT THEME ── */
+[data-theme="light"]{
+  --bg:#f6f8fa; --bg2:#ffffff; --bg3:#f0f2f5; --bg4:#e4e8ec;
+  --border:#d0d7de; --border2:#aab3bb;
+  --text:#1a1f2e; --text2:#57606a; --text3:#8c959f;
+  --blue:#0969da; --blue-dim:#0550ae; --blue-bg:#f5f8ff;
+  --green:#1a7f37; --green-bg:rgba(26,127,55,.1);
+  --amber:#9a6700; --amber-bg:rgba(154,103,0,.1);
+  --red:#cf222e; --red-bg:rgba(207,34,46,.1);
+  --purple:#8250df; --purple-bg:rgba(130,80,223,.1);
+  --ai:#0969da; --ai-bg:rgba(9,105,218,.05);
+}
 html{font-size:13px}
 body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;line-height:1.5}
 
@@ -312,6 +324,40 @@ td input[type=number]{text-align:right}
 .ai-setup-hint{background:rgba(88,166,255,.06);border:0.5px solid rgba(88,166,255,.15);border-radius:var(--radius);padding:10px 14px;font-size:11px;color:var(--text2);display:flex;align-items:center;gap:8px;margin-top:8px;cursor:pointer;transition:var(--transition)}
 .ai-setup-hint:hover{background:rgba(88,166,255,.12)}
 
+/* ── GANTT TIMELINE ── */
+.tl-outer{position:relative;overflow:hidden}
+.tl-header-row{display:flex;align-items:flex-end;padding-bottom:6px;border-bottom:1px solid var(--border);margin-bottom:0}
+.tl-lbl-col{width:210px;flex-shrink:0;font-size:10px;color:var(--text3);padding-right:12px;font-weight:500}
+.tl-dates-area{flex:1;position:relative;height:22px}
+.tl-wk-tick{position:absolute;bottom:0;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;pointer-events:none}
+.tl-wk-line{width:1px;height:6px;background:var(--border)}
+.tl-wk-label{font-size:9px;color:var(--text3);white-space:nowrap;margin-bottom:1px;line-height:1}
+.tl-wk-label.is-month{color:var(--text2);font-weight:600;font-size:10px}
+.tl-today-head{position:absolute;bottom:0;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;pointer-events:none;z-index:3}
+.tl-today-dot{width:7px;height:7px;border-radius:50%;background:var(--red);margin-bottom:0}
+.tl-today-lbl{font-size:9px;color:var(--red);font-weight:600;white-space:nowrap;margin-bottom:2px}
+.tl-rows{position:relative}
+.tl-row{display:flex;align-items:center;border-bottom:0.5px solid var(--border);height:40px;cursor:pointer;transition:background .12s}
+.tl-row:hover{background:var(--bg3)}
+.tl-row:last-child{border-bottom:none}
+.tl-row-lbl{width:210px;flex-shrink:0;padding-right:12px}
+.tl-row-nm{font-size:12px;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tl-row-cl{font-size:10px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px}
+.tl-row-track{flex:1;position:relative;height:100%}
+.tl-vline{position:absolute;top:0;width:1px;height:100%;pointer-events:none}
+.tl-vline-today{background:var(--red);opacity:.35;z-index:2}
+.tl-vline-wk{background:var(--border);opacity:.5;z-index:1}
+.tl-bar{position:absolute;top:50%;transform:translateY(-50%);height:18px;border-radius:4px;overflow:hidden;min-width:3px;z-index:3}
+.tl-bar-fill{position:absolute;inset:0;opacity:.22;border-radius:4px}
+.tl-bar-border{position:absolute;inset:0;border-radius:4px;border:1.5px solid currentColor;opacity:.6}
+.tl-work-fill{position:absolute;top:0;right:0;height:100%;border-radius:0 3px 3px 0;opacity:.7}
+.tl-bar-tag{position:absolute;right:100%;top:50%;transform:translateY(-50%);white-space:nowrap;font-size:9px;font-weight:600;padding-right:4px;z-index:4}
+.tl-nodate-lbl{font-size:11px;color:var(--text3);padding:0 8px;font-style:italic}
+.tl-sec-hdr{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;padding:8px 0 4px 0;border-top:1px solid var(--border);margin-top:4px}
+.tl-legend{display:flex;gap:12px;margin-top:8px;flex-wrap:wrap;padding-top:8px;border-top:0.5px solid var(--border)}
+.tl-legend-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text3)}
+.tl-legend-swatch{width:14px;height:8px;border-radius:2px}
+
 /* ── RESPONSIVE ── */
 @media(max-width:768px){
   :root{--sidebar:0px}
@@ -409,6 +455,7 @@ td input[type=number]{text-align:right}
       <button class="topbar-btn sync" id="btn-sync" onclick="sincronizzaDrive()" style="display:none"><i class="ti ti-refresh"></i> Sync</button>
       <button class="topbar-btn" onclick="apriNegozio()" title="Dati del negozio"><i class="ti ti-building-store"></i></button>
       <button class="topbar-btn" onclick="apriSetupAI()" title="Configura Gemini AI"><i class="ti ti-brain"></i></button>
+      <button class="topbar-btn" id="btn-theme" onclick="toggleTheme()" title="Cambia tema"><i class="ti ti-sun"></i></button>
       <button class="topbar-btn" onclick="esportaDati()"><i class="ti ti-download"></i> Backup</button>
       <button class="topbar-btn" onclick="document.getElementById('import-input').click()"><i class="ti ti-upload"></i></button>
       <input type="file" id="import-input" accept=".json" style="display:none" onchange="importaDati(event)">
@@ -480,6 +527,27 @@ td input[type=number]{text-align:right}
           <div class="kpi-label"><i class="ti ti-check"></i> Totale ordini</div>
           <div class="kpi-val" id="k-tot">0</div>
           <div class="kpi-sub" id="k-tot-sub"></div>
+        </div>
+      </div>
+
+      <!-- TIMELINE PRINCIPALE -->
+      <div class="panel" style="margin-bottom:14px">
+        <div class="panel-hdr">
+          <span class="panel-title"><i class="ti ti-timeline"></i> Timeline scadenze</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span id="tl-range-lbl" style="font-size:10px;color:var(--text3)"></span>
+            <button class="topbar-btn" style="padding:3px 8px;font-size:11px" onclick="refreshDashboard()" title="Aggiorna"><i class="ti ti-refresh"></i></button>
+          </div>
+        </div>
+        <div id="tl-container">
+          <div class="empty"><i class="ti ti-calendar-event"></i><p>Caricamento...</p></div>
+        </div>
+        <div class="tl-legend">
+          <div class="tl-legend-item"><div class="tl-legend-swatch" style="background:var(--red)"></div> Scaduta / urgente (&lt;3gg)</div>
+          <div class="tl-legend-item"><div class="tl-legend-swatch" style="background:var(--amber)"></div> In scadenza (3–14gg)</div>
+          <div class="tl-legend-item"><div class="tl-legend-swatch" style="background:var(--blue)"></div> Entro 30gg</div>
+          <div class="tl-legend-item"><div class="tl-legend-swatch" style="background:var(--green)"></div> Oltre 30gg</div>
+          <div class="tl-legend-item"><div class="tl-legend-swatch" style="background:var(--purple);opacity:.9"></div> Blocco lavoro (ore stimate)</div>
         </div>
       </div>
 
@@ -615,6 +683,7 @@ td input[type=number]{text-align:right}
             <div class="field"><label>Tecnica / Stampante</label><select id="pr-tecnica"></select></div>
             <div class="field"><label>Assegnato a</label><select id="pr-assegnato"></select></div>
             <div class="field"><label>Dimensione (cm)</label><input type="text" id="pr-dim" placeholder="es. 35 · 30/40 · 80+BASE"></div>
+            <div class="field"><label>Ore di lavoro stimate <span style="color:var(--text3);font-weight:400">(per timeline)</span></label><input type="number" id="pr-orelavoro" min="0" step="0.5" placeholder="es. 24"></div>
           </div>
         </div>
         <!-- Statue -->
@@ -872,6 +941,8 @@ function popolaSelectProgetto(dati){
   document.getElementById('pr-tecnica').innerHTML   = blank + opts(cfg.tecniche, dati?.tecnica||'');
   document.getElementById('pr-assegnato').innerHTML = blank + opts(cfg.persone,  dati?.assegnato||'');
   document.getElementById('pr-dim').value      = dati?.dim||'';
+  const olEl = document.getElementById('pr-orelavoro');
+  if(olEl) olEl.value = dati?.orelavoro||'';
   aggiornaFaseColore();
 }
 function aggiornaFaseColore(){
@@ -918,6 +989,200 @@ function salvaConfig(){
     const raw=localStorage.getItem(storageKey(ordineAttivo));
     popolaSelectProgetto(raw?JSON.parse(raw):null);
   }
+}
+
+/* ═══════════════════════════════════════════════════
+   TEMA CHIARO / SCURO
+═══════════════════════════════════════════════════ */
+function initTheme(){
+  const t = localStorage.getItem('theme') || 'dark';
+  applyTheme(t);
+}
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme', t);
+  const btn = document.getElementById('btn-theme');
+  if(btn) btn.innerHTML = t==='light' ? '<i class="ti ti-moon"></i>' : '<i class="ti ti-sun"></i>';
+}
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+  const next = cur === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('theme', next);
+  applyTheme(next);
+}
+
+/* ═══════════════════════════════════════════════════
+   GANTT TIMELINE
+═══════════════════════════════════════════════════ */
+function buildTimeline(){
+  const container = document.getElementById('tl-container');
+  if(!container) return;
+
+  const ordini = ordiniAttivi().filter(o => o.stato !== 'saldato');
+  const oggi = new Date(); oggi.setHours(0,0,0,0);
+
+  if(!ordini.length){
+    container.innerHTML = '<div class="empty"><i class="ti ti-calendar-off"></i><p>Nessuna commessa attiva da mostrare</p></div>';
+    document.getElementById('tl-range-lbl').textContent = '';
+    return;
+  }
+
+  // Separa con e senza scadenza
+  const conData = ordini.filter(o => o.scadenza || o.prossima)
+    .sort((a,b) => ((a.scadenza||a.prossima)||'').localeCompare((b.scadenza||b.prossima)||''));
+  const senzaData = ordini.filter(o => !o.scadenza && !o.prossima);
+
+  // Range temporale
+  let rangeStart = new Date(oggi); rangeStart.setDate(rangeStart.getDate() - 5);
+  let rangeEnd = new Date(oggi); rangeEnd.setDate(rangeEnd.getDate() + 90);
+  conData.forEach(o => {
+    const d = new Date(o.scadenza || o.prossima);
+    if(d > rangeEnd){ rangeEnd = new Date(d); rangeEnd.setDate(rangeEnd.getDate()+14); }
+  });
+
+  const totalMs = rangeEnd - rangeStart;
+  const todayPct = (oggi - rangeStart) / totalMs * 100;
+
+  const mNames = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+
+  // Calcola posizioni dei tick settimanali
+  const ticks = [];
+  let d = new Date(rangeStart);
+  const dow = d.getDay(); // allinea a lunedì
+  d.setDate(d.getDate() + (dow === 0 ? 1 : dow === 1 ? 0 : 8 - dow));
+  while(d <= rangeEnd){
+    const pct = (d - rangeStart) / totalMs * 100;
+    if(pct >= 0 && pct <= 100){
+      const isFirstOfMonth = d.getDate() <= 7;
+      ticks.push({pct, label: isFirstOfMonth ? mNames[d.getMonth()] : d.getDate()+'', isMonth: isFirstOfMonth});
+    }
+    const next = new Date(d); next.setDate(next.getDate()+7); d = next;
+  }
+
+  // Header ticks HTML
+  const ticksHtml = ticks.map(t => `
+    <div class="tl-wk-tick" style="left:${t.pct.toFixed(2)}%;bottom:0">
+      <div class="tl-wk-label${t.isMonth?' is-month':''}">${t.label}</div>
+      <div class="tl-wk-line"></div>
+    </div>`).join('');
+
+  const todayHeadHtml = `<div class="tl-today-head" style="left:${todayPct.toFixed(2)}%;bottom:0">
+    <div class="tl-today-lbl">Oggi</div>
+    <div class="tl-today-dot"></div>
+  </div>`;
+
+  // Vertical lines per ogni row (today + settimane)
+  function vLinesHtml(){
+    const todayLine = `<div class="tl-vline tl-vline-today" style="left:${todayPct.toFixed(2)}%"></div>`;
+    const wkLines = ticks.map(t => `<div class="tl-vline tl-vline-wk" style="left:${t.pct.toFixed(2)}%"></div>`).join('');
+    return todayLine + wkLines;
+  }
+
+  // Colore per urgenza
+  function urgColor(diff){
+    if(diff < 0)   return 'var(--red)';
+    if(diff <= 3)  return 'var(--red)';
+    if(diff <= 14) return 'var(--amber)';
+    if(diff <= 30) return 'var(--blue)';
+    return 'var(--green)';
+  }
+
+  // Righe commesse
+  const rowsHtml = conData.map(o => {
+    const deadline = new Date(o.scadenza || o.prossima); deadline.setHours(0,0,0,0);
+    const diff = Math.round((deadline - oggi) / 864e5);
+    const col = urgColor(diff);
+    const isOverdue = diff < 0;
+
+    // Bar: da apertura (o today se già passata) a deadline
+    const startDate = o.cliente?.data ? new Date(o.cliente.data) : oggi;
+    startDate.setHours(0,0,0,0);
+    const barS = new Date(Math.max(startDate.getTime(), rangeStart.getTime()));
+    const barE = new Date(Math.min(deadline.getTime(), rangeEnd.getTime()));
+
+    let barLeft = (barS - rangeStart) / totalMs * 100;
+    let barWidth = Math.max(0.5, (barE - barS) / totalMs * 100);
+    barLeft = Math.max(0, barLeft);
+
+    // Blocco lavoro (ore lavoro)
+    let workHtml = '';
+    if(o.orelavoro > 0){
+      const workDays = Math.ceil(o.orelavoro / 8);
+      const workStart = new Date(deadline); workStart.setDate(workStart.getDate() - workDays);
+      const wS = new Date(Math.max(workStart.getTime(), barS.getTime()));
+      const wE = barE;
+      if(wS < wE){
+        const wLeft = (wS - barS) / (barE - barS) * 100;
+        const wWidth = (wE - wS) / (barE - barS) * 100;
+        workHtml = `<div class="tl-work-fill" style="left:${wLeft.toFixed(1)}%;width:${wWidth.toFixed(1)}%;background:var(--purple)"></div>`;
+      }
+    }
+
+    // Tag scadenza
+    const diffTxt = isOverdue
+      ? `<span style="color:var(--red)">⚠ ${Math.abs(diff)}gg fa</span>`
+      : diff === 0 ? `<span style="color:var(--red)">Oggi!</span>`
+      : `<span style="color:${col}">${diff}gg</span>`;
+
+    const tagPos = barLeft + barWidth + 1;
+    const showTagRight = tagPos < 88; // mostra a destra se c'è spazio
+
+    return `<div class="tl-row" data-open="${esc(o.nome)}">
+      <div class="tl-row-lbl">
+        <div class="tl-row-nm">${esc(o.nome)}</div>
+        <div class="tl-row-cl">${esc(o.cliente?.nome||'—')}${o.orelavoro>0?' · '+o.orelavoro+'h':''}</div>
+      </div>
+      <div class="tl-row-track">
+        ${vLinesHtml()}
+        <div class="tl-bar" style="left:${barLeft.toFixed(2)}%;width:${barWidth.toFixed(2)}%;color:${col}" title="${esc(o.nome)} — scadenza ${fmtDate(o.scadenza||o.prossima)}">
+          <div class="tl-bar-fill" style="background:${col}"></div>
+          <div class="tl-bar-border"></div>
+          ${workHtml}
+        </div>
+        ${showTagRight
+          ? `<div style="position:absolute;left:${(barLeft+barWidth+0.5).toFixed(2)}%;top:50%;transform:translateY(-50%);font-size:9px;font-weight:600;white-space:nowrap;z-index:5">${diffTxt}</div>`
+          : `<div style="position:absolute;left:${Math.max(0,barLeft-0.5).toFixed(2)}%;top:50%;transform:translate(-100%,-50%);font-size:9px;font-weight:600;white-space:nowrap;z-index:5;padding-right:3px">${diffTxt}</div>`
+        }
+      </div>
+    </div>`;
+  }).join('');
+
+  // Righe senza data
+  const noDatesHtml = senzaData.length ? `
+    <div class="tl-sec-hdr">Senza data di consegna</div>
+    ${senzaData.map(o => `<div class="tl-row" data-open="${esc(o.nome)}">
+      <div class="tl-row-lbl">
+        <div class="tl-row-nm">${esc(o.nome)}</div>
+        <div class="tl-row-cl">${esc(o.cliente?.nome||'—')}</div>
+      </div>
+      <div class="tl-row-track">
+        ${vLinesHtml()}
+        <span class="tl-nodate-lbl">Nessuna scadenza impostata</span>
+      </div>
+    </div>`).join('')}
+  ` : '';
+
+  const rangeLabel = document.getElementById('tl-range-lbl');
+  if(rangeLabel) rangeLabel.textContent = `${fmtDate(rangeStart.toISOString().split('T')[0])} → ${fmtDate(rangeEnd.toISOString().split('T')[0])}`;
+
+  container.innerHTML = `
+    <div class="tl-outer">
+      <div class="tl-header-row">
+        <div class="tl-lbl-col">Commessa / Cliente</div>
+        <div class="tl-dates-area">
+          ${ticksHtml}
+          ${todayHeadHtml}
+        </div>
+      </div>
+      <div class="tl-rows">
+        ${rowsHtml||'<div class="empty"><i class="ti ti-mood-happy"></i><p>Tutte le commesse sono saldate!</p></div>'}
+        ${noDatesHtml}
+      </div>
+    </div>`;
+
+  // Event delegation: click apre commessa
+  container.querySelectorAll('.tl-row[data-open]').forEach(row => {
+    row.addEventListener('click', () => apriCommessa(row.dataset.open));
+  });
 }
 
 /* ═══════════════════════════════════════════════════
@@ -1462,7 +1727,7 @@ function tuttiGliOrdini(){
     const daConsegnare = voci.filter(s=>!s.consegnato).length;
     const tuttoConsegnato = voci.length>0 && daConsegnare===0;
     return {nome, cliente:d.cliente||{}, statue:d.statue||[], pagamenti:d.pagamenti||[], note:d.note||'', tot, inc, res, stato, prossima, archiviata:!!d.archiviata, daConsegnare, tuttoConsegnato,
-      fase:d.fase||'', tecnica:d.tecnica||'', assegnato:d.assegnato||'', dim:d.dim||'', scadenza:d.scadenza||''};
+      fase:d.fase||'', tecnica:d.tecnica||'', assegnato:d.assegnato||'', dim:d.dim||'', scadenza:d.scadenza||'', orelavoro:parseFloat(d.orelavoro)||0};
   });
 }
 
@@ -1575,6 +1840,7 @@ function refreshDashboard(){
   buildForecastBars('forecast-bars','forecast-labels', ordini, 4, 3);
   renderTabella(ordini);
   updateAIUI();
+  buildTimeline();
 }
 
 function buildForecastBars(barsId, labelsId, ordini, pastMonths, futureMonths){
@@ -1791,7 +2057,7 @@ function confermaNuovo(){
   const nome = document.getElementById('nuovo-input').value.trim().toUpperCase();
   if(!nome){ alert('Inserisci il nome della commessa'); return; }
   if(localStorage.getItem(storageKey(nome))){ alert('Esiste già una commessa con questo nome'); return; }
-  localStorage.setItem(storageKey(nome), JSON.stringify({cliente:{nome:'',tel:'',data:today},statue:[],pagamenti:[],note:'',fase:'',tecnica:'',assegnato:'',dim:'',scadenza:''}));
+  localStorage.setItem(storageKey(nome), JSON.stringify({cliente:{nome:'',tel:'',data:today},statue:[],pagamenti:[],note:'',fase:'',tecnica:'',assegnato:'',dim:'',scadenza:'',orelavoro:0}));
   document.getElementById('nuovo-input').value = '';
   document.getElementById('nuovo-input').style.display = 'none';
   document.getElementById('btn-conferma').style.display = 'none';
@@ -1929,7 +2195,8 @@ function raccogliDati(){
     fase:      document.getElementById('pr-fase').value,
     tecnica:   document.getElementById('pr-tecnica').value,
     assegnato: document.getElementById('pr-assegnato').value,
-    dim:       document.getElementById('pr-dim').value
+    dim:       document.getElementById('pr-dim').value,
+    orelavoro: parseFloat(document.getElementById('pr-orelavoro')?.value)||0
   };
 }
 
@@ -2115,6 +2382,7 @@ td.c{text-align:center}td.r{text-align:right}td.b{font-weight:600}td.d{font-weig
 /* ═══════════════════════════════════════════════════
    INIT
 ═══════════════════════════════════════════════════ */
+initTheme();
 document.getElementById('dash-date').textContent = new Date().toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'});
 document.getElementById('dash-greeting').textContent = greet();
 setFiltro('tutti');
