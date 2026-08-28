@@ -369,39 +369,53 @@ td input[type=number]{text-align:right}
 /* ── RESPONSIVE ── */
 @media(max-width:768px){
   :root{--sidebar:0px;--topbar:50px}
-  html{font-size:14px}
-  .sidebar{display:none}
+  html,body{font-size:14px;width:100%;max-width:100%;overflow-x:hidden}
 
-  /* Fix viewport iOS Safari: 100dvh invece di 100vh */
+  /* Layout mobile: flexbox colonna (più affidabile di grid su iOS) */
   #app{
+    display:flex !important;
+    flex-direction:column !important;
+    width:100vw;
     height:100dvh;
-    height:100vh; /* fallback */
-    grid-template-columns:1fr;
-    grid-template-rows:calc(var(--topbar) + env(safe-area-inset-top,0px)) 1fr;
+    height:100vh; /* fallback browsers senza dvh */
     overflow:hidden;
   }
 
-  /* Topbar: safe area notch + nasconde bottoni secondari */
+  .sidebar{display:none !important}
+
+  /* Topbar: occupa tutta la larghezza, flex-shrink:0 */
   .topbar{
+    flex-shrink:0;
+    width:100%;
+    box-sizing:border-box;
     padding:0 10px;
     padding-top:env(safe-area-inset-top,0px);
-    height:calc(var(--topbar) + env(safe-area-inset-top,0px));
-    gap:6px;
+    min-height:calc(var(--topbar) + env(safe-area-inset-top,0px));
+    height:auto;
     align-items:flex-end;
     padding-bottom:6px;
+    gap:6px;
+    /* annulla grid-column desktop */
+    grid-column:unset;
+    grid-row:unset;
   }
   .topbar-brand{width:auto;padding-right:8px}
   .chip{display:none}
   .topbar-btn.backup-btn,.topbar-btn.import-btn{display:none}
 
-  /* Main content: scrollabile, con safe area bottom */
+  /* Main: flex:1 + min-height:0 è fondamentale per scroll su flex */
   .main{
-    grid-column:1;
-    grid-row:2;
+    flex:1 1 0%;
+    min-height:0;
+    width:100%;
+    box-sizing:border-box;
     overflow-y:auto;
     -webkit-overflow-scrolling:touch;
     padding:12px;
     padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));
+    /* annulla grid-column desktop */
+    grid-column:unset;
+    grid-row:unset;
   }
 
   /* Timeline mobile */
@@ -412,7 +426,7 @@ td input[type=number]{text-align:right}
   .tl-row{height:36px}
   .tl-legend{display:none}
 
-  /* Griglia */
+  /* Griglie interne */
   .kpi-row{grid-template-columns:1fr 1fr}
   .grid-2,.grid-3{grid-template-columns:1fr}
   .comm-grid{grid-template-columns:1fr}
@@ -423,21 +437,11 @@ td input[type=number]{text-align:right}
   .btn-row{flex-direction:column;gap:8px}
 
   /* Tabella */
-  .table-wrap{-webkit-overflow-scrolling:touch}
+  .table-wrap{-webkit-overflow-scrolling:touch;overflow-x:auto}
   th,td{font-size:11px;padding:7px 6px}
 
-  /* Touch targets Apple HIG */
+  /* Touch targets Apple HIG 44pt */
   .nav-item,.btn,.topbar-btn,.btn-primary,.btn-add{min-height:44px}
-}
-
-/* Supporto safe-area per tutti i browser */
-@supports(padding:max(0px)){
-  @media(max-width:768px){
-    .topbar{
-      padding-left:max(10px,env(safe-area-inset-left));
-      padding-right:max(10px,env(safe-area-inset-right));
-    }
-  }
 }
 </style>
 </head>

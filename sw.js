@@ -1,4 +1,4 @@
-const CACHE = 'commesse-v2';
+const CACHE = 'commesse-v3';
 const SHELL = [
   './index.html',
   './manifest.json',
