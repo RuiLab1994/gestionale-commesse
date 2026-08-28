@@ -371,52 +371,70 @@ td input[type=number]{text-align:right}
   :root{--sidebar:0px;--topbar:50px}
   html{font-size:14px}
   .sidebar{display:none}
-  #app{grid-template-columns:1fr}
-  .kpi-row{grid-template-columns:1fr 1fr}
-  .grid-2,.grid-3{grid-template-columns:1fr}
-  .comm-grid{grid-template-columns:1fr 1fr}
-  .metrics-row{grid-template-columns:1fr 1fr}
 
-  /* Topbar mobile: nascondi bottoni secondari */
-  .topbar{padding:0 10px;gap:6px}
+  /* Fix viewport iOS Safari: 100dvh invece di 100vh */
+  #app{
+    height:100dvh;
+    height:100vh; /* fallback */
+    grid-template-columns:1fr;
+    grid-template-rows:calc(var(--topbar) + env(safe-area-inset-top,0px)) 1fr;
+    overflow:hidden;
+  }
+
+  /* Topbar: safe area notch + nasconde bottoni secondari */
+  .topbar{
+    padding:0 10px;
+    padding-top:env(safe-area-inset-top,0px);
+    height:calc(var(--topbar) + env(safe-area-inset-top,0px));
+    gap:6px;
+    align-items:flex-end;
+    padding-bottom:6px;
+  }
   .topbar-brand{width:auto;padding-right:8px}
   .chip{display:none}
-  .topbar-btn.backup-btn,.topbar-btn.import-btn,.topbar-btn.negozio-btn,.topbar-btn.ai-btn{display:none}
+  .topbar-btn.backup-btn,.topbar-btn.import-btn{display:none}
 
-  /* Safe area iOS (notch + home indicator) */
-  .topbar{padding-top:env(safe-area-inset-top);height:calc(var(--topbar) + env(safe-area-inset-top))}
-  #app{grid-template-rows:calc(var(--topbar) + env(safe-area-inset-top)) 1fr}
-  .main{padding:14px 12px;padding-bottom:calc(14px + env(safe-area-inset-bottom))}
+  /* Main content: scrollabile, con safe area bottom */
+  .main{
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    padding:12px;
+    padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));
+  }
 
   /* Timeline mobile */
-  .tl-lbl-col{width:100px;font-size:9px}
-  .tl-row-lbl{width:100px;padding-right:6px}
+  .tl-lbl-col{width:110px;font-size:9px}
+  .tl-row-lbl{width:110px;padding-right:6px}
   .tl-row-nm{font-size:11px}
   .tl-row-cl{display:none}
   .tl-row{height:36px}
   .tl-legend{display:none}
 
-  /* Pannello commessa */
+  /* Griglia */
+  .kpi-row{grid-template-columns:1fr 1fr}
+  .grid-2,.grid-3{grid-template-columns:1fr}
   .comm-grid{grid-template-columns:1fr}
   .prod-grid{grid-template-columns:1fr 1fr}
-  .btn-row{flex-direction:column;gap:8px}
-  .btn-row>div{width:100%}
-  .btn-row>div .btn{flex:1;justify-content:center}
+  .metrics-row{grid-template-columns:1fr 1fr}
 
-  /* Tabella responsive */
+  /* Pannello commessa */
+  .btn-row{flex-direction:column;gap:8px}
+
+  /* Tabella */
   .table-wrap{-webkit-overflow-scrolling:touch}
   th,td{font-size:11px;padding:7px 6px}
 
-  /* Touch targets */
-  .nav-item,.btn,.topbar-btn,.btn-primary{min-height:42px}
-  .btn-add{min-height:42px}
+  /* Touch targets Apple HIG */
+  .nav-item,.btn,.topbar-btn,.btn-primary,.btn-add{min-height:44px}
 }
 
-/* iPhone con notch/Dynamic Island */
-@supports(padding-top: env(safe-area-inset-top)){
-  .topbar{
-    padding-left:max(16px, env(safe-area-inset-left));
-    padding-right:max(16px, env(safe-area-inset-right));
+/* Supporto safe-area per tutti i browser */
+@supports(padding:max(0px)){
+  @media(max-width:768px){
+    .topbar{
+      padding-left:max(10px,env(safe-area-inset-left));
+      padding-right:max(10px,env(safe-area-inset-right));
+    }
   }
 }
 </style>
