@@ -368,13 +368,56 @@ td input[type=number]{text-align:right}
 
 /* ── RESPONSIVE ── */
 @media(max-width:768px){
-  :root{--sidebar:0px}
+  :root{--sidebar:0px;--topbar:50px}
+  html{font-size:14px}
   .sidebar{display:none}
   #app{grid-template-columns:1fr}
   .kpi-row{grid-template-columns:1fr 1fr}
   .grid-2,.grid-3{grid-template-columns:1fr}
+  .comm-grid{grid-template-columns:1fr 1fr}
+  .metrics-row{grid-template-columns:1fr 1fr}
+
+  /* Topbar mobile: nascondi bottoni secondari */
+  .topbar{padding:0 10px;gap:6px}
+  .topbar-brand{width:auto;padding-right:8px}
+  .chip{display:none}
+  .topbar-btn.backup-btn,.topbar-btn.import-btn,.topbar-btn.negozio-btn,.topbar-btn.ai-btn{display:none}
+
+  /* Safe area iOS (notch + home indicator) */
+  .topbar{padding-top:env(safe-area-inset-top);height:calc(var(--topbar) + env(safe-area-inset-top))}
+  #app{grid-template-rows:calc(var(--topbar) + env(safe-area-inset-top)) 1fr}
+  .main{padding:14px 12px;padding-bottom:calc(14px + env(safe-area-inset-bottom))}
+
+  /* Timeline mobile */
+  .tl-lbl-col{width:100px;font-size:9px}
+  .tl-row-lbl{width:100px;padding-right:6px}
+  .tl-row-nm{font-size:11px}
+  .tl-row-cl{display:none}
+  .tl-row{height:36px}
+  .tl-legend{display:none}
+
+  /* Pannello commessa */
   .comm-grid{grid-template-columns:1fr}
-  .metrics-row{grid-template-columns:1fr}
+  .prod-grid{grid-template-columns:1fr 1fr}
+  .btn-row{flex-direction:column;gap:8px}
+  .btn-row>div{width:100%}
+  .btn-row>div .btn{flex:1;justify-content:center}
+
+  /* Tabella responsive */
+  .table-wrap{-webkit-overflow-scrolling:touch}
+  th,td{font-size:11px;padding:7px 6px}
+
+  /* Touch targets */
+  .nav-item,.btn,.topbar-btn,.btn-primary{min-height:42px}
+  .btn-add{min-height:42px}
+}
+
+/* iPhone con notch/Dynamic Island */
+@supports(padding-top: env(safe-area-inset-top)){
+  .topbar{
+    padding-left:max(16px, env(safe-area-inset-left));
+    padding-right:max(16px, env(safe-area-inset-right));
+  }
 }
 </style>
 </head>
@@ -464,8 +507,8 @@ td input[type=number]{text-align:right}
       <button class="topbar-btn" onclick="apriNegozio()" title="Dati del negozio"><i class="ti ti-building-store"></i></button>
       <button class="topbar-btn" onclick="apriSetupAI()" title="Configura Gemini AI"><i class="ti ti-brain"></i></button>
       <button class="topbar-btn" id="btn-theme" onclick="toggleTheme()" title="Cambia tema"><i class="ti ti-sun"></i></button>
-      <button class="topbar-btn" onclick="esportaDati()"><i class="ti ti-download"></i> Backup</button>
-      <button class="topbar-btn" onclick="document.getElementById('import-input').click()"><i class="ti ti-upload"></i></button>
+      <button class="topbar-btn backup-btn" onclick="esportaDati()"><i class="ti ti-download"></i></button>
+      <button class="topbar-btn import-btn" onclick="document.getElementById('import-input').click()"><i class="ti ti-upload"></i></button>
       <input type="file" id="import-input" accept=".json" style="display:none" onchange="importaDati(event)">
       <button class="topbar-btn" id="btn-logout" onclick="logout()" style="display:none" title="Esci"><i class="ti ti-logout"></i></button>
     </div>
