@@ -311,6 +311,22 @@ td input[type=number]{text-align:right}
 /* ── AVVISO ── */
 .avviso{background:rgba(210,153,34,.08);border:0.5px solid rgba(210,153,34,.3);border-radius:var(--radius);padding:10px 14px;font-size:12px;color:var(--amber);display:none;align-items:center;gap:8px;margin:10px 0}
 
+/* ── CONSEGNATE DA SALDARE (evidenza dashboard) ── */
+.cds-box{background:linear-gradient(180deg,var(--red-bg),var(--bg2));border:0.5px solid rgba(248,81,73,.35);border-left:3px solid var(--red);border-radius:var(--radius-lg);padding:16px;margin-bottom:14px;box-shadow:0 0 0 1px rgba(248,81,73,.05)}
+.cds-hdr{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.cds-title{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--red)}
+.cds-title i{font-size:15px}
+.cds-sub{font-size:11px;font-weight:400;color:var(--text2)}
+.cds-tot{background:var(--red-bg);color:var(--red);font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;border:0.5px solid rgba(248,81,73,.3);font-family:var(--mono)}
+.cds-list{display:flex;flex-direction:column;gap:6px}
+.cds-row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);padding:9px 12px;cursor:pointer;transition:var(--transition)}
+.cds-row:hover{border-color:rgba(248,81,73,.4);background:var(--bg3)}
+.cds-info{min-width:0;flex:1}
+.cds-nome{font-weight:500;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px}
+.cds-nome .ti-check{font-size:12px;color:var(--green);flex-shrink:0}
+.cds-cli{font-size:11px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cds-res{font-family:var(--mono);font-weight:600;font-size:13px;color:var(--red);flex-shrink:0}
+
 /* ── TOAST ── */
 .toast{position:fixed;bottom:24px;right:24px;background:var(--bg3);border:0.5px solid var(--border2);color:var(--text);border-radius:var(--radius-lg);padding:11px 18px;font-size:12px;display:none;align-items:center;gap:8px;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.4)}
 .toast.show{display:flex}
@@ -606,6 +622,15 @@ td input[type=number]{text-align:right}
       <div class="page-hdr">
         <h1 id="dash-greeting">Buongiorno 👋</h1>
         <p id="dash-date" style="font-size:12px;color:var(--text2)"></p>
+      </div>
+
+      <!-- CONSEGNATE DA SALDARE (evidenza) -->
+      <div class="cds-box" id="cds-box" style="display:none">
+        <div class="cds-hdr">
+          <span class="cds-title"><i class="ti ti-alert-triangle"></i> Consegnate da saldare <span class="cds-sub" id="cds-count"></span></span>
+          <span class="cds-tot" id="cds-tot">€ 0</span>
+        </div>
+        <div class="cds-list" id="cds-list"></div>
       </div>
 
 
@@ -1843,8 +1868,37 @@ function refreshDashboard(){
   const nbR = document.getElementById('nav-badge-residuo');
   if(nbR) nbR.style.display = inRitardo.length>0?'inline':'none';
 
+  renderConsegnateDaSaldare();
   updateAIUI();
   buildTimeline();
+}
+
+/* Riquadro evidenza: commesse consegnate (tutte le voci spuntate) con saldo ancora aperto */
+function renderConsegnateDaSaldare(){
+  const box   = document.getElementById('cds-box');
+  const list  = document.getElementById('cds-list');
+  const totEl = document.getElementById('cds-tot');
+  const cntEl = document.getElementById('cds-count');
+  if(!box||!list) return;
+  const items = ordiniAttivi()
+    .filter(o=>o.tuttoConsegnato && o.res>0)
+    .sort((a,b)=>b.res-a.res);
+  if(!items.length){ box.style.display='none'; list.innerHTML=''; return; }
+  const tot = items.reduce((s,o)=>s+o.res,0);
+  if(totEl) totEl.textContent = fmtShort(tot);
+  if(cntEl) cntEl.textContent = '· ' + items.length + (items.length===1?' commessa':' commesse');
+  list.innerHTML = items.map(o=>`
+    <div class="cds-row" data-open="${esc(o.nome)}" title="Apri commessa">
+      <div class="cds-info">
+        <div class="cds-nome"><i class="ti ti-check"></i> ${esc(o.nome)}</div>
+        <div class="cds-cli">${esc(o.cliente?.nome||'—')}${o.cliente?.tel?' · '+esc(o.cliente.tel):''}</div>
+      </div>
+      <div class="cds-res">${fmt(o.res)}</div>
+    </div>`).join('');
+  list.querySelectorAll('.cds-row[data-open]').forEach(row=>{
+    row.addEventListener('click', ()=>apriCommessa(row.dataset.open));
+  });
+  box.style.display='block';
 }
 
 function buildForecastBars(barsId, labelsId, ordini, pastMonths, futureMonths){
