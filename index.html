@@ -107,6 +107,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .nav-item:hover{background:var(--bg3);color:var(--text)}
 .nav-item.active{background:rgba(88,166,255,.12);color:var(--blue)}
 .nav-item i{font-size:15px;flex-shrink:0}
+/* Riga commessa archiviata: nome (apri) + ripristino rapido */
+.arch-row{display:flex;align-items:center;gap:2px}
+.arch-row .arch-open{flex:1;min-width:0}
+.arch-restore{flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border:none;background:none;border-radius:var(--radius);color:var(--text3);cursor:pointer;transition:var(--transition)}
+.arch-restore:hover{background:var(--green-bg);color:var(--green)}
+.arch-restore i{font-size:15px}
 .nav-badge{margin-left:auto;background:var(--red-bg);color:var(--red);font-size:10px;padding:1px 6px;border-radius:20px;border:0.5px solid rgba(248,81,73,.3)}
 .nav-badge.amber{background:var(--amber-bg);color:var(--amber);border-color:rgba(210,153,34,.3)}
 
@@ -1635,7 +1641,10 @@ function renderArchiviate(){
   const arch = tuttiGliOrdini().filter(o=>o.archiviata).sort((a,b)=>a.nome.localeCompare(b.nome));
   if(!arch.length){ wrap.innerHTML=''; wrap.style.display='none'; if(sec) sec.style.display='none'; return; }
   if(sec) sec.style.display='flex';
-  wrap.innerHTML = arch.map(o=>`<button class="nav-item" data-open="${esc(o.nome)}" title="${esc(o.nome)}" style="padding-left:22px"><i class="ti ti-archive" style="font-size:13px;opacity:.6"></i> <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left">${esc(o.nome)}</span></button>`).join('');
+  wrap.innerHTML = arch.map(o=>`<div class="arch-row">
+      <button class="nav-item arch-open" data-open="${esc(o.nome)}" title="${esc(o.nome)}" style="padding-left:22px"><i class="ti ti-archive" style="font-size:13px;opacity:.6"></i> <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left">${esc(o.nome)}</span></button>
+      <button class="arch-restore" data-restore="${esc(o.nome)}" title="Ripristina commessa"><i class="ti ti-arrow-back-up"></i></button>
+    </div>`).join('');
   // lista resta chiusa di default — non toccare display
 }
 
@@ -1657,6 +1666,22 @@ async function toggleArchivia(){
   caricaListaOrdini();
   aggiornaBtnArchivia(dati.archiviata);
   refreshDashboard();
+}
+
+async function ripristinaCommessa(nome){
+  if(!nome) return;
+  const raw = localStorage.getItem(storageKey(nome));
+  if(!raw){ showToast('Commessa non trovata','error'); return; }
+  if(!confirm(`Ripristinare la commessa "${nome}"? Tornerà tra le commesse attive.`)) return;
+  let d; try{ d = JSON.parse(raw); }catch(e){ showToast('Dati non validi','error'); return; }
+  d.archiviata = false;
+  localStorage.setItem(storageKey(nome), JSON.stringify(d));
+  showToast('Commessa ripristinata ✓');
+  caricaListaOrdini();
+  refreshDashboard();
+  // se è quella aperta nel pannello, aggiorna il pulsante Archivia/Riattiva
+  if(ordineAttivo===nome) aggiornaBtnArchivia(false);
+  await salvaSuDrive();
 }
 
 function aggiornaBtnArchivia(archiviata){
@@ -2319,6 +2344,8 @@ if(_savedToken){
 ['archived-list','task-list','pagamenti-list','dash-tbody','pag-tbody','prev-tbody'].forEach(id=>{
   const c = document.getElementById(id);
   if(c) c.addEventListener('click', e=>{
+    const r = e.target.closest('[data-restore]');
+    if(r && c.contains(r)){ ripristinaCommessa(r.dataset.restore); return; }
     const el = e.target.closest('[data-open]');
     if(el && c.contains(el)) apriCommessa(el.dataset.open);
   });
