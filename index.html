@@ -236,27 +236,6 @@ td input[type=number]{text-align:right}
 .cfg-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
 .cfg-row input[type=color]{width:32px;height:32px;padding:0;border:0.5px solid var(--border);border-radius:6px;background:var(--bg3);cursor:pointer;flex-shrink:0}
 .cfg-row .setup-input{margin:0;flex:1}
-/* ── PAGE PRODUZIONE (BOARD) ── */
-.prod-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
-.filter-sel{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);color:var(--text2);padding:6px 10px;font-size:12px;font-family:var(--font);cursor:pointer;transition:var(--transition)}
-.filter-sel:focus{outline:none;border-color:var(--blue)}
-.prod-group{margin-bottom:18px}
-.prod-group-hdr{display:flex;align-items:center;gap:8px;margin-bottom:10px}
-.fase-pill{display:inline-flex;align-items:center;gap:6px;padding:3px 12px;border-radius:20px;font-size:11px;font-weight:600}
-.prod-group-count{font-size:11px;color:var(--text3)}
-.prod-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
-.prod-card{background:var(--bg2);border:0.5px solid var(--border);border-left:3px solid var(--fasecol,var(--border2));border-radius:var(--radius-lg);padding:12px 14px;transition:var(--transition)}
-.prod-card:hover{border-color:var(--border2)}
-.prod-card-name{font-size:13px;font-weight:600;cursor:pointer;line-height:1.3}
-.prod-card-name:hover{color:var(--blue)}
-.prod-card-cli{font-size:11px;color:var(--text2);margin:3px 0 9px}
-.prod-chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px}
-.prod-chip{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:2px 8px;border-radius:20px;border:0.5px solid var(--border);color:var(--text2);white-space:nowrap}
-.prod-chip i{font-size:12px}
-.prod-card-foot{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.prod-card-foot select{font-size:11px;padding:4px 6px;background:var(--bg3);border:0.5px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--font);max-width:140px}
-.prod-scad{font-size:10px;color:var(--text3);white-space:nowrap}
-.prod-scad.over{color:var(--red);font-weight:500}
 
 /* ── COMMESSA PANEL ── */
 .comm-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px}
@@ -587,10 +566,6 @@ td input[type=number]{text-align:right}
       <i class="ti ti-checklist"></i> Commesse
       <span class="nav-badge amber" id="nav-badge-aperte" style="display:none">0</span>
     </button>
-    <button class="nav-item" id="nav-produzione" onclick="showPage('produzione')">
-      <i class="ti ti-layout-kanban"></i> Produzione
-      <span class="nav-badge amber" id="nav-badge-prod" style="display:none">0</span>
-    </button>
     <div class="nav-section">Finanza</div>
     <button class="nav-item" id="nav-pagamenti" onclick="showPage('pagamenti')">
       <i class="ti ti-coin"></i> Chi deve pagare
@@ -873,23 +848,6 @@ td input[type=number]{text-align:right}
       </div>
     </div>
 
-    <!-- ══ PAGE: PRODUZIONE ══ -->
-    <div class="page" id="page-produzione">
-      <div class="page-hdr">
-        <h1>Produzione</h1>
-        <p>Tutte le commesse per fase di lavorazione — filtra per stampante, persona o "cosa fare"</p>
-      </div>
-      <div class="prod-toolbar">
-        <input class="search-input" id="prod-search" placeholder="Cerca commessa o cliente..." oninput="refreshProduzione()" style="min-width:170px;flex:0 1 220px">
-        <select class="filter-sel" id="prod-fase" onchange="refreshProduzione()"></select>
-        <select class="filter-sel" id="prod-tecnica" onchange="refreshProduzione()"></select>
-        <select class="filter-sel" id="prod-persona" onchange="refreshProduzione()"></select>
-        <button class="filter-btn on" id="prod-tab-tutte" onclick="setProdTab('tutte')">Tutte</button>
-        <button class="filter-btn" id="prod-tab-dafare" onclick="setProdTab('dafare')">Da fare</button>
-      </div>
-      <div id="prod-board"></div>
-      <div class="empty" id="prod-empty" style="display:none"><i class="ti ti-layout-kanban"></i><p>Nessuna commessa con questi filtri</p></div>
-    </div>
 
   </main>
 </div>
@@ -1293,118 +1251,9 @@ function showPage(id){
   document.getElementById('page-'+id)?.classList.add('active');
   document.getElementById('nav-'+id)?.classList.add('active');
   if(id==='dashboard') refreshDashboard();
-  if(id==='produzione') refreshProduzione();
   if(id==='pagamenti') refreshPagamenti();
   if(id==='previsioni') refreshPrevisioni();
   if(id==='ai') refreshAIPage();
-}
-
-/* ═══════════════════════════════════════════════════
-   PAGE: PRODUZIONE (board filtrabile)
-═══════════════════════════════════════════════════ */
-let prodTab = 'tutte';
-function setProdTab(t){
-  prodTab = t;
-  document.getElementById('prod-tab-tutte').classList.toggle('on', t==='tutte');
-  document.getElementById('prod-tab-dafare').classList.toggle('on', t==='dafare');
-  refreshProduzione();
-}
-function ultimaFaseNome(cfg){ cfg=cfg||getConfig(); return cfg.fasi.length ? cfg.fasi[cfg.fasi.length-1].nome : ''; }
-function aggiornaBadgeProd(){
-  const last = ultimaFaseNome();
-  // conta solo le commesse con una fase impostata e non ancora all'ultima fase
-  const n = ordiniAttivi().filter(o=>o.fase && o.fase!==last).length;
-  const b = document.getElementById('nav-badge-prod');
-  if(b){ b.textContent = n; b.style.display = n>0 ? 'inline' : 'none'; }
-}
-function popolaFiltriProduzione(cfg){
-  const setSel = (id,list,blank)=>{
-    const sel = document.getElementById(id);
-    const cur = sel.value;
-    sel.innerHTML = `<option value="">${blank}</option>` + list.map(x=>`<option value="${esc(x.nome)}">${esc(x.nome)}</option>`).join('');
-    sel.value = cur;
-  };
-  setSel('prod-fase', cfg.fasi, '— tutte le fasi —');
-  setSel('prod-tecnica', cfg.tecniche, '— tutte le stampanti —');
-  setSel('prod-persona', cfg.persone, '— tutte le persone —');
-}
-function refreshProduzione(){
-  const cfg = getConfig();
-  popolaFiltriProduzione(cfg);
-  const fFase = document.getElementById('prod-fase').value;
-  const fTec  = document.getElementById('prod-tecnica').value;
-  const fPer  = document.getElementById('prod-persona').value;
-  const q     = (document.getElementById('prod-search').value||'').toLowerCase();
-  const last  = ultimaFaseNome(cfg);
-
-  const ordini = ordiniAttivi().filter(o=>{
-    if(q && !(o.nome.toLowerCase().includes(q) || (o.cliente?.nome||'').toLowerCase().includes(q))) return false;
-    if(fTec && o.tecnica!==fTec) return false;
-    if(fPer && o.assegnato!==fPer) return false;
-    if(prodTab==='dafare' && o.fase===last) return false;
-    return true;
-  });
-
-  aggiornaBadgeProd();
-
-  let gruppi = cfg.fasi.map(f=>({nome:f.nome, col:f.col}));
-  if(fFase) gruppi = gruppi.filter(g=>g.nome===fFase);
-
-  let html = '', tot = 0;
-  gruppi.forEach(g=>{
-    const items = ordini.filter(o=>o.fase===g.nome);
-    if(!items.length) return;
-    tot += items.length;
-    html += prodGruppoHtml(g.nome, g.col, items, cfg);
-  });
-  if(!fFase){
-    const senza = ordini.filter(o=>!o.fase);
-    if(senza.length){ tot += senza.length; html += prodGruppoHtml('Senza fase', '', senza, cfg); }
-  }
-  document.getElementById('prod-board').innerHTML = html;
-  document.getElementById('prod-empty').style.display = tot ? 'none' : 'block';
-}
-function prodGruppoHtml(nome, col, items, cfg){
-  const pill = `<span class="fase-pill" style="background:${col?col+'22':'var(--bg3)'};color:${col||'var(--text2)'};border:0.5px solid ${col||'var(--border)'}">${esc(nome)}</span>`;
-  const cards = items.map(o=>prodCardHtml(o, cfg)).join('');
-  return `<div class="prod-group">
-    <div class="prod-group-hdr">${pill}<span class="prod-group-count">${items.length}</span></div>
-    <div class="prod-cards">${cards}</div>
-  </div>`;
-}
-function prodCardHtml(o, cfg){
-  const tecCol  = (cfg.tecniche.find(t=>t.nome===o.tecnica)||{}).col || '';
-  const perCol  = (cfg.persone.find(p=>p.nome===o.assegnato)||{}).col || '';
-  const faseCol = (cfg.fasi.find(f=>f.nome===o.fase)||{}).col || 'var(--border2)';
-  const oggi = new Date(); oggi.setHours(0,0,0,0);
-  const scad = o.scadenza || o.prossima;
-  const over = scad && new Date(scad) < oggi;
-  const scadHtml = scad ? `<span class="prod-scad${over?' over':''}">${over?'⚠ ':''}${fmtDate(scad)}</span>` : '<span></span>';
-  const chips = [];
-  if(o.tecnica)   chips.push(`<span class="prod-chip" style="border-color:${tecCol};color:${tecCol||'var(--text2)'}"><i class="ti ti-printer"></i>${esc(o.tecnica)}</span>`);
-  if(o.assegnato) chips.push(`<span class="prod-chip" style="border-color:${perCol};color:${perCol||'var(--text2)'}"><i class="ti ti-user"></i>${esc(o.assegnato)}</span>`);
-  if(o.dim)       chips.push(`<span class="prod-chip"><i class="ti ti-ruler-2"></i>${esc(o.dim)}</span>`);
-  const faseOpts = `<option value="">— fase —</option>` + cfg.fasi.map(f=>`<option value="${esc(f.nome)}"${o.fase===f.nome?' selected':''}>${esc(f.nome)}</option>`).join('');
-  return `<div class="prod-card" style="--fasecol:${faseCol}">
-    <div class="prod-card-name" data-open="${esc(o.nome)}">${esc(o.nome)}</div>
-    <div class="prod-card-cli">${esc(o.cliente?.nome||'—')}${o.res>0?' · '+fmt(o.res)+' residuo':''}</div>
-    <div class="prod-chips">${chips.join('')}</div>
-    <div class="prod-card-foot">
-      <select data-fase-for="${esc(o.nome)}" title="Cambia fase">${faseOpts}</select>
-      ${scadHtml}
-    </div>
-  </div>`;
-}
-async function cambiaFaseRapida(nome, fase){
-  const raw = localStorage.getItem(storageKey(nome));
-  if(!raw) return;
-  let d; try{ d = JSON.parse(raw); }catch(e){ return; }
-  d.fase = fase;
-  localStorage.setItem(storageKey(nome), JSON.stringify(d));
-  showToast('Fase aggiornata' + (fase?': '+fase:''));
-  refreshProduzione();
-  if(ordineAttivo===nome){ const s=document.getElementById('pr-fase'); if(s){ s.value=fase; aggiornaFaseColore(); } }
-  await salvaSuDrive();
 }
 
 /* ═══════════════════════════════════════════════════
@@ -2001,7 +1850,11 @@ function renderTabella(ordini){
 function refreshPagamenti(){
   const ordini = ordiniAttivi();
   const oggi = new Date(); oggi.setHours(0,0,0,0);
-  const conRes = ordini.filter(o=>o.res>0).sort((a,b)=>b.res-a.res);
+  const conRes = ordini.filter(o=>o.res>0).sort((a,b)=>{
+    // Priorità: prima le commesse già consegnate ma non saldate, poi quelle col saldo più alto
+    if(a.tuttoConsegnato !== b.tuttoConsegnato) return a.tuttoConsegnato ? -1 : 1;
+    return b.res - a.res;
+  });
   const totRes = conRes.reduce((s,o)=>s+o.res,0);
   const scaduti = conRes.filter(o=>o.prossima && new Date(o.prossima)<oggi);
   const inScad = conRes.filter(o=>{
@@ -2028,7 +1881,7 @@ function refreshPagamenti(){
       <td class="r mono" style="color:var(--green)">${fmt(o.inc)}</td>
       <td class="r mono" style="color:var(--red);font-weight:600">${fmt(o.res)}</td>
       <td style="color:${dateColor}">${isOver?'⚠ ':''}${fmtDate(o.prossima)}</td>
-      <td>${o.stato==='parziale'?'<span class="badge badge-partial">Parziale</span>':'<span class="badge badge-open">Aperto</span>'}</td>
+      <td>${o.tuttoConsegnato?'<span class="badge badge-done" style="margin-right:4px">Consegnato</span>':''}${o.stato==='parziale'?'<span class="badge badge-partial">Parziale</span>':'<span class="badge badge-open">Aperto</span>'}</td>
     </tr>`;
   }).join('');
 }
@@ -2447,7 +2300,6 @@ setFiltro('tutti');
 caricaListaOrdini();
 refreshDashboard();
 updateAIUI();
-aggiornaBadgeProd();
 
 // Ripristina sessione Drive al ricaricamento (evita logout su F5)
 const _savedToken = _restoreToken();
@@ -2462,16 +2314,6 @@ if(_savedToken){
     window.addEventListener('load', ()=>{ if(typeof google!=='undefined') _tentaSilentLogin(); });
   }
 }
-
-// Board produzione: apertura commessa e cambio fase rapido (event delegation)
-document.getElementById('prod-board').addEventListener('click', e=>{
-  const el = e.target.closest('[data-open]');
-  if(el) apriCommessa(el.dataset.open);
-});
-document.getElementById('prod-board').addEventListener('change', e=>{
-  const sel = e.target.closest('[data-fase-for]');
-  if(sel) cambiaFaseRapida(sel.dataset.faseFor, sel.value);
-});
 
 // Apertura commessa da tabelle/liste (event delegation, regge i nomi con apostrofo)
 ['archived-list','task-list','pagamenti-list','dash-tbody','pag-tbody','prev-tbody'].forEach(id=>{
