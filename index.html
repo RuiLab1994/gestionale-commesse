@@ -1846,7 +1846,8 @@ function renderTabella(ordini){
   });
   const tbody = document.getElementById('dash-tbody');
   const empty = document.getElementById('dash-empty');
-  if(!rows.length){ tbody.innerHTML=''; empty.style.display='block'; return; }
+  if(!tbody) return;   // tabella non presente in questa versione: nessuna operazione
+  if(!rows.length){ tbody.innerHTML=''; if(empty) empty.style.display='block'; return; }
   empty.style.display = 'none';
   const bmap = {
     aperto:`<span class="badge badge-open"><span class="dot dot-open"></span> Aperto</span>`,
@@ -2321,7 +2322,6 @@ td.c{text-align:center}td.r{text-align:right}td.b{font-weight:600}td.d{font-weig
 initTheme();
 document.getElementById('dash-date').textContent = new Date().toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'});
 document.getElementById('dash-greeting').textContent = greet();
-setFiltro('tutti');
 caricaListaOrdini();
 refreshDashboard();
 updateAIUI();
@@ -2341,7 +2341,7 @@ if(_savedToken){
 }
 
 // Apertura commessa da tabelle/liste (event delegation, regge i nomi con apostrofo)
-['archived-list','task-list','pagamenti-list','dash-tbody','pag-tbody','prev-tbody'].forEach(id=>{
+['archived-list','task-list','pagamenti-list','pag-tbody','prev-tbody'].forEach(id=>{
   const c = document.getElementById(id);
   if(c) c.addEventListener('click', e=>{
     const r = e.target.closest('[data-restore]');
