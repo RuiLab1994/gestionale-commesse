@@ -367,6 +367,47 @@ td input[type=number]{text-align:right}
 .tl-legend-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text3)}
 .tl-legend-swatch{width:14px;height:8px;border-radius:2px}
 
+/* ── KANBAN SETTIMANALE ── */
+.kb-nav{display:flex;align-items:center;gap:6px}
+.kb-range{font-size:12px;font-weight:600;color:var(--text);min-width:150px;text-align:center}
+.kb-today-btn{font-size:11px;padding:4px 10px}
+.kb-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+.kb-col{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);padding:7px 7px 10px;min-height:120px;display:flex;flex-direction:column;gap:7px}
+.kb-col.is-today{border-color:var(--blue);box-shadow:inset 0 0 0 1px rgba(88,166,255,.35);background:rgba(88,166,255,.04)}
+.kb-col.is-sat{background:var(--amber-bg);border-color:rgba(210,153,34,.3)}
+.kb-col.is-sat .kb-col-dow{color:var(--amber)}
+/* Post-it settimana corrente: più presenti/leggibili (protagonisti) */
+.kb-cards .kb-card{padding:8px 9px}
+.kb-cards .kb-card-nm{font-size:12px}
+/* Sezione "settimana prossima": compatta, chip viola di contrasto (chiaramente secondaria) */
+.kb-next-sec{margin:9px -3px 0;border-radius:8px;background:rgba(188,140,255,.08);border:1px solid rgba(188,140,255,.3);overflow:hidden}
+.kb-next-hdr{display:flex;align-items:center;gap:4px;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#fff;background:var(--purple);padding:3px 7px}
+.kb-next-hdr i{font-size:10px}
+.kb-next-chips{display:flex;flex-direction:column;gap:4px;padding:6px}
+.kb-chip{display:flex;align-items:center;gap:5px;font-size:9.5px;font-weight:500;color:var(--text2);background:rgba(188,140,255,.13);border:0.5px solid rgba(188,140,255,.3);border-radius:5px;padding:3px 6px;cursor:pointer;transition:var(--transition);min-width:0}
+.kb-chip:hover{background:rgba(188,140,255,.26);color:var(--text)}
+.kb-chip-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.kb-chip-nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
+.kb-chip-res{font-family:var(--mono);font-size:9px;font-weight:600;color:var(--red);flex-shrink:0;opacity:.85}
+.kb-next-empty{font-size:9px;color:var(--purple);opacity:.55;text-align:center;padding:4px 0}
+.kb-col-hdr{display:flex;flex-direction:column;align-items:center;gap:1px;padding-bottom:6px;border-bottom:0.5px solid var(--border);position:sticky;top:0}
+.kb-col-dow{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text3)}
+.kb-col.is-today .kb-col-dow{color:var(--blue)}
+.kb-col-day{font-size:16px;font-weight:600;color:var(--text);line-height:1}
+.kb-col-mon{font-size:9px;color:var(--text3);text-transform:uppercase}
+.kb-col-count{font-size:9px;color:var(--text3);margin-top:1px}
+.kb-cards{display:flex;flex-direction:column;gap:6px;flex:1}
+.kb-card{position:relative;background:var(--bg2);border:0.5px solid var(--border);border-left:3px solid var(--kbcol,var(--border2));border-radius:6px;padding:7px 8px;cursor:pointer;transition:var(--transition);box-shadow:0 1px 2px rgba(0,0,0,.18)}
+.kb-card:hover{border-color:var(--border2);transform:translateY(-1px);box-shadow:0 3px 8px rgba(0,0,0,.28)}
+.kb-card.over{border-left-color:var(--red);background:linear-gradient(180deg,var(--red-bg),var(--bg2))}
+.kb-card-nm{font-size:11.5px;font-weight:600;color:var(--text);line-height:1.25;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.kb-card-cl{font-size:10px;color:var(--text2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kb-card-foot{display:flex;align-items:center;justify-content:space-between;gap:4px;margin-top:5px}
+.kb-fase{font-size:9px;font-weight:500;color:var(--kbcol,var(--text3));overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%}
+.kb-res{font-family:var(--mono);font-size:9.5px;font-weight:600;color:var(--red);flex-shrink:0}
+.kb-col-empty{font-size:10px;color:var(--text3);opacity:.5;text-align:center;padding:10px 0}
+.kb-legenda{font-size:10px;color:var(--text3)}
+
 /* ── RESPONSIVE ── */
 @media(max-width:768px){
   :root{--sidebar:0px;--topbar:50px}
@@ -448,6 +489,11 @@ td input[type=number]{text-align:right}
   .tl-row-cl{display:none}
   .tl-row{height:36px}
   .tl-legend{display:none}
+
+  /* Kanban mobile: scroll orizzontale, colonne a larghezza fissa */
+  .kb-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -4px;padding:0 4px}
+  .kb-grid{grid-auto-flow:column;grid-template-columns:none;grid-auto-columns:138px}
+  .kb-range{min-width:110px;font-size:11px}
 
   /* Griglie interne */
   .kpi-row{grid-template-columns:1fr 1fr}
@@ -612,6 +658,23 @@ td input[type=number]{text-align:right}
           <span class="cds-tot" id="cds-tot">€ 0</span>
         </div>
         <div class="cds-list" id="cds-list"></div>
+      </div>
+
+      <!-- KANBAN SETTIMANALE -->
+      <div class="panel" style="margin-bottom:14px">
+        <div class="panel-hdr">
+          <span class="panel-title"><i class="ti ti-layout-kanban"></i> Settimana di lavoro</span>
+          <div class="kb-nav">
+            <button class="topbar-btn kb-today-btn" onclick="kanbanGoToday()" title="Torna a questa settimana">Oggi</button>
+            <button class="topbar-btn" onclick="kanbanShift(-1)" title="Settimana precedente"><i class="ti ti-chevron-left"></i></button>
+            <span class="kb-range" id="kb-range"></span>
+            <button class="topbar-btn" onclick="kanbanShift(1)" title="Settimana successiva"><i class="ti ti-chevron-right"></i></button>
+          </div>
+        </div>
+        <div class="kb-scroll">
+          <div class="kb-grid" id="kb-grid"></div>
+        </div>
+        <div class="kb-legenda" id="kb-legenda" style="margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border)"></div>
       </div>
 
 
@@ -1743,8 +1806,129 @@ function refreshDashboard(){
   if(nbR) nbR.style.display = inRitardo.length>0?'inline':'none';
 
   renderConsegnateDaSaldare();
+  renderKanban();
   updateAIUI();
   buildTimeline();
+}
+
+/* ═══════════════════════════════════════════════════
+   KANBAN SETTIMANALE (post-it per giorno)
+═══════════════════════════════════════════════════ */
+let kanbanWeekOffset = 0;   // 0 = settimana corrente, -1 precedente, +1 successiva
+
+function kanbanShift(n){ kanbanWeekOffset += n; renderKanban(); }
+function kanbanGoToday(){ kanbanWeekOffset = 0; renderKanban(); }
+
+// Lunedì (00:00) della settimana corrente + offset
+function lunediSettimana(offset){
+  const d = new Date(); d.setHours(0,0,0,0);
+  const dow = d.getDay();                       // 0=dom ... 6=sab
+  d.setDate(d.getDate() - (dow===0 ? 6 : dow-1)); // arretra a lunedì
+  d.setDate(d.getDate() + offset*7);
+  return d;
+}
+
+function renderKanban(){
+  const grid = document.getElementById('kb-grid');
+  if(!grid) return;
+  const cfg = getConfig();
+  const faseCol = nome => (cfg.fasi.find(f=>f.nome===nome)||{}).col || 'var(--border2)';
+
+  const oggi = new Date(); oggi.setHours(0,0,0,0);
+  const start = lunediSettimana(kanbanWeekOffset);
+  const giorni = [];
+  for(let i=0;i<6;i++){ const d=new Date(start); d.setDate(d.getDate()+i); giorni.push(d); }   // lun→sab
+  const fine = giorni[5];
+
+  // Etichetta intervallo
+  const mN = ['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
+  const rangeLbl = `${start.getDate()} ${mN[start.getMonth()]} – ${fine.getDate()} ${mN[fine.getMonth()]} ${fine.getFullYear()}`;
+  const rangeEl = document.getElementById('kb-range');
+  if(rangeEl){
+    const diffW = kanbanWeekOffset===0 ? ' · questa settimana' : kanbanWeekOffset===-1 ? ' · scorsa' : kanbanWeekOffset===1 ? ' · prossima' : '';
+    rangeEl.textContent = rangeLbl + diffW;
+  }
+
+  // Chiave data locale YYYY-MM-DD (no fusi/UTC)
+  const keyOf = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const giorniKey = giorni.map(keyOf);
+
+  // Settimana successiva (lun→sab) per la colonna "sguardo avanti"
+  const startNext = new Date(start); startNext.setDate(startNext.getDate()+7);
+  const giorniNext = [];
+  for(let i=0;i<6;i++){ const d=new Date(startNext); d.setDate(d.getDate()+i); giorniNext.push(d); }
+  const fineNext = giorniNext[5];
+  const nextKeys = giorniNext.map(keyOf);
+
+  // Mappa data→commesse (non saldate, non tutte consegnate); per data pendente,
+  // o scadenza manuale se non ci sono date pendenti.
+  const byDate = {};
+  ordiniAttivi().filter(o=>o.stato!=='saldato' && !o.tuttoConsegnato).forEach(o=>{
+    let date = (o.datesPendenti&&o.datesPendenti.length) ? o.datesPendenti.slice() : (o.scadenza?[o.scadenza]:[]);
+    date.forEach(ds=>{ (byDate[ds]=byDate[ds]||[]).push(o); });
+  });
+  const perGiorno = {}; giorniKey.forEach(k=>perGiorno[k]=byDate[k]||[]);
+
+  const dowN = ['Lun','Mar','Mer','Gio','Ven','Sab'];
+  let totSett = 0, totNext = 0;
+
+  // Genera il post-it di una commessa (small = versione compatta per la sett. prossima)
+  const cardHtml = (o, k, small) => {
+    const col = faseCol(o.fase);
+    const over = new Date(k) < oggi;
+    return `<div class="kb-card${over?' over':''}${small?' kb-card-sm':''}" style="--kbcol:${col}" data-open="${esc(o.nome)}" title="${esc(o.nome)}">
+      <div class="kb-card-nm">${esc(o.nome)}</div>
+      ${o.cliente?.nome?`<div class="kb-card-cl">${esc(o.cliente.nome)}</div>`:''}
+      <div class="kb-card-foot">
+        <span class="kb-fase">${o.fase?esc(o.fase):'—'}</span>
+        ${o.res>0?`<span class="kb-res">${fmtShort(o.res)}</span>`:''}
+      </div>
+    </div>`;
+  };
+
+  const html = giorni.map((d,i)=>{
+    const k = giorniKey[i];
+    const isToday = d.getTime()===oggi.getTime();
+    const isSat = i===5;
+    // consegne di questo giorno (settimana corrente)
+    const items = perGiorno[k].slice().sort((a,b)=> a.nome.localeCompare(b.nome));
+    totSett += items.length;
+    const cards = items.length ? items.map(o=>cardHtml(o,k,false)).join('') : '<div class="kb-col-empty">—</div>';
+    // consegne dello stesso giorno della settimana successiva
+    const kN = nextKeys[i];
+    const itemsN = (byDate[kN]||[]).slice().sort((a,b)=> a.nome.localeCompare(b.nome));
+    totNext += itemsN.length;
+    const dN = giorniNext[i];
+    const chips = itemsN.length ? itemsN.map(o=>`<span class="kb-chip" data-open="${esc(o.nome)}" title="${esc(o.nome)}${o.res>0?' · '+fmtShort(o.res)+' da incassare':''}">
+        <span class="kb-chip-dot" style="background:${faseCol(o.fase)}"></span>
+        <span class="kb-chip-nm">${esc(o.nome)}</span>
+        ${o.res>0?`<span class="kb-chip-res">${fmtShort(o.res)}</span>`:''}
+      </span>`).join('') : '<div class="kb-next-empty">—</div>';
+    const nextSec = `<div class="kb-next-sec">
+        <div class="kb-next-hdr"><i class="ti ti-arrow-forward-up"></i> prossima · ${dN.getDate()} ${mN[dN.getMonth()]}</div>
+        <div class="kb-next-chips">${chips}</div>
+      </div>`;
+    return `<div class="kb-col${isToday?' is-today':''}${isSat?' is-sat':''}">
+      <div class="kb-col-hdr">
+        <span class="kb-col-dow">${dowN[i]}</span>
+        <span class="kb-col-day">${d.getDate()}</span>
+        <span class="kb-col-mon">${mN[d.getMonth()]}</span>
+        <span class="kb-col-count">${items.length||''}</span>
+      </div>
+      <div class="kb-cards">${cards}</div>
+      ${nextSec}
+    </div>`;
+  }).join('');
+
+  grid.innerHTML = html;
+
+  // Delega click sulle card → apre la commessa
+  grid.querySelectorAll('.kb-card[data-open]').forEach(c=>{
+    c.addEventListener('click', ()=>apriCommessa(c.dataset.open));
+  });
+
+  const leg = document.getElementById('kb-legenda');
+  if(leg) leg.innerHTML = `${totSett} ${totSett===1?'consegna':'consegne'} in settimana · <span style="color:var(--purple)">${totNext} la settimana prossima</span> (riquadro in basso in ogni giorno) · il colore del bordo indica la fase · clicca un post-it per aprire la commessa`;
 }
 
 /* Riquadro evidenza: commesse consegnate (tutte le voci spuntate) con saldo ancora aperto */
