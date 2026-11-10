@@ -328,6 +328,27 @@ td input[type=number]{text-align:right}
 .comm-hdr h2{font-size:16px;font-weight:600;flex:1}
 .sel-commessa{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:7px 10px;font-size:13px;color:var(--text);font-family:var(--font);flex:1;min-width:200px;transition:var(--transition)}
 .sel-commessa:focus{outline:none;border-color:var(--blue)}
+/* ── RICERCA COMMESSE ── */
+.comm-search{position:relative;flex:1;min-width:200px}
+.comm-search > i{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:15px;color:var(--text3);pointer-events:none}
+.comm-search input{width:100%;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:8px 30px 8px 32px;font-size:13px;color:var(--text);font-family:var(--font);transition:var(--transition)}
+.comm-search input:focus{outline:none;border-color:var(--blue)}
+.comm-search-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:20px;height:20px;border:none;background:none;color:var(--text3);cursor:pointer;display:none;align-items:center;justify-content:center;border-radius:4px}
+.comm-search-clear:hover{background:var(--bg4);color:var(--text)}
+.comm-search-res{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-lg);box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:50;max-height:340px;overflow-y:auto;display:none;padding:4px}
+.comm-search-res.open{display:block}
+.csr-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--radius);cursor:pointer;transition:background .12s}
+.csr-item:hover,.csr-item.active{background:var(--bg3)}
+.csr-ic{width:28px;height:28px;border-radius:7px;background:var(--bg4);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--text2);font-size:14px}
+.csr-main{flex:1;min-width:0}
+.csr-nome{font-size:12.5px;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.csr-nome mark{background:rgba(88,166,255,.3);color:var(--text);border-radius:2px;padding:0 1px}
+.csr-sub{font-size:11px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px}
+.csr-sub mark{background:rgba(88,166,255,.3);color:var(--text);border-radius:2px;padding:0 1px}
+.csr-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.csr-res{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--red)}
+.csr-arch{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em}
+.csr-empty{padding:16px 12px;text-align:center;font-size:12px;color:var(--text3)}
 
 /* ── AI SETUP HINT ── */
 .ai-setup-hint{background:rgba(88,166,255,.06);border:0.5px solid rgba(88,166,255,.15);border-radius:var(--radius);padding:10px 14px;font-size:11px;color:var(--text2);display:flex;align-items:center;gap:8px;margin-top:8px;cursor:pointer;transition:var(--transition)}
@@ -709,6 +730,13 @@ td input[type=number]{text-align:right}
       </div>
       <!-- Selector -->
       <div class="comm-hdr">
+        <div class="comm-search">
+          <i class="ti ti-search"></i>
+          <input type="text" id="comm-search-input" placeholder="Cerca commessa, cliente, telefono..." autocomplete="off"
+                 oninput="cercaCommesse(this.value)" onfocus="cercaCommesse(this.value)" onkeydown="cercaCommesseKey(event)">
+          <button class="comm-search-clear" id="comm-search-clear" onclick="pulisciRicerca()" title="Cancella"><i class="ti ti-x"></i></button>
+          <div class="comm-search-res" id="comm-search-res"></div>
+        </div>
         <select class="sel-commessa" id="ord-sel" onchange="onSelChange()"><option value="">— seleziona commessa —</option></select>
         <input type="text" id="nuovo-input" placeholder="Nome nuova commessa..." style="display:none;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:7px 10px;font-size:13px;color:var(--text);font-family:var(--font);flex:1;min-width:160px">
         <button class="btn" id="btn-nuovo" onclick="mostraNuovo()"><i class="ti ti-plus"></i> Nuova</button>
@@ -1692,7 +1720,99 @@ function caricaListaOrdini(){
   });
   if(corrente) sel.value = corrente;
   renderArchiviate();
+  // se la ricerca è aperta, aggiorna i risultati
+  const si = document.getElementById('comm-search-input');
+  if(si && document.getElementById('comm-search-res')?.classList.contains('open')) cercaCommesse(si.value);
 }
+
+/* ═══════════════════════════════════════════════════
+   RICERCA RAPIDA COMMESSE
+═══════════════════════════════════════════════════ */
+let _ricercaAttivo = -1;   // indice risultato evidenziato (navigazione tastiera)
+
+function _norm(s){ return (s||'').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }
+function _hl(testo, q){
+  const t = testo||'';
+  if(!q) return esc(t);
+  const i = _norm(t).indexOf(q);
+  if(i<0) return esc(t);
+  return esc(t.slice(0,i)) + '<mark>' + esc(t.slice(i,i+q.length)) + '</mark>' + esc(t.slice(i+q.length));
+}
+
+function cercaCommesse(raw){
+  const box = document.getElementById('comm-search-res');
+  const clear = document.getElementById('comm-search-clear');
+  if(!box) return;
+  const q = _norm(raw).trim();
+  if(clear) clear.style.display = raw ? 'flex' : 'none';
+  _ricercaAttivo = -1;
+  if(!q){ box.classList.remove('open'); box.innerHTML=''; return; }
+
+  const hit = tuttiGliOrdini().filter(o=>{
+    return _norm(o.nome).includes(q)
+        || _norm(o.cliente?.nome).includes(q)
+        || _norm(o.cliente?.tel).includes(q)
+        || _norm(o.fase).includes(q)
+        || _norm(o.note).includes(q);
+  }).sort((a,b)=> (a.archiviata?1:0)-(b.archiviata?1:0) || a.nome.localeCompare(b.nome)).slice(0,40);
+
+  if(!hit.length){ box.innerHTML = '<div class="csr-empty">Nessuna commessa trovata</div>'; box.classList.add('open'); return; }
+
+  box.innerHTML = hit.map(o=>{
+    const sub = [o.cliente?.nome, o.cliente?.tel, o.fase].filter(Boolean).map(x=>_hl(x,q)).join(' · ');
+    return `<div class="csr-item" data-open="${esc(o.nome)}">
+      <div class="csr-ic"><i class="ti ti-${o.archiviata?'archive':'package'}"></i></div>
+      <div class="csr-main">
+        <div class="csr-nome">${_hl(o.nome,q)}</div>
+        ${sub?`<div class="csr-sub">${sub}</div>`:''}
+      </div>
+      <div class="csr-right">
+        ${o.res>0?`<span class="csr-res">${fmtShort(o.res)}</span>`:''}
+        ${o.archiviata?'<span class="csr-arch">arch.</span>':''}
+      </div>
+    </div>`;
+  }).join('');
+  box.classList.add('open');
+  box.querySelectorAll('.csr-item[data-open]').forEach(el=>{
+    el.addEventListener('click', ()=>_apriDaRicerca(el.dataset.open));
+  });
+}
+
+function _apriDaRicerca(nome){
+  pulisciRicerca();
+  apriCommessa(nome);
+}
+
+function cercaCommesseKey(e){
+  const box = document.getElementById('comm-search-res');
+  if(!box || !box.classList.contains('open')) return;
+  const items = [...box.querySelectorAll('.csr-item[data-open]')];
+  if(e.key==='ArrowDown'){ e.preventDefault(); _ricercaAttivo = Math.min(_ricercaAttivo+1, items.length-1); }
+  else if(e.key==='ArrowUp'){ e.preventDefault(); _ricercaAttivo = Math.max(_ricercaAttivo-1, 0); }
+  else if(e.key==='Enter'){ e.preventDefault(); const t = items[_ricercaAttivo] || items[0]; if(t) _apriDaRicerca(t.dataset.open); return; }
+  else if(e.key==='Escape'){ pulisciRicerca(); return; }
+  else return;
+  items.forEach((it,i)=>it.classList.toggle('active', i===_ricercaAttivo));
+  if(items[_ricercaAttivo]) items[_ricercaAttivo].scrollIntoView({block:'nearest'});
+}
+
+function pulisciRicerca(){
+  const si = document.getElementById('comm-search-input');
+  const box = document.getElementById('comm-search-res');
+  const clear = document.getElementById('comm-search-clear');
+  if(si) si.value='';
+  if(box){ box.classList.remove('open'); box.innerHTML=''; }
+  if(clear) clear.style.display='none';
+  _ricercaAttivo = -1;
+}
+
+// Chiude i risultati cliccando fuori
+document.addEventListener('click', e=>{
+  if(!e.target.closest('.comm-search')){
+    const box = document.getElementById('comm-search-res');
+    if(box) box.classList.remove('open');
+  }
+});
 
 /* ═══════════════════════════════════════════════════
    COMMESSE ARCHIVIATE

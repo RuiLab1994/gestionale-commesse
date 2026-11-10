@@ -1,4 +1,4 @@
-const CACHE = 'commesse-v3';
+const CACHE = 'commesse-v4';
 const SHELL = [
   './index.html',
   './manifest.json',
@@ -8,10 +8,12 @@ const SHELL = [
   'https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap'
 ];
 
-// Installa e precacha la shell
+// Installa e precacha la shell (non blocca se qualche risorsa fallisce)
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())
+    caches.open(CACHE)
+      .then(c => Promise.allSettled(SHELL.map(u => c.add(u))))
+      .then(() => self.skipWaiting())
   );
 });
 
@@ -24,24 +26,45 @@ self.addEventListener('activate', e => {
   );
 });
 
-// Strategia: cache-first per shell, network-only per Google APIs
+// Riceve l'ordine di attivarsi subito (usato per l'aggiornamento immediato)
+self.addEventListener('message', e => {
+  if (e.data === 'skipWaiting') self.skipWaiting();
+});
+
 self.addEventListener('fetch', e => {
-  const url = e.request.url;
+  const req = e.request;
+  const url = req.url;
 
   // Google APIs e OAuth → sempre rete (non cachare mai)
   if (url.includes('googleapis.com') || url.includes('accounts.google.com') || url.includes('gsi/client') || url.includes('generativelanguage')) {
-    e.respondWith(fetch(e.request).catch(() => new Response('', { status: 503 })));
+    e.respondWith(fetch(req).catch(() => new Response('', { status: 503 })));
     return;
   }
 
-  // Tutto il resto → cache-first, poi rete
+  // Pagina / navigazione / index.html → NETWORK-FIRST:
+  // carica sempre l'ultima versione dalla rete, cade sulla cache solo se offline.
+  const isPagina = req.mode === 'navigate' || url.endsWith('/') || url.endsWith('/index.html') || url.endsWith('index.html');
+  if (isPagina) {
+    e.respondWith(
+      fetch(req)
+        .then(resp => {
+          const clone = resp.clone();
+          caches.open(CACHE).then(c => c.put('./index.html', clone)).catch(() => {});
+          return resp;
+        })
+        .catch(() => caches.match('./index.html').then(r => r || caches.match(req)))
+    );
+    return;
+  }
+
+  // Risorse statiche (icone, font, css) → CACHE-FIRST, poi rete
   e.respondWith(
-    caches.match(e.request).then(cached => {
+    caches.match(req).then(cached => {
       if (cached) return cached;
-      return fetch(e.request).then(resp => {
+      return fetch(req).then(resp => {
         if (!resp || resp.status !== 200 || resp.type === 'opaque') return resp;
         const clone = resp.clone();
-        caches.open(CACHE).then(c => c.put(e.request, clone));
+        caches.open(CACHE).then(c => c.put(req, clone)).catch(() => {});
         return resp;
       });
     })
