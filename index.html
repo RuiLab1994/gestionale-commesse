@@ -67,8 +67,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .login-note{margin-top:14px;font-size:11px;color:var(--text3)}
 
 /* ── SETUP API KEY ── */
-#setup-overlay,#negozio-overlay,#config-overlay,#gcal-overlay{position:fixed;inset:0;background:rgba(13,17,23,.9);display:flex;align-items:center;justify-content:center;z-index:900;backdrop-filter:blur(4px)}
-#setup-overlay.hidden,#negozio-overlay.hidden,#config-overlay.hidden,#gcal-overlay.hidden{display:none}
+#setup-overlay,#negozio-overlay,#config-overlay,#gcal-overlay,#sessione-overlay{position:fixed;inset:0;background:rgba(13,17,23,.9);display:flex;align-items:center;justify-content:center;z-index:900;backdrop-filter:blur(4px)}
+#setup-overlay.hidden,#negozio-overlay.hidden,#config-overlay.hidden,#gcal-overlay.hidden,#sessione-overlay.hidden{display:none}
+#sessione-body p{font-size:12.5px;color:var(--text2);line-height:1.55;margin-bottom:10px}
+.login-msg{background:var(--amber-bg);border:0.5px solid rgba(210,153,34,.35);color:var(--amber);border-radius:var(--radius);padding:9px 12px;font-size:12px;line-height:1.5;margin:4px 0 16px}
 /* Google Calendar */
 .gcal-btn{position:relative}
 .gcal-dot{position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;border:1.5px solid var(--bg2)}
@@ -104,6 +106,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;border:0.5px solid var(--border)}
 .chip-off{color:var(--text3);background:transparent}
 .chip-on{color:#3fb950;background:var(--green-bg);border-color:rgba(63,185,80,.3)}
+.chip-warn{color:var(--amber);background:var(--amber-bg);border-color:rgba(210,153,34,.35)}
 .chip-user{color:var(--text2);background:var(--bg3)}
 .topbar-btn{background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--radius);color:var(--text2);padding:5px 10px;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:var(--font);transition:var(--transition);white-space:nowrap}
 .topbar-btn:hover{background:var(--bg4);color:var(--text);border-color:var(--border2)}
@@ -498,6 +501,7 @@ td input[type=number]{text-align:right}
   }
   .topbar-brand{width:auto;padding-right:8px}
   .chip{display:none}
+  .chip.chip-warn{display:inline-flex}
   .topbar-btn.backup-btn,.topbar-btn.import-btn{display:none}
 
   /* Main: flex:1 + min-height:0 è fondamentale per scroll su flex */
@@ -554,6 +558,7 @@ td input[type=number]{text-align:right}
   <div class="login-card">
     <div class="login-logo"><i class="ti ti-cloud"></i></div>
     <h2>Gestionale Commesse</h2>
+    <div id="login-msg" class="login-msg" style="display:none"></div>
     <p>Accedi con Google per sincronizzare i dati su tutti i tuoi dispositivi tramite Google Drive.</p>
     <button class="btn-google" onclick="avviaLogin()">
       <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
@@ -573,6 +578,13 @@ td input[type=number]{text-align:right}
       <button class="btn-primary" onclick="salvaGeminiKey()"><i class="ti ti-check"></i> Salva e attiva</button>
       <button class="btn-skip" onclick="chiudiSetup()">Salta per ora</button>
     </div>
+  </div>
+</div>
+
+<div id="sessione-overlay" class="hidden">
+  <div class="setup-card" style="max-width:440px">
+    <h3><i class="ti ti-user-circle" style="color:var(--blue)"></i> Sessione e collegamento</h3>
+    <div id="sessione-body"></div>
   </div>
 </div>
 
@@ -637,7 +649,7 @@ td input[type=number]{text-align:right}
       <span class="brand-name">Commesse</span>
     </div>
     <div class="topbar-right">
-      <span class="chip chip-off" id="drive-status"><i class="ti ti-cloud-off"></i> Non connesso</span>
+      <span class="chip chip-off" id="drive-status" onclick="clicChipDrive()" style="cursor:pointer"><i class="ti ti-cloud-off"></i> Non connesso</span>
       <button class="topbar-btn sync" id="btn-sync" onclick="sincronizzaDrive()" style="display:none"><i class="ti ti-refresh"></i> Sync</button>
       <button class="topbar-btn gcal-btn" id="btn-gcal" onclick="apriGcal()" style="display:none" title="Google Calendar"><i class="ti ti-calendar-event"></i><span class="gcal-dot off" id="gcal-dot"></span></button>
       <button class="topbar-btn" onclick="apriNegozio()" title="Dati del negozio"><i class="ti ti-building-store"></i></button>
@@ -674,6 +686,9 @@ td input[type=number]{text-align:right}
     <div class="nav-section">Impostazioni</div>
     <button class="nav-item" id="nav-config" onclick="apriConfig()">
       <i class="ti ti-adjustments"></i> Fasi, stampanti e persone
+    </button>
+    <button class="nav-item" id="nav-sessione" onclick="apriSessione()">
+      <i class="ti ti-user-circle"></i> Sessione e disconnessione
     </button>
     <button class="nav-item" id="archived-section" onclick="toggleArchived()" style="display:none;justify-content:space-between">
       <span style="display:flex;align-items:center;gap:9px"><i class="ti ti-archive" style="font-size:15px"></i> Archiviate</span>
@@ -1573,114 +1588,313 @@ function refreshAIPage(){
 }
 
 /* ═══════════════════════════════════════════════════
-   GOOGLE AUTH
+   SESSIONE + GOOGLE AUTH
+   - La SESSIONE del gestionale resta aperta finché lo usi (anche chiudendo la
+     scheda o riaprendo il browser) e scade solo dopo N minuti di INUTILIZZO.
+   - Il TOKEN Google dura ~1 ora: quando scade viene rinnovato in automatico
+     al primo clic, senza schermata di login. Nel frattempo si lavora sul
+     dispositivo e le modifiche vanno su Drive appena il token è rinnovato.
 ═══════════════════════════════════════════════════ */
-function _setLoggedIn(token, calOk){
-  accessToken = token;
-  gcalHasScope = !!calOk;
-  try{
-    sessionStorage.setItem('gis_token', token);
-    sessionStorage.setItem('gis_token_ts', Date.now().toString());
-    sessionStorage.setItem('gis_cal', calOk ? '1' : '0');
-  }catch(e){}
-  gcalAggiornaUI();
-  document.getElementById('login-overlay').classList.add('hidden');
-  document.getElementById('drive-status').className = 'chip chip-on';
-  document.getElementById('drive-status').innerHTML = '<i class="ti ti-cloud-check"></i> Drive connesso';
-  document.getElementById('btn-sync').style.display = 'inline-flex';
-  document.getElementById('btn-logout').style.display = 'inline-flex';
+const SESS_KEY        = 'sessione_app';      // {attiva, ultimaAttivita, motivoUscita}
+const TOKEN_KEY       = 'gis_auth';          // {token, scad, cal}
+const INATT_KEY       = 'inattivita_min';    // minuti di inutilizzo prima dell'uscita (0 = mai)
+const INATT_DEFAULT   = 240;                 // 4 ore
+const DRIVE_PENDING   = 'drive_pending';     // '1' = modifiche locali non ancora su Drive
+const EMAIL_KEY       = 'google_email';
+let tokenScadenza = 0;
+let _refreshInCorso = false, _attesaRefresh = [], _ultimoTentativoRefresh = 0, _avvisoUscitaMostrato = false;
+
+function minutiInattivita(){ const v = parseInt(localStorage.getItem(INATT_KEY)); return isNaN(v) ? INATT_DEFAULT : v; }
+function _sess(){ try{ return JSON.parse(localStorage.getItem(SESS_KEY)||'null'); }catch(e){ return null; } }
+function _setSess(s){ localStorage.setItem(SESS_KEY, JSON.stringify(s)); }
+function sessioneAttiva(){ return !!_sess()?.attiva; }
+function msAllaScadenzaSessione(){
+  const s = _sess(), lim = minutiInattivita();
+  if(!s?.attiva) return 0;
+  if(!lim) return Infinity;
+  return lim*60000 - (Date.now() - (s.ultimaAttivita||0));
+}
+function sessioneValida(){ return msAllaScadenzaSessione() > 0; }
+
+let _ultimaAttivitaScritta = 0;
+function segnaAttivita(){
+  const now = Date.now();
+  if(now - _ultimaAttivitaScritta < 15000) return;      // scrive al massimo ogni 15s
+  const s = _sess(); if(!s?.attiva) return;
+  if(!sessioneValida()) return;                         // già scaduta: decide il controllo periodico
+  _ultimaAttivitaScritta = now; s.ultimaAttivita = now; _setSess(s);
+  _avvisoUscitaMostrato = false;
 }
 
-function _restoreToken(){
-  try{
-    const t  = sessionStorage.getItem('gis_token');
-    const ts = parseInt(sessionStorage.getItem('gis_token_ts')||'0');
-    if(t && (Date.now()-ts) < 55*60*1000) return t; // valido per 55 minuti
-  }catch(e){}
+function tokenValido(margineMs=60000){ return !!accessToken && (tokenScadenza - Date.now()) > margineMs; }
+function _tokenSalvato(){
+  try{ const t = JSON.parse(localStorage.getItem(TOKEN_KEY)||'null'); if(t?.token && t.scad - Date.now() > 60000) return t; }catch(e){}
   return null;
+}
+function segnaDrivePendente(v){ try{ v ? localStorage.setItem(DRIVE_PENDING,'1') : localStorage.removeItem(DRIVE_PENDING); }catch(e){} }
+function drivePendente(){ return localStorage.getItem(DRIVE_PENDING)==='1'; }
+
+/* Stato visivo del collegamento Google: 'on' | 'scaduto' | 'off' */
+function statoGoogle(stato){
+  const chip = document.getElementById('drive-status');
+  if(stato==='on'){
+    chip.className = 'chip chip-on'; chip.innerHTML = '<i class="ti ti-cloud-check"></i> Drive connesso'; chip.title = 'Google Drive collegato';
+  } else if(stato==='scaduto'){
+    chip.className = 'chip chip-warn'; chip.innerHTML = '<i class="ti ti-refresh-alert"></i> Riconnetti'; chip.title = 'Il collegamento a Google va rinnovato: clicca (le modifiche restano salvate sul dispositivo)';
+  } else {
+    chip.className = 'chip chip-off'; chip.innerHTML = '<i class="ti ti-cloud-off"></i> Non connesso'; chip.title = '';
+  }
+  const loggato = stato!=='off';
+  document.getElementById('btn-sync').style.display = loggato ? 'inline-flex' : 'none';
+  document.getElementById('btn-logout').style.display = loggato ? 'inline-flex' : 'none';
+  gcalAggiornaUI();
+}
+
+function _sbloccaApp(){ document.getElementById('login-overlay').classList.add('hidden'); }
+
+function _setLoggedIn(token, calOk, expiresIn){
+  accessToken = token;
+  gcalHasScope = !!calOk;
+  tokenScadenza = Date.now() + (parseInt(expiresIn)||3599)*1000;
+  try{ localStorage.setItem(TOKEN_KEY, JSON.stringify({token, scad: tokenScadenza, cal: !!calOk})); }catch(e){}
+  // apre (o prolunga) la sessione del gestionale
+  const s = _sess() || {};
+  if(!s.attiva){ s.attiva = true; s.ultimaAttivita = Date.now(); delete s.motivoUscita; _setSess(s); }
+  _sbloccaApp();
+  statoGoogle('on');
+  _recuperaEmail();
 }
 
 function _calConcesso(resp){
   try{ return google.accounts.oauth2.hasGrantedAllScopes(resp, SCOPE_CAL); }catch(e){ return false; }
 }
 
-function avviaLogin(){
-  const client = google.accounts.oauth2.initTokenClient({
-    client_id: CLIENT_ID, scope: scopesRichiesti(), include_granted_scopes: true,
-    callback: async(resp)=>{
-      if(resp.error){ showToast('Errore login: '+resp.error,'error'); return; }
-      _setLoggedIn(resp.access_token, _calConcesso(resp));
-      await sincronizzaDrive();
-    }
-  });
-  client.requestAccessToken();
-}
-
-function _tentaSilentLogin(){
+// Email dell'account: serve a Google per rinnovare il token senza chiedere quale account usare
+async function _recuperaEmail(){
+  if(localStorage.getItem(EMAIL_KEY) || !accessToken) return;
   try{
-    const client = google.accounts.oauth2.initTokenClient({
-      client_id: CLIENT_ID, scope: scopesRichiesti(), prompt:'', include_granted_scopes: true,
-      callback: async(resp)=>{
-        if(!resp.error){
-          _setLoggedIn(resp.access_token, _calConcesso(resp));
-          await sincronizzaDrive();
-        }
-      }
-    });
-    client.requestAccessToken({prompt:''});
+    const r = await fetch('https://www.googleapis.com/drive/v3/about?fields=user(emailAddress)', {headers:{'Authorization':'Bearer '+accessToken}});
+    if(r.ok){ const j = await r.json(); if(j.user?.emailAddress) localStorage.setItem(EMAIL_KEY, j.user.emailAddress); }
   }catch(e){}
 }
 
-function logout(){
-  if(!confirm('Esci dall\'account Google?')) return;
-  try{ sessionStorage.removeItem('gis_token'); sessionStorage.removeItem('gis_token_ts'); sessionStorage.removeItem('gis_cal'); }catch(e){}
-  accessToken = null; driveFileId = null; gcalHasScope = false;
-  gcalAggiornaUI();
+function _tokenClient(opts, onOk, onFail){
+  const email = localStorage.getItem(EMAIL_KEY);
+  return google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID, scope: scopesRichiesti(), include_granted_scopes: true,
+    ...(email ? {login_hint: email} : {}), ...opts,
+    callback: (resp)=>{ if(resp.error) onFail(resp.error); else onOk(resp); },
+    error_callback: (err)=>onFail(err?.type || 'popup')
+  });
+}
+
+/* Accesso esplicito dal pulsante "Accedi con Google" */
+function avviaLogin(){
+  if(typeof google==='undefined' || !google.accounts){ showToast('Servizi Google non ancora caricati, riprova tra un attimo','error'); return; }
+  _tokenClient({}, async(resp)=>{
+    _setLoggedIn(resp.access_token, _calConcesso(resp), resp.expires_in);
+    await sincronizzaDrive();
+  }, (err)=>{ if(err!=='popup_closed') showToast('Accesso non completato: '+err,'error'); }).requestAccessToken();
+}
+
+/* Rinnovo del token senza login: Google lo concede in automatico se l'account
+   è ancora collegato nel browser. Va lanciato durante un clic/tasto, altrimenti
+   il browser blocca la finestrella di Google. */
+function rinnovaToken(){
+  return new Promise(resolve=>{
+    if(typeof google==='undefined' || !google.accounts){ resolve(false); return; }
+    if(_refreshInCorso){ _attesaRefresh.push(resolve); return; }
+    _refreshInCorso = true; _ultimoTentativoRefresh = Date.now();
+    const fine = (ok)=>{
+      _refreshInCorso = false;
+      const coda = _attesaRefresh.splice(0); resolve(ok); coda.forEach(f=>f(ok));
+      if(ok) _dopoRinnovo(); else if(!tokenValido(0)) statoGoogle('scaduto');
+    };
+    try{
+      _tokenClient({prompt:''}, (resp)=>{ _setLoggedIn(resp.access_token, _calConcesso(resp), resp.expires_in); fine(true); }, ()=>fine(false))
+        .requestAccessToken({prompt:''});
+    }catch(e){ fine(false); }
+  });
+}
+
+// Dopo un rinnovo: invia a Drive le modifiche rimaste in sospeso
+function _dopoRinnovo(){
+  if(drivePendente()) salvaSuDrive();
+  else gcalProgramma();
+}
+
+function _gestoUtenteAttivo(){ return !navigator.userActivation || navigator.userActivation.isActive; }
+
+// Usa un token già rinnovato da un'altra scheda, se c'è
+function _adottaTokenCondiviso(){
+  const t = _tokenSalvato();
+  if(!t || (t.token===accessToken && tokenValido())) return false;
+  accessToken = t.token; tokenScadenza = t.scad; gcalHasScope = !!t.cal;
+  if(sessioneAttiva()){ _sbloccaApp(); statoGoogle('on'); }
+  return true;
+}
+
+/* Garantisce un token valido prima di chiamare Google. false = non disponibile ora */
+async function assicuraToken(){
+  if(tokenValido()) return true;
+  if(_adottaTokenCondiviso() && tokenValido()) return true;
+  if(!sessioneAttiva()) return false;
+  if(_refreshInCorso) return await new Promise(r=>_attesaRefresh.push(r));
+  if(!_gestoUtenteAttivo()){ statoGoogle('scaduto'); return false; }   // senza clic il browser bloccherebbe la finestrella
+  return await rinnovaToken();
+}
+
+function tokenScaduto(){
+  tokenScadenza = 0;
+  try{ localStorage.removeItem(TOKEN_KEY); }catch(e){}
+  if(sessioneAttiva()) statoGoogle('scaduto');
+}
+
+/* Uscita: manuale o per inattività */
+function _terminaSessione(motivo){
+  const tok = accessToken;
+  accessToken = null; tokenScadenza = 0; driveFileId = null; gcalHasScope = false;
+  try{ localStorage.removeItem(TOKEN_KEY); }catch(e){}
+  _setSess({attiva:false, motivoUscita: motivo||''});
+  statoGoogle('off');
+  _mostraLogin(motivo);
+  return tok;
+}
+
+function _mostraLogin(motivo){
+  const msg = document.getElementById('login-msg');
+  if(msg){
+    if(motivo==='inattivita'){
+      const m = minutiInattivita();
+      msg.textContent = `Sei stato disconnesso dopo ${m>=60 ? (m/60)+' ore' : m+' minuti'} di inutilizzo. Le modifiche sono salvate.`;
+      msg.style.display = 'block';
+    } else { msg.style.display = 'none'; }
+  }
   document.getElementById('login-overlay').classList.remove('hidden');
-  document.getElementById('drive-status').className = 'chip chip-off';
-  document.getElementById('drive-status').innerHTML = '<i class="ti ti-cloud-off"></i> Non connesso';
-  document.getElementById('btn-sync').style.display = 'none';
-  document.getElementById('btn-logout').style.display = 'none';
+}
+
+function logout(){
+  if(!confirm('Esci dal gestionale?')) return;
+  if(drivePendente() && !confirm('Ci sono modifiche non ancora salvate su Google Drive (restano su questo dispositivo).\nUscire comunque?')) return;
+  _terminaSessione('manuale');
+  chiudiSessione();
+}
+
+/* Controllo periodico dell'inattività (+ avviso 1 minuto prima) */
+function _controllaInattivita(){
+  if(!sessioneAttiva()) return;
+  const ms = msAllaScadenzaSessione();
+  if(ms <= 0){ _terminaSessione('inattivita'); return; }
+  if(ms < 60000 && !_avvisoUscitaMostrato && document.visibilityState==='visible'){
+    _avvisoUscitaMostrato = true;
+    showToast('Per inattività verrai disconnesso tra meno di un minuto: muovi il mouse per restare collegato');
+  }
+}
+
+/* Attività dell'utente: prolunga la sessione e rinnova il token Google al momento giusto */
+function _suGesto(){
+  if(!sessioneAttiva() || !sessioneValida()) return;
+  segnaAttivita();
+  // token scaduto o in scadenza (<5 min): rinnova sfruttando questo clic
+  if(!tokenValido(5*60000)){
+    _adottaTokenCondiviso();
+    if(!tokenValido(5*60000) && !_refreshInCorso && Date.now()-_ultimoTentativoRefresh > 60000 && typeof google!=='undefined') rinnovaToken();
+  }
+}
+document.addEventListener('click', _suGesto, true);
+document.addEventListener('keydown', _suGesto, true);
+['mousemove','scroll','touchstart','wheel'].forEach(ev=>document.addEventListener(ev, ()=>{ if(document.visibilityState==='visible') segnaAttivita(); }, {passive:true, capture:true}));
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible'){ _controllaInattivita(); } });
+setInterval(_controllaInattivita, 20000);
+// Sincronia tra schede: uscita fatta altrove → esce anche qui; token rinnovato altrove → lo usa
+window.addEventListener('storage', e=>{
+  const sbloccata = document.getElementById('login-overlay').classList.contains('hidden');
+  if(e.key===SESS_KEY && !sessioneAttiva() && sbloccata){ _terminaSessione(_sess()?.motivoUscita); }
+  if(e.key===TOKEN_KEY && sessioneAttiva()){ if(_adottaTokenCondiviso() && drivePendente()) salvaSuDrive(); }
+});
+
+/* ── Pannello "Sessione" ── */
+function apriSessione(){ renderSessione(); document.getElementById('sessione-overlay').classList.remove('hidden'); }
+function chiudiSessione(){ document.getElementById('sessione-overlay').classList.add('hidden'); }
+function renderSessione(){
+  const box = document.getElementById('sessione-body'); if(!box) return;
+  const email = localStorage.getItem(EMAIL_KEY);
+  const m = minutiInattivita();
+  const opzioni = [[30,'30 minuti'],[60,'1 ora'],[120,'2 ore'],[240,'4 ore'],[480,'8 ore'],[1440,'24 ore'],[0,'Mai (resta sempre collegato)']];
+  let statoTok;
+  if(!sessioneAttiva()) statoTok = '<span style="color:var(--text3)">Non collegato</span>';
+  else if(tokenValido(0)) statoTok = `<span style="color:var(--green)"><i class="ti ti-circle-check"></i> Collegato</span> · si rinnova da solo tra ${Math.max(1,Math.round((tokenScadenza-Date.now())/60000))} min`;
+  else statoTok = '<span style="color:var(--amber)"><i class="ti ti-refresh-alert"></i> Da rinnovare</span> · succede al prossimo clic, oppure premi «Riconnetti»';
+  const pend = drivePendente() ? `<p style="color:var(--amber)"><i class="ti ti-alert-triangle"></i> Ci sono modifiche salvate solo su questo dispositivo: andranno su Drive appena Google è ricollegato.</p>` : '';
+  box.innerHTML = `
+    <p><b>Account:</b> ${email ? esc(email) : '—'}<br><b>Google Drive:</b> ${statoTok}</p>
+    ${pend}
+    <label style="display:block;font-size:12px;color:var(--text2);margin:14px 0 6px">Disconnetti dopo un periodo di inutilizzo di</label>
+    <select class="setup-input" id="sess-inatt" style="font-family:var(--font)" onchange="impostaInattivita(this.value)">
+      ${opzioni.map(([v,l])=>`<option value="${v}" ${v===m?'selected':''}>${l}</option>`).join('')}
+    </select>
+    <p style="font-size:11.5px;color:var(--text3)">Finché usi il gestionale resti collegato, anche se chiudi la scheda o riapri il browser. Il collegamento a Google si rinnova da solo ogni ora circa: al primo clic può comparire per un attimo una finestrella di Google che si chiude da sola.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+      ${sessioneAttiva() && !tokenValido(0) ? '<button class="btn-primary" onclick="riconnettiGoogle()"><i class="ti ti-refresh"></i> Riconnetti</button>' : ''}
+      <button class="btn-skip" onclick="logout()" style="color:var(--red)"><i class="ti ti-logout"></i> Esci</button>
+      <button class="btn-skip" onclick="chiudiSessione()">Chiudi</button>
+    </div>`;
+}
+function impostaInattivita(v){
+  localStorage.setItem(INATT_KEY, String(parseInt(v)||0));
+  _ultimaAttivitaScritta = 0; segnaAttivita();
+  showToast('Impostazione salvata ✓');
+}
+async function riconnettiGoogle(){
+  const ok = await rinnovaToken();
+  if(!ok){ avviaLogin(); return; }      // se il rinnovo silenzioso non basta, login completo
+  showToast('Google ricollegato ✓');
+  if(!document.getElementById('sessione-overlay').classList.contains('hidden')) renderSessione();
+}
+function clicChipDrive(){
+  if(sessioneAttiva() && !tokenValido(0)) riconnettiGoogle();
+  else apriSessione();
 }
 
 /* ═══════════════════════════════════════════════════
    GOOGLE DRIVE
 ═══════════════════════════════════════════════════ */
 async function driveFetch(url, opts={}){
-  if(!accessToken) return null;
+  if(!(await assicuraToken())){ const e = new Error('Google da ricollegare'); e.noToken = true; throw e; }
   opts.headers = {...(opts.headers||{}),'Authorization':'Bearer '+accessToken};
   const r = await fetch(url, opts);
-  if(r.status===401){ showToast('Sessione scaduta, riaccedi','error'); logout(); return null; }
+  if(r.status===401){ tokenScaduto(); const e = new Error('Collegamento Google scaduto'); e.noToken = true; throw e; }
   return r;
 }
 
 async function trovaDriveFile(){
   const q = encodeURIComponent(`name='${DRIVE_FILE}' and trashed=false`);
   const r = await driveFetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`);
-  if(!r) return null;
+  if(!r.ok) throw new Error('Drive: errore '+r.status);
   const d = await r.json();
   return d.files && d.files.length ? d.files[0].id : null;
 }
 
 async function leggiDaDrive(fileId){
   const r = await driveFetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`);
-  if(!r) return null;
+  if(!r.ok) throw new Error('Drive: errore lettura '+r.status);
   try{ return await r.json(); }catch(e){ return null; }
 }
 
 async function scrivisuDrive(data){
   const body = JSON.stringify(data);
   if(driveFileId){
-    await driveFetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`,{
+    const r = await driveFetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`,{
       method:'PATCH', headers:{'Content-Type':'application/json'}, body
     });
+    if(!r.ok) throw new Error('Drive: errore salvataggio '+r.status);
   } else {
     const meta = JSON.stringify({name: DRIVE_FILE});
     const form = new FormData();
     form.append('metadata', new Blob([meta],{type:'application/json'}));
     form.append('file', new Blob([body],{type:'application/json'}));
     const r = await driveFetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',{method:'POST',body:form});
-    if(!r) return;
+    if(!r.ok) throw new Error('Drive: errore creazione file '+r.status);
     const d = await r.json();
     driveFileId = d.id;
   }
@@ -1698,13 +1912,18 @@ function buildBackup(){
 }
 
 async function sincronizzaDrive(){
-  if(!accessToken){ showToast('Non connesso a Drive','error'); return; }
+  if(!sessioneAttiva()){ showToast('Accedi con Google per sincronizzare','error'); return; }
   const btn = document.getElementById('btn-sync');
   btn.innerHTML = '<span class="spinner"></span> Sync...';
   btn.disabled = true;
   try{
     if(!driveFileId) driveFileId = await trovaDriveFile();
-    if(driveFileId){
+    if(drivePendente()){
+      // modifiche fatte mentre Google era scollegato: prima si inviano, così non vengono sovrascritte
+      await scrivisuDrive(buildBackup());
+      segnaDrivePendente(false);
+      showToast('Modifiche in sospeso salvate su Drive ✓');
+    } else if(driveFileId){
       const remoto = await leggiDaDrive(driveFileId);
       if(remoto){
         let n = 0;
@@ -1721,7 +1940,10 @@ async function sincronizzaDrive(){
       await scrivisuDrive(buildBackup());
       showToast('Dati caricati su Drive ✓');
     }
-  } catch(e){ showToast('Errore sync: '+e.message,'error'); }
+  } catch(e){
+    if(e.noToken) showToast('Google da ricollegare: clicca «Riconnetti» in alto','error');
+    else showToast('Errore sync: '+e.message,'error');
+  }
   btn.innerHTML = '<i class="ti ti-refresh"></i> Sync';
   btn.disabled = false;
   caricaListaOrdini();
@@ -1731,11 +1953,22 @@ async function sincronizzaDrive(){
   gcalProgramma();
 }
 
+/* Salva tutto su Drive. Ritorna true se riuscito; se Google è scollegato le
+   modifiche restano sul dispositivo e partono al prossimo rinnovo del token. */
 async function salvaSuDrive(){
-  if(!accessToken) return;
-  if(!driveFileId) driveFileId = await trovaDriveFile();
-  await scrivisuDrive(buildBackup());
-  gcalProgramma();
+  if(!sessioneAttiva()) return false;
+  try{
+    if(!driveFileId) driveFileId = await trovaDriveFile();
+    await scrivisuDrive(buildBackup());
+    segnaDrivePendente(false);
+    if(tokenValido(0)) statoGoogle('on');
+    gcalProgramma();
+    return true;
+  }catch(e){
+    segnaDrivePendente(true);
+    if(!e.noToken) showToast('Salvataggio su Drive non riuscito ('+e.message+'): riprovo al prossimo salvataggio','error');
+    return false;
+  }
 }
 
 /* ═══════════════════════════════════════════════════
@@ -1755,12 +1988,15 @@ let _linkCommessaPendente = (()=>{ try{ return new URLSearchParams(location.sear
 function gcalCfg(){ try{ return JSON.parse(localStorage.getItem(GCAL_KEY)||'{}')||{}; }catch(e){ return {}; } }
 function gcalSetCfg(patch){ localStorage.setItem(GCAL_KEY, JSON.stringify({...gcalCfg(), ...patch})); }
 function gcalLocal(){ try{ return JSON.parse(localStorage.getItem(GCAL_LOCAL)||'{}')||{}; }catch(e){ return {}; } }
-function gcalPronto(){ return gcalCfg().enabled && !!accessToken && gcalHasScope; }
+function gcalPronto(){ return gcalCfg().enabled && sessioneAttiva() && gcalHasScope; }
 
 async function gcalFetch(url, opts={}){
+  if(!(await assicuraToken())){ const e = new Error('Google da ricollegare'); e.noToken = true; throw e; }
   opts.headers = {...(opts.headers||{}), 'Authorization':'Bearer '+accessToken};
   if(opts.body) opts.headers['Content-Type'] = 'application/json';
-  return fetch(url, opts);
+  const r = await fetch(url, opts);
+  if(r.status===401){ tokenScaduto(); const e = new Error('Collegamento Google scaduto'); e.noToken = true; throw e; }
+  return r;
 }
 async function gcalErrore_(r){
   let msg = '';
@@ -1857,7 +2093,7 @@ async function gcalCreaCalendario(){
   if(!r.ok) throw await gcalErrore_(r);
   const cal = await r.json();
   gcalSetCfg({calendarId: cal.id});
-  try{ if(accessToken){ if(!driveFileId) driveFileId = await trovaDriveFile(); await scrivisuDrive(buildBackup()); } }catch(e){}   // condivide l'ID con gli altri dispositivi
+  await salvaSuDrive();   // condivide l'ID con gli altri dispositivi
   return cal.id;
 }
 
@@ -1882,7 +2118,7 @@ function gcalProgramma(){
 
 async function sincronizzaCalendar({silenzioso=false}={}){
   if(!gcalCfg().enabled) return;
-  if(!accessToken){ if(!silenzioso) showToast('Accedi con Google per sincronizzare il calendario','error'); return; }
+  if(!sessioneAttiva()){ if(!silenzioso) showToast('Accedi con Google per sincronizzare il calendario','error'); return; }
   if(!gcalHasScope){ if(!silenzioso) gcalRichiediPermesso(); return; }
   if(gcalInCorso){ gcalDiNuovo = true; return; }
   gcalInCorso = true; gcalErrore = null; gcalAggiornaUI();
@@ -1936,8 +2172,8 @@ async function sincronizzaCalendar({silenzioso=false}={}){
     }
   }catch(e){
     gcalErrore = e;
-    if(e.status===401){ showToast('Sessione Google scaduta: riaccedi','error'); }
-    else if(e.scopeMancante){ gcalHasScope = false; try{ sessionStorage.setItem('gis_cal','0'); }catch(_){} if(!silenzioso) gcalRichiediPermesso(); }
+    if(e.noToken){ gcalErrore = null; if(!silenzioso) showToast('Google da ricollegare: clicca «Riconnetti» in alto','error'); }
+    else if(e.scopeMancante){ gcalHasScope = false; try{ const t = JSON.parse(localStorage.getItem(TOKEN_KEY)||'null'); if(t){ t.cal = false; localStorage.setItem(TOKEN_KEY, JSON.stringify(t)); } }catch(_){} if(!silenzioso) gcalRichiediPermesso(); }
     else if(e.apiDisabilitata){ showToast('Attiva l\'API Google Calendar (vedi pannello Calendar)','error'); }
     else showToast('Errore Calendar: '+e.message,'error');
   }finally{
@@ -1956,7 +2192,7 @@ function gcalRichiediPermesso(){
     callback: async(resp)=>{
       if(resp.error){ showToast('Permesso calendario non concesso','error'); gcalAggiornaUI(); return; }
       if(!_calConcesso(resp)){ showToast('Serve spuntare l\'accesso al calendario nella finestra di Google','error'); gcalAggiornaUI(); return; }
-      _setLoggedIn(resp.access_token, true);
+      _setLoggedIn(resp.access_token, true, resp.expires_in);
       await sincronizzaCalendar();
     }
   });
@@ -1967,7 +2203,7 @@ function gcalRichiediPermesso(){
 function gcalAggiornaUI(){
   const btn = document.getElementById('btn-gcal');
   if(!btn) return;
-  btn.style.display = accessToken ? 'inline-flex' : 'none';
+  btn.style.display = sessioneAttiva() ? 'inline-flex' : 'none';
   const dot = document.getElementById('gcal-dot');
   const c = gcalCfg();
   let stato = 'off', tip = 'Google Calendar: non attivo';
@@ -1992,7 +2228,7 @@ function gcalRenderPannello(){
   const nDesiderati = gcalEventiDesiderati().size;
   const spiegazione = `<p>Ogni <b>consegna in sospeso</b> diventa un evento nel calendario dedicato <b>«Commesse RuiLab»</b> del tuo Google Calendar, con promemoria il giorno prima alle 9:00. Si aggiorna da solo quando salvi: le consegne completate, spostate o archiviate vengono aggiornate o rimosse.</p>`;
   let html = '';
-  if(!accessToken){
+  if(!sessioneAttiva()){
     html = spiegazione + `<p style="color:var(--amber)"><i class="ti ti-alert-triangle"></i> Accedi prima con Google.</p>
       <div style="display:flex;gap:8px"><button class="btn-skip" onclick="chiudiGcal()">Chiudi</button></div>`;
   } else if(!c.enabled){
@@ -2042,7 +2278,7 @@ async function gcalDisattiva(){
   if(!confirm('Disattivare la sincronizzazione con Google Calendar?')) return;
   const calId = gcalCfg().calendarId;
   let elimina = false;
-  if(calId && gcalHasScope && accessToken) elimina = confirm('Vuoi anche ELIMINARE il calendario «Commesse RuiLab» da Google Calendar?\n\nOK = elimina il calendario e i suoi eventi\nAnnulla = lascialo com\'è');
+  if(calId && gcalHasScope && sessioneAttiva()) elimina = confirm('Vuoi anche ELIMINARE il calendario «Commesse RuiLab» da Google Calendar?\n\nOK = elimina il calendario e i suoi eventi\nAnnulla = lascialo com\'è');
   if(elimina){
     const r = await gcalFetch(`${GCAL_API}/calendars/${encodeURIComponent(calId)}`, {method:'DELETE'});
     if(r.ok || r.status===404 || r.status===410){ gcalSetCfg({calendarId: null}); showToast('Calendario eliminato'); }
@@ -2051,7 +2287,7 @@ async function gcalDisattiva(){
   gcalSetCfg({enabled: false});
   gcalErrore = null;
   localStorage.removeItem(GCAL_LOCAL);
-  try{ if(accessToken){ if(!driveFileId) driveFileId = await trovaDriveFile(); await scrivisuDrive(buildBackup()); } }catch(e){}
+  await salvaSuDrive();
   gcalRenderPannello(); gcalAggiornaUI();
   showToast('Sincronizzazione Calendar disattivata');
 }
@@ -2798,8 +3034,8 @@ async function salva(){
   if(!ordineAttivo) return;
   localStorage.setItem(storageKey(ordineAttivo), JSON.stringify(raccogliDati()));
   showToast('Salvataggio in corso...','');
-  await salvaSuDrive();
-  showToast('Salvato e sincronizzato ✓');
+  const ok = await salvaSuDrive();
+  showToast(ok ? 'Salvato e sincronizzato ✓' : 'Salvato sul dispositivo ✓ · va su Drive appena Google è ricollegato');
 }
 
 function copiaRiepilogo(){
@@ -2995,20 +3231,26 @@ function _apriDaLink(){
 }
 _apriDaLink();
 
-// Ripristina sessione Drive al ricaricamento (evita logout su F5)
-const _savedToken = _restoreToken();
-if(_savedToken){
-  let _calSalvato = false; try{ _calSalvato = sessionStorage.getItem('gis_cal')==='1'; }catch(e){}
-  _setLoggedIn(_savedToken, _calSalvato);
-  sincronizzaDrive();
-} else {
-  // Tentativo silenzioso dopo caricamento script Google
-  if(typeof google !== 'undefined' && google.accounts){
-    _tentaSilentLogin();
+// Avvio: se la sessione è ancora valida (usata di recente) si entra senza login
+(function avvioSessione(){
+  try{ sessionStorage.removeItem('gis_token'); sessionStorage.removeItem('gis_token_ts'); sessionStorage.removeItem('gis_cal'); }catch(e){}   // vecchio sistema
+  if(sessioneAttiva() && sessioneValida()){
+    _sbloccaApp();
+    const t = _tokenSalvato();
+    if(t){
+      accessToken = t.token; tokenScadenza = t.scad; gcalHasScope = !!t.cal;
+      statoGoogle('on');
+      sincronizzaDrive();          // se ci sono modifiche in sospeso le invia prima di scaricare
+    } else {
+      statoGoogle('scaduto');      // token scaduto: si rinnova da solo al primo clic
+    }
+    segnaAttivita();
+  } else if(sessioneAttiva()){
+    _terminaSessione('inattivita');   // tornato dopo troppo tempo di inutilizzo
   } else {
-    window.addEventListener('load', ()=>{ if(typeof google!=='undefined') _tentaSilentLogin(); });
+    _mostraLogin(_sess()?.motivoUscita);
   }
-}
+})();
 
 // Apertura commessa da tabelle/liste (event delegation, regge i nomi con apostrofo)
 ['archived-list','task-list','pagamenti-list','pag-tbody','prev-tbody'].forEach(id=>{
