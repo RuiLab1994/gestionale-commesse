@@ -67,8 +67,20 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .login-note{margin-top:14px;font-size:11px;color:var(--text3)}
 
 /* ── SETUP API KEY ── */
-#setup-overlay,#negozio-overlay,#config-overlay{position:fixed;inset:0;background:rgba(13,17,23,.9);display:flex;align-items:center;justify-content:center;z-index:900;backdrop-filter:blur(4px)}
-#setup-overlay.hidden,#negozio-overlay.hidden,#config-overlay.hidden{display:none}
+#setup-overlay,#negozio-overlay,#config-overlay,#gcal-overlay{position:fixed;inset:0;background:rgba(13,17,23,.9);display:flex;align-items:center;justify-content:center;z-index:900;backdrop-filter:blur(4px)}
+#setup-overlay.hidden,#negozio-overlay.hidden,#config-overlay.hidden,#gcal-overlay.hidden{display:none}
+/* Google Calendar */
+.gcal-btn{position:relative}
+.gcal-dot{position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;border:1.5px solid var(--bg2)}
+.gcal-dot.off{background:var(--text3)}
+.gcal-dot.on{background:var(--green)}
+.gcal-dot.warn{background:var(--amber)}
+.gcal-dot.err{background:var(--red)}
+.gcal-dot.sync{background:var(--blue);animation:gcalPulse 1s ease-in-out infinite}
+@keyframes gcalPulse{50%{opacity:.25}}
+#gcal-body p{font-size:12.5px;color:var(--text2);line-height:1.55;margin-bottom:10px}
+.gcal-err{background:var(--red-bg);border:0.5px solid rgba(248,81,73,.35);border-radius:var(--radius);padding:10px 12px;font-size:12px;color:var(--text);line-height:1.5;margin-top:8px}
+.gcal-err a{color:var(--blue);font-weight:600;display:inline-block;margin-top:6px}
 .setup-card{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-xl);padding:32px;max-width:420px;width:90%}
 .setup-card h3{font-size:16px;font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:8px}
 .setup-card p{font-size:12px;color:var(--text2);margin-bottom:20px;line-height:1.6}
@@ -564,6 +576,13 @@ td input[type=number]{text-align:right}
   </div>
 </div>
 
+<div id="gcal-overlay" class="hidden">
+  <div class="setup-card" style="max-width:460px">
+    <h3><i class="ti ti-calendar-event" style="color:var(--blue)"></i> Google Calendar</h3>
+    <div id="gcal-body"></div>
+  </div>
+</div>
+
 <div id="negozio-overlay" class="hidden">
   <div class="setup-card">
     <h3><i class="ti ti-building-store" style="color:var(--blue)"></i> Dati del negozio</h3>
@@ -620,6 +639,7 @@ td input[type=number]{text-align:right}
     <div class="topbar-right">
       <span class="chip chip-off" id="drive-status"><i class="ti ti-cloud-off"></i> Non connesso</span>
       <button class="topbar-btn sync" id="btn-sync" onclick="sincronizzaDrive()" style="display:none"><i class="ti ti-refresh"></i> Sync</button>
+      <button class="topbar-btn gcal-btn" id="btn-gcal" onclick="apriGcal()" style="display:none" title="Google Calendar"><i class="ti ti-calendar-event"></i><span class="gcal-dot off" id="gcal-dot"></span></button>
       <button class="topbar-btn" onclick="apriNegozio()" title="Dati del negozio"><i class="ti ti-building-store"></i></button>
       <button class="topbar-btn" onclick="apriSetupAI()" title="Configura Gemini AI"><i class="ti ti-brain"></i></button>
       <button class="topbar-btn" id="btn-theme" onclick="toggleTheme()" title="Cambia tema"><i class="ti ti-sun"></i></button>
@@ -957,6 +977,9 @@ td input[type=number]{text-align:right}
 ═══════════════════════════════════════════════════ */
 const CLIENT_ID = '994203576107-k72u8odttdfnmdd4bhbammrqf0eh3k6p.apps.googleusercontent.com';
 const SCOPES    = 'https://www.googleapis.com/auth/drive.file';
+// Calendar: solo i calendari creati da questa app (non può leggere/modificare gli altri calendari)
+const SCOPE_CAL = 'https://www.googleapis.com/auth/calendar.app.created';
+function scopesRichiesti(){ return gcalCfg().enabled ? SCOPES+' '+SCOPE_CAL : SCOPES; }
 const DRIVE_FILE = 'commesse_statue.json';
 const today     = new Date().toISOString().split('T')[0];
 
@@ -1552,12 +1575,15 @@ function refreshAIPage(){
 /* ═══════════════════════════════════════════════════
    GOOGLE AUTH
 ═══════════════════════════════════════════════════ */
-function _setLoggedIn(token){
+function _setLoggedIn(token, calOk){
   accessToken = token;
+  gcalHasScope = !!calOk;
   try{
     sessionStorage.setItem('gis_token', token);
     sessionStorage.setItem('gis_token_ts', Date.now().toString());
+    sessionStorage.setItem('gis_cal', calOk ? '1' : '0');
   }catch(e){}
+  gcalAggiornaUI();
   document.getElementById('login-overlay').classList.add('hidden');
   document.getElementById('drive-status').className = 'chip chip-on';
   document.getElementById('drive-status').innerHTML = '<i class="ti ti-cloud-check"></i> Drive connesso';
@@ -1574,12 +1600,16 @@ function _restoreToken(){
   return null;
 }
 
+function _calConcesso(resp){
+  try{ return google.accounts.oauth2.hasGrantedAllScopes(resp, SCOPE_CAL); }catch(e){ return false; }
+}
+
 function avviaLogin(){
   const client = google.accounts.oauth2.initTokenClient({
-    client_id: CLIENT_ID, scope: SCOPES,
+    client_id: CLIENT_ID, scope: scopesRichiesti(), include_granted_scopes: true,
     callback: async(resp)=>{
       if(resp.error){ showToast('Errore login: '+resp.error,'error'); return; }
-      _setLoggedIn(resp.access_token);
+      _setLoggedIn(resp.access_token, _calConcesso(resp));
       await sincronizzaDrive();
     }
   });
@@ -1589,10 +1619,10 @@ function avviaLogin(){
 function _tentaSilentLogin(){
   try{
     const client = google.accounts.oauth2.initTokenClient({
-      client_id: CLIENT_ID, scope: SCOPES, prompt:'',
+      client_id: CLIENT_ID, scope: scopesRichiesti(), prompt:'', include_granted_scopes: true,
       callback: async(resp)=>{
         if(!resp.error){
-          _setLoggedIn(resp.access_token);
+          _setLoggedIn(resp.access_token, _calConcesso(resp));
           await sincronizzaDrive();
         }
       }
@@ -1603,8 +1633,9 @@ function _tentaSilentLogin(){
 
 function logout(){
   if(!confirm('Esci dall\'account Google?')) return;
-  try{ sessionStorage.removeItem('gis_token'); sessionStorage.removeItem('gis_token_ts'); }catch(e){}
-  accessToken = null; driveFileId = null;
+  try{ sessionStorage.removeItem('gis_token'); sessionStorage.removeItem('gis_token_ts'); sessionStorage.removeItem('gis_cal'); }catch(e){}
+  accessToken = null; driveFileId = null; gcalHasScope = false;
+  gcalAggiornaUI();
   document.getElementById('login-overlay').classList.remove('hidden');
   document.getElementById('drive-status').className = 'chip chip-off';
   document.getElementById('drive-status').innerHTML = '<i class="ti ti-cloud-off"></i> Non connesso';
@@ -1656,7 +1687,7 @@ async function scrivisuDrive(data){
 }
 
 /* Chiavi sincronizzate: commesse + configurazioni (fasi/tecniche/persone, dati negozio) */
-const EXTRA_SYNC_KEYS = ['config_progetto','negozio_info'];
+const EXTRA_SYNC_KEYS = ['config_progetto','negozio_info','gcal_config'];
 function isSyncKey(k){ return k.startsWith('commessa__') || EXTRA_SYNC_KEYS.includes(k); }
 function buildBackup(){
   const b={};
@@ -1695,12 +1726,334 @@ async function sincronizzaDrive(){
   btn.disabled = false;
   caricaListaOrdini();
   refreshDashboard();
+  _apriDaLink();
+  gcalAggiornaUI();
+  gcalProgramma();
 }
 
 async function salvaSuDrive(){
   if(!accessToken) return;
   if(!driveFileId) driveFileId = await trovaDriveFile();
   await scrivisuDrive(buildBackup());
+  gcalProgramma();
+}
+
+/* ═══════════════════════════════════════════════════
+   GOOGLE CALENDAR — consegne e scadenze come eventi
+   Calendario dedicato "Commesse RuiLab": un evento giornata intera per ogni
+   data di consegna in sospeso (+ scadenza manuale). Sync a senso unico
+   gestionale → calendario: aggiunge, aggiorna e rimuove gli eventi.
+═══════════════════════════════════════════════════ */
+const GCAL_API   = 'https://www.googleapis.com/calendar/v3';
+const GCAL_KEY   = 'gcal_config';          // {enabled, calendarId} — sincronizzato via Drive
+const GCAL_LOCAL = 'gcal_local';           // {lastSync, eventi} — solo questo dispositivo
+const GCAL_TAG   = 'gestionale-commesse';
+const GCAL_PROGETTO = '994203576107';      // progetto Google Cloud del CLIENT_ID
+let gcalHasScope = false, gcalInCorso = false, gcalDiNuovo = false, gcalTimer = null, gcalErrore = null;
+let _linkCommessaPendente = (()=>{ try{ return new URLSearchParams(location.search).get('commessa'); }catch(e){ return null; } })();
+
+function gcalCfg(){ try{ return JSON.parse(localStorage.getItem(GCAL_KEY)||'{}')||{}; }catch(e){ return {}; } }
+function gcalSetCfg(patch){ localStorage.setItem(GCAL_KEY, JSON.stringify({...gcalCfg(), ...patch})); }
+function gcalLocal(){ try{ return JSON.parse(localStorage.getItem(GCAL_LOCAL)||'{}')||{}; }catch(e){ return {}; } }
+function gcalPronto(){ return gcalCfg().enabled && !!accessToken && gcalHasScope; }
+
+async function gcalFetch(url, opts={}){
+  opts.headers = {...(opts.headers||{}), 'Authorization':'Bearer '+accessToken};
+  if(opts.body) opts.headers['Content-Type'] = 'application/json';
+  return fetch(url, opts);
+}
+async function gcalErrore_(r){
+  let msg = '';
+  try{ const j = await r.json(); msg = j.error?.message || ''; }catch(e){}
+  const err = new Error(msg || ('Errore '+r.status));
+  err.status = r.status;
+  err.apiDisabilitata = /has not been used|is disabled|SERVICE_DISABLED|accessNotConfigured/i.test(msg);
+  err.scopeMancante  = /insufficient authentication scopes|ACCESS_TOKEN_SCOPE_INSUFFICIENT/i.test(msg);
+  return err;
+}
+
+// Hash breve e stabile (cyrb53) per capire se un evento è cambiato
+function _hash(str){
+  let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+  for(let i=0;i<str.length;i++){ const c=str.charCodeAt(i); h1=Math.imul(h1^c,2654435761); h2=Math.imul(h2^c,1597334677); }
+  h1 = Math.imul(h1^(h1>>>16),2246822507) ^ Math.imul(h2^(h2>>>13),3266489909);
+  h2 = Math.imul(h2^(h2>>>16),2246822507) ^ Math.imul(h1^(h1>>>13),3266489909);
+  return (4294967296*(2097151&h2)+(h1>>>0)).toString(16);
+}
+// ID evento deterministico (alfabeto base32hex: 0-9 a-v) → stesso evento a ogni sync, niente duplicati
+function gcalEventId(tipo, nome, data){
+  const bytes = new TextEncoder().encode(`${tipo}|${nome}|${data}`);
+  let hex = ''; bytes.forEach(b=>hex += b.toString(16).padStart(2,'0'));
+  return hex.length <= 1000 ? 'rl'+hex : 'rl'+_hash(hex)+_hash(hex.split('').reverse().join(''));
+}
+function _giornoDopo(ds){
+  const [y,m,d] = ds.split('-').map(Number);
+  const x = new Date(y, m-1, d+1);
+  return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`;
+}
+function _linkCommessa(nome){
+  if(!/^https?:/.test(location.protocol)) return '';
+  return location.origin + location.pathname + '?commessa=' + encodeURIComponent(nome);
+}
+
+// Eventi che DOVREBBERO esistere sul calendario, in base ai dati attuali
+function gcalEventiDesiderati(){
+  const out = new Map();
+  const add = (tipo, o, data, titolo, righe)=>{
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(data||'')) return;
+    const link = _linkCommessa(o.nome);
+    const descr = righe.filter(Boolean).join('\n') + (link ? `\n\nApri nel gestionale: ${link}` : '');
+    const ev = {
+      id: gcalEventId(tipo, o.nome, data),
+      summary: titolo,
+      description: descr,
+      start: {date: data}, end: {date: _giornoDopo(data)},
+      transparency: 'transparent',
+      reminders: {useDefault:false, overrides:[{method:'popup', minutes:900}]},   // giorno prima alle 9:00
+    };
+    if(link) ev.source = {title:'Gestionale commesse', url: link};
+    ev.extendedProperties = {private:{app: GCAL_TAG, h: _hash(JSON.stringify([ev.summary, ev.description, data]))}};
+    out.set(ev.id, ev);
+  };
+  ordiniAttivi().forEach(o=>{
+    const cli = o.cliente?.nome || '';
+    const base = [
+      cli ? `Cliente: ${cli}` : '',
+      o.cliente?.tel ? `Tel: ${o.cliente.tel}` : '',
+      o.fase ? `Fase: ${o.fase}` : '',
+      o.res > 0 ? `Da incassare: ${fmt(o.res)}` : 'Saldato',
+    ];
+    // una consegna per data (raggruppa gli articoli con la stessa data)
+    const perData = {};
+    (o.statue||[]).forEach(s=>{ if(s.consegna && !s.consegnato) (perData[s.consegna] = perData[s.consegna]||[]).push(s); });
+    Object.entries(perData).forEach(([data, arts])=>{
+      const elenco = arts.filter(s=>s.desc).map(s=>`• ${s.desc}${parseFloat(s.qty)>1?' ×'+s.qty:''}`);
+      add('c', o, data, `📦 Consegna: ${o.nome}${cli?' – '+cli:''}`,
+          [...base, elenco.length ? '\nDa consegnare:\n'+elenco.join('\n') : '']);
+    });
+    // scadenza manuale, se non coincide già con una consegna
+    if(o.scadenza && !perData[o.scadenza] && !o.tuttoConsegnato){
+      add('s', o, o.scadenza, `⏰ Scadenza: ${o.nome}${cli?' – '+cli:''}`, base);
+    }
+  });
+  return out;
+}
+
+// Esegue le richieste con un piccolo parallelismo (più veloce, entro i limiti di Google)
+async function _pool(tasks, n=4){
+  let i = 0, primoErrore = null;
+  const worker = async()=>{ while(i < tasks.length){ const t = tasks[i++]; try{ await t(); }catch(e){ primoErrore = primoErrore || e; } } };
+  await Promise.all(Array.from({length: Math.min(n, tasks.length)}, worker));
+  if(primoErrore) throw primoErrore;
+}
+
+async function gcalCreaCalendario(){
+  const tz = (Intl.DateTimeFormat().resolvedOptions().timeZone) || 'Europe/Rome';
+  const r = await gcalFetch(`${GCAL_API}/calendars`, {method:'POST', body: JSON.stringify({
+    summary: 'Commesse RuiLab',
+    description: 'Consegne e scadenze sincronizzate automaticamente dal gestionale commesse. Non modificare a mano: le modifiche vengono sovrascritte.',
+    timeZone: tz
+  })});
+  if(!r.ok) throw await gcalErrore_(r);
+  const cal = await r.json();
+  gcalSetCfg({calendarId: cal.id});
+  try{ if(accessToken){ if(!driveFileId) driveFileId = await trovaDriveFile(); await scrivisuDrive(buildBackup()); } }catch(e){}   // condivide l'ID con gli altri dispositivi
+  return cal.id;
+}
+
+async function gcalLeggiEventi(calId){
+  const map = new Map();
+  let pageToken = '';
+  do{
+    const r = await gcalFetch(`${GCAL_API}/calendars/${encodeURIComponent(calId)}/events?maxResults=2500&showDeleted=false${pageToken?'&pageToken='+encodeURIComponent(pageToken):''}`);
+    if(!r.ok) throw await gcalErrore_(r);
+    const j = await r.json();
+    (j.items||[]).forEach(ev=>map.set(ev.id, ev));
+    pageToken = j.nextPageToken || '';
+  }while(pageToken);
+  return map;
+}
+
+function gcalProgramma(){
+  if(!gcalPronto()) return;
+  clearTimeout(gcalTimer);
+  gcalTimer = setTimeout(()=>sincronizzaCalendar({silenzioso:true}), 1500);
+}
+
+async function sincronizzaCalendar({silenzioso=false}={}){
+  if(!gcalCfg().enabled) return;
+  if(!accessToken){ if(!silenzioso) showToast('Accedi con Google per sincronizzare il calendario','error'); return; }
+  if(!gcalHasScope){ if(!silenzioso) gcalRichiediPermesso(); return; }
+  if(gcalInCorso){ gcalDiNuovo = true; return; }
+  gcalInCorso = true; gcalErrore = null; gcalAggiornaUI();
+  try{
+    let calId = gcalCfg().calendarId;
+    let esistenti;
+    if(calId){
+      try{ esistenti = await gcalLeggiEventi(calId); }
+      catch(e){ if(e.status===404 || e.status===410){ calId = null; } else throw e; }   // calendario eliminato → lo ricrea
+    }
+    if(!calId){ calId = await gcalCreaCalendario(); esistenti = new Map(); }
+
+    const desiderati = gcalEventiDesiderati();
+    const base = `${GCAL_API}/calendars/${encodeURIComponent(calId)}/events`;
+    let add=0, upd=0, del=0;
+    const tasks = [];
+    desiderati.forEach((ev, id)=>{
+      const ex = esistenti.get(id);
+      if(!ex){
+        tasks.push(async()=>{
+          let r = await gcalFetch(base, {method:'POST', body: JSON.stringify(ev)});
+          if(r.status===409){   // ID già usato da un evento cancellato in passato → lo riattiva
+            r = await gcalFetch(`${base}/${id}`, {method:'PUT', body: JSON.stringify({...ev, status:'confirmed'})});
+          }
+          if(!r.ok) throw await gcalErrore_(r);
+          add++;
+        });
+      } else if(ex.extendedProperties?.private?.h !== ev.extendedProperties.private.h){
+        tasks.push(async()=>{
+          const r = await gcalFetch(`${base}/${id}`, {method:'PUT', body: JSON.stringify(ev)});
+          if(!r.ok) throw await gcalErrore_(r);
+          upd++;
+        });
+      }
+    });
+    esistenti.forEach((ex, id)=>{
+      if(desiderati.has(id)) return;
+      if(ex.extendedProperties?.private?.app !== GCAL_TAG) return;   // eventi aggiunti a mano: non si toccano
+      tasks.push(async()=>{
+        const r = await gcalFetch(`${base}/${id}`, {method:'DELETE'});
+        if(!r.ok && r.status!==404 && r.status!==410) throw await gcalErrore_(r);
+        del++;
+      });
+    });
+    await _pool(tasks);
+
+    localStorage.setItem(GCAL_LOCAL, JSON.stringify({lastSync: Date.now(), eventi: desiderati.size}));
+    const cambi = add+upd+del;
+    if(!silenzioso || cambi){
+      showToast(cambi ? `Calendario aggiornato: ${[add&&'+'+add+' nuovi', upd&&upd+' modificati', del&&del+' rimossi'].filter(Boolean).join(', ')} ✓` : 'Calendario già aggiornato ✓');
+    }
+  }catch(e){
+    gcalErrore = e;
+    if(e.status===401){ showToast('Sessione Google scaduta: riaccedi','error'); }
+    else if(e.scopeMancante){ gcalHasScope = false; try{ sessionStorage.setItem('gis_cal','0'); }catch(_){} if(!silenzioso) gcalRichiediPermesso(); }
+    else if(e.apiDisabilitata){ showToast('Attiva l\'API Google Calendar (vedi pannello Calendar)','error'); }
+    else showToast('Errore Calendar: '+e.message,'error');
+  }finally{
+    gcalInCorso = false;
+    gcalAggiornaUI();
+    if(!document.getElementById('gcal-overlay').classList.contains('hidden')) gcalRenderPannello();
+    if(gcalDiNuovo){ gcalDiNuovo = false; gcalProgramma(); }
+  }
+}
+
+// Chiede a Google il permesso per il calendario (popup di consenso)
+function gcalRichiediPermesso(){
+  if(typeof google==='undefined' || !google.accounts){ showToast('Servizi Google non caricati, riprova','error'); return; }
+  const client = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID, scope: SCOPES+' '+SCOPE_CAL, include_granted_scopes: true,
+    callback: async(resp)=>{
+      if(resp.error){ showToast('Permesso calendario non concesso','error'); gcalAggiornaUI(); return; }
+      if(!_calConcesso(resp)){ showToast('Serve spuntare l\'accesso al calendario nella finestra di Google','error'); gcalAggiornaUI(); return; }
+      _setLoggedIn(resp.access_token, true);
+      await sincronizzaCalendar();
+    }
+  });
+  client.requestAccessToken();
+}
+
+/* ── UI: pulsante topbar + pannello ── */
+function gcalAggiornaUI(){
+  const btn = document.getElementById('btn-gcal');
+  if(!btn) return;
+  btn.style.display = accessToken ? 'inline-flex' : 'none';
+  const dot = document.getElementById('gcal-dot');
+  const c = gcalCfg();
+  let stato = 'off', tip = 'Google Calendar: non attivo';
+  if(c.enabled){
+    if(gcalInCorso){ stato='sync'; tip='Google Calendar: sincronizzazione…'; }
+    else if(!gcalHasScope){ stato='warn'; tip='Google Calendar: serve il permesso su questo dispositivo'; }
+    else if(gcalErrore){ stato='err'; tip='Google Calendar: errore — clicca per i dettagli'; }
+    else { stato='on'; tip='Google Calendar: sincronizzato'; }
+  }
+  btn.title = tip;
+  if(dot) dot.className = 'gcal-dot '+stato;
+  btn.classList.toggle('gcal-spin', stato==='sync');
+}
+
+function apriGcal(){ gcalRenderPannello(); document.getElementById('gcal-overlay').classList.remove('hidden'); }
+function chiudiGcal(){ document.getElementById('gcal-overlay').classList.add('hidden'); }
+
+function gcalRenderPannello(){
+  const box = document.getElementById('gcal-body');
+  if(!box) return;
+  const c = gcalCfg(), loc = gcalLocal();
+  const nDesiderati = gcalEventiDesiderati().size;
+  const spiegazione = `<p>Ogni <b>consegna in sospeso</b> diventa un evento nel calendario dedicato <b>«Commesse RuiLab»</b> del tuo Google Calendar, con promemoria il giorno prima alle 9:00. Si aggiorna da solo quando salvi: le consegne completate, spostate o archiviate vengono aggiornate o rimosse.</p>`;
+  let html = '';
+  if(!accessToken){
+    html = spiegazione + `<p style="color:var(--amber)"><i class="ti ti-alert-triangle"></i> Accedi prima con Google.</p>
+      <div style="display:flex;gap:8px"><button class="btn-skip" onclick="chiudiGcal()">Chiudi</button></div>`;
+  } else if(!c.enabled){
+    html = spiegazione + `<p style="font-size:11.5px;color:var(--text3)">Google ti chiederà il permesso di gestire <i>solo i calendari creati da questa app</i>: il gestionale non può leggere né modificare i tuoi altri calendari. Eventi da creare ora: <b>${nDesiderati}</b>.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn-primary" onclick="gcalAttiva()"><i class="ti ti-calendar-plus"></i> Attiva sincronizzazione</button>
+        <button class="btn-skip" onclick="chiudiGcal()">Annulla</button>
+      </div>`;
+  } else {
+    const ultima = loc.lastSync ? new Date(loc.lastSync).toLocaleString('it-IT',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : 'mai';
+    let statoHtml;
+    if(gcalInCorso) statoHtml = `<span class="spinner"></span> Sincronizzazione in corso…`;
+    else if(!gcalHasScope) statoHtml = `<span style="color:var(--amber)"><i class="ti ti-lock"></i> Su questo dispositivo serve concedere il permesso</span>`;
+    else statoHtml = `<span style="color:var(--green)"><i class="ti ti-circle-check"></i> Attiva</span> · ultimo aggiornamento: ${ultima}`;
+    let erroreHtml = '';
+    if(gcalErrore){
+      const link = `https://console.cloud.google.com/apis/library/calendar-json.googleapis.com?project=${GCAL_PROGETTO}`;
+      erroreHtml = gcalErrore.apiDisabilitata
+        ? `<div class="gcal-err"><b>Manca un passaggio una tantum:</b> l'API Google Calendar non è attiva nel progetto Google del gestionale. Apri il link, premi <b>«Abilita»</b>, aspetta un minuto e poi «Sincronizza ora».<br><a href="${link}" target="_blank" rel="noopener">Attiva API Google Calendar ↗</a></div>`
+        : `<div class="gcal-err"><b>Ultimo errore:</b> ${esc(gcalErrore.message)}</div>`;
+    }
+    html = `<p style="margin-bottom:6px">${statoHtml}</p>
+      <p style="font-size:11.5px;color:var(--text3)">Consegne e scadenze in calendario: <b>${nDesiderati}</b> · calendario «Commesse RuiLab»</p>
+      ${erroreHtml}
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+        ${gcalHasScope
+          ? `<button class="btn-primary" onclick="sincronizzaCalendar()" ${gcalInCorso?'disabled':''}><i class="ti ti-refresh"></i> Sincronizza ora</button>`
+          : `<button class="btn-primary" onclick="gcalRichiediPermesso()"><i class="ti ti-lock-open"></i> Concedi permesso</button>`}
+        <a class="btn-skip" href="https://calendar.google.com/" target="_blank" rel="noopener" style="text-decoration:none;display:inline-flex;align-items:center;gap:5px"><i class="ti ti-external-link"></i> Apri Calendar</a>
+        <button class="btn-skip" onclick="gcalDisattiva()" style="color:var(--red)">Disattiva</button>
+        <button class="btn-skip" onclick="chiudiGcal()">Chiudi</button>
+      </div>`;
+  }
+  box.innerHTML = html;
+}
+
+function gcalAttiva(){
+  gcalSetCfg({enabled: true});
+  gcalErrore = null;
+  // salva la scelta su Drive così vale anche sugli altri dispositivi
+  salvaSuDrive().catch(()=>{});
+  if(gcalHasScope) sincronizzaCalendar(); else gcalRichiediPermesso();
+  gcalRenderPannello(); gcalAggiornaUI();
+}
+
+async function gcalDisattiva(){
+  if(!confirm('Disattivare la sincronizzazione con Google Calendar?')) return;
+  const calId = gcalCfg().calendarId;
+  let elimina = false;
+  if(calId && gcalHasScope && accessToken) elimina = confirm('Vuoi anche ELIMINARE il calendario «Commesse RuiLab» da Google Calendar?\n\nOK = elimina il calendario e i suoi eventi\nAnnulla = lascialo com\'è');
+  if(elimina){
+    const r = await gcalFetch(`${GCAL_API}/calendars/${encodeURIComponent(calId)}`, {method:'DELETE'});
+    if(r.ok || r.status===404 || r.status===410){ gcalSetCfg({calendarId: null}); showToast('Calendario eliminato'); }
+    else showToast('Non sono riuscito a eliminare il calendario: '+(await gcalErrore_(r)).message,'error');
+  }
+  gcalSetCfg({enabled: false});
+  gcalErrore = null;
+  localStorage.removeItem(GCAL_LOCAL);
+  try{ if(accessToken){ if(!driveFileId) driveFileId = await trovaDriveFile(); await scrivisuDrive(buildBackup()); } }catch(e){}
+  gcalRenderPannello(); gcalAggiornaUI();
+  showToast('Sincronizzazione Calendar disattivata');
 }
 
 /* ═══════════════════════════════════════════════════
@@ -2630,10 +2983,23 @@ caricaListaOrdini();
 refreshDashboard();
 updateAIUI();
 
+// Link diretto ?commessa=NOME (es. dagli eventi di Google Calendar): apre la commessa se esiste.
+// Non crea mai commesse vuote; se il dispositivo non l'ha ancora, riprova dopo la sync Drive.
+function _apriDaLink(){
+  if(!_linkCommessaPendente) return;
+  if(localStorage.getItem(storageKey(_linkCommessaPendente))){
+    apriCommessa(_linkCommessaPendente);
+    _linkCommessaPendente = null;
+    try{ history.replaceState(null, '', location.pathname); }catch(e){}
+  }
+}
+_apriDaLink();
+
 // Ripristina sessione Drive al ricaricamento (evita logout su F5)
 const _savedToken = _restoreToken();
 if(_savedToken){
-  _setLoggedIn(_savedToken);
+  let _calSalvato = false; try{ _calSalvato = sessionStorage.getItem('gis_cal')==='1'; }catch(e){}
+  _setLoggedIn(_savedToken, _calSalvato);
   sincronizzaDrive();
 } else {
   // Tentativo silenzioso dopo caricamento script Google
