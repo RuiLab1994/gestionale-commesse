@@ -1,11 +1,11 @@
-const CACHE = 'commesse-v4';
+const CACHE = 'commesse-v5';
 const SHELL = [
   './index.html',
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
   'https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css',
-  'https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap'
+  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap'
 ];
 
 // Installa e precacha la shell (non blocca se qualche risorsa fallisce)

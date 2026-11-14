@@ -4,8 +4,8 @@
   "description": "Gestionale commesse RuiLab",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#0d1117",
-  "theme_color": "#0d1117",
+  "background_color": "#F3F4F6",
+  "theme_color": "#FFFFFF",
   "orientation": "portrait",
   "icons": [
     { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
