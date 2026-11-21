@@ -10,11 +10,12 @@
 const RUOLI  = [['post_produzione','Post-produzione'],['decorazione','Decorazione'],['montaggio','Montaggio'],['imballaggio','Imballaggio']];
 const GIORNI = [[1,'lun'],[2,'mar'],[3,'mer'],[4,'gio'],[5,'ven'],[6,'sab'],[7,'dom']];
 const PAGINE = [['prod-programmazione','Programmazione'],['prod-catalogo','Catalogo'],['prod-file','File di stampa'],['prod-magazzino','Magazzino'],['prod-personale','Personale']];
-const TABELLE = ['modelli','modelli_pezzi','file_stampa','file_stampa_contenuto','personale','macchine'];
+const TABELLE = ['modelli','modelli_pezzi','file_stampa','file_stampa_contenuto','personale','macchine','commesse_produzione','produzione_righe'];
 
 const st = {
   pagina: null, caricato: false, errore: null, inCarica: null,
-  modelli: [], pezzi: [], files: [], contenuto: [], personale: [], macchine: [],
+  modelli: [], pezzi: [], files: [], contenuto: [], personale: [], macchine: [], cprod: [], righe: [],
+  commessaId: null, commessaNome: null,
   selModello: null, bozzaModello: null,
   selFile: null, bozzaFile: null, filtroMacchina: '',
   cercaModelli: '', sporco: false, canale: null, timerReload: null, daRicaricare: false
@@ -46,7 +47,8 @@ async function carica(){
   if(!(typeof sbPronto==='function' && sbPronto())) throw new Error('Database non collegato: esci e rientra con email e password');
   const ris = await Promise.all(TABELLE.map(t=>sb.from(t).select('*')));
   ris.forEach((r,i)=>{ if(r.error) throw new Error(r.error.message + ' [' + TABELLE[i] + ']'); });
-  [st.modelli, st.pezzi, st.files, st.contenuto, st.personale, st.macchine] = ris.map(r=>r.data||[]);
+  [st.modelli, st.pezzi, st.files, st.contenuto, st.personale, st.macchine, st.cprod, st.righe] = ris.map(r=>r.data||[]);
+  st.righe.sort((a,b)=>a.ordine-b.ordine);
   st.modelli.sort(perNome); st.files.sort(perNome); st.personale.sort(perNome); st.macchine.sort(perNome);
   st.pezzi.sort((a,b)=>a.ordine-b.ordine);
   st.caricato = true; st.errore = null;
@@ -70,12 +72,12 @@ function programmaReload(){
   clearTimeout(st.timerReload);
   st.timerReload = setTimeout(async()=>{
     if(st.sporco){ st.daRicaricare = true; return; }   // non disturbare chi sta scrivendo
-    try{ await ricarica(); if(st.pagina) render(); }catch(err){}
+    try{ await ricarica(); if(st.pagina) render(); aggiornaRiquadro(); }catch(err){}
   }, 800);
 }
 
 const modelloDi   = (pid)=>st.pezzi.find(p=>p.id===pid);
-const nomeModello = (mid)=>{ const m = st.modelli.find(x=>x.id===mid); return m ? m.nome + (m.altezza_cm ? ' ' + String(m.altezza_cm).replace(/\.0$/,'') + ' cm' : '') : '—'; };
+const nomeModello = (mid)=>{ const m = st.modelli.find(x=>x.id===mid); if(!m) return '—'; return m.nome + (m.altezza_cm ? ' ' + String(m.altezza_cm).replace(/\.0$/,'') + ' cm' : '') + (m.commessa_id ? ' · commessa ' + (nomeCommessaDaId(m.commessa_id) || '?') : ''); };
 const fileDelPezzo = (pid)=>{ const c = st.contenuto.find(x=>x.pezzo_id===pid); if(!c) return null; const f = st.files.find(x=>x.id===c.file_id); return f ? {file:f, quantita:c.quantita} : null; };
 const nomeMacchina = (id)=>st.macchine.find(m=>m.id===id)?.nome || 'Nessuna macchina';
 const modelliCatalogo = ()=>st.modelli.filter(m=>!m.commessa_id);
@@ -90,6 +92,8 @@ function testata(titolo, sotto, azioni){
 function contenitore(id){ return document.getElementById(id.replace('prod-','prod-box-')); }
 
 async function mostra(id){
+  const daCommessa = st.daCommessa; st.daCommessa = false;
+  if(id==='prod-catalogo' && !daCommessa && st.bozzaModello?.commessa_id && !st.sporco){ st.bozzaModello = null; st.selModello = null; }
   st.pagina = id;
   ascolta();
   const box = contenitore(id); if(!box) return;
@@ -106,7 +110,7 @@ function render(){
   if(st.errore && !st.caricato){
     const tab = erroreTabelle(st.errore);
     box.innerHTML = testata(PAGINE.find(p=>p[0]===id)?.[1]||'', '') + `<div class="prod-banner err"><i class="ti ti-alert-triangle"></i><span>${tab
-      ? 'Le tabelle della produzione non ci sono ancora nel database: esegui <b>supabase/02_produzione.sql</b> nello SQL Editor di Supabase, poi ricarica la pagina.'
+      ? 'Mancano alcune tabelle della produzione nel database: esegui gli script della cartella <b>supabase/</b> che non hai ancora eseguito (02_produzione.sql, 03_commesse_produzione.sql) nello SQL Editor di Supabase, poi ricarica la pagina.'
       : 'Dati di produzione non raggiungibili: ' + e(st.errore)}</span><button class="btn sm" onclick="Prod.riprova()">Riprova</button></div>`;
     return;
   }
@@ -114,16 +118,19 @@ function render(){
   else if(id==='prod-file') renderFile(box);
   else if(id==='prod-personale') renderPersonale(box);
   else if(id==='prod-magazzino') renderMagazzino(box);
+  else if(id==='prod-commessa') renderCommessa(box);
   else renderProgrammazione(box);
 }
 
 /* ═════════════ CATALOGO MODELLI ═════════════ */
 function bozzaDa(m){
-  if(!m) return {id:null, nome:'', altezza:'', montaggio:0, imballaggio:0, note:'', pezzi:[{id:null, nome:'', tipo:'pezzo', tecnologia:'fdm', quantita:1, cart:0, deco:0}]};
-  return {
-    id:m.id, nome:m.nome, altezza:m.altezza_cm ?? '', montaggio:m.minuti_montaggio, imballaggio:m.minuti_imballaggio, note:m.note||'',
+  if(!m) return {id:null, commessa_id:null, nome:'', altezza:'', montaggio:0, imballaggio:0, note:'', pezzi:[{id:null, nome:'', tipo:'pezzo', tecnologia:'fdm', quantita:1, cart:0, deco:0}]};
+  const b = {
+    id:m.id, commessa_id:m.commessa_id||null, nome:m.nome, altezza:m.altezza_cm ?? '', montaggio:m.minuti_montaggio, imballaggio:m.minuti_imballaggio, note:m.note||'',
     pezzi: st.pezzi.filter(p=>p.modello_id===m.id).map(p=>({id:p.id, nome:p.nome, tipo:p.tipo, tecnologia:p.tecnologia, quantita:p.quantita, cart:p.minuti_carteggiatura, deco:p.minuti_decorazione}))
   };
+  if(!b.pezzi.length) b.pezzi.push({id:null, nome:'', tipo:'pezzo', tecnologia:'fdm', quantita:1, cart:0, deco:0});   // si parte con una riga vuota
+  return b;
 }
 function oreLavoroModello(mid){
   const m = st.modelli.find(x=>x.id===mid); if(!m) return 0;
@@ -178,12 +185,13 @@ function editorModello(){
     </tr>`;
   }).join('');
 
-  return `<div class="card">
+  const personalizzata = b.commessa_id ? `<div class="prod-banner" style="margin:16px 20px 0;background:var(--purple-bg);border-color:transparent;color:var(--purple)"><i class="ti ti-sparkles"></i><span style="flex:1">Statua personalizzata della commessa <b>${e(nomeCommessaDaId(b.commessa_id)||'')}</b>: non compare nel catalogo del negozio.</span><button class="btn sm" onclick="Prod.tornaACommessa()"><i class="ti ti-arrow-left"></i> Torna alla commessa</button></div>` : '';
+  return `<div class="card">${personalizzata}
     <div class="prod-form">
-      <div class="field grow"><label for="pm-nome">Nome del modello</label><input id="pm-nome" type="text" value="${e(b.nome)}" placeholder="es. Madonna di Lourdes" oninput="Prod.mod('nome',this.value)"></div>
+      <div class="field grow"><label for="pm-nome">${b.commessa_id ? 'Nome della statua' : 'Nome del modello'}</label><input id="pm-nome" type="text" value="${e(b.nome)}" placeholder="es. Madonna di Lourdes" oninput="Prod.mod('nome',this.value)"></div>
       <div class="field small"><label for="pm-alt">Altezza (cm)</label><input id="pm-alt" type="number" min="0" step="0.5" value="${e(b.altezza)}" oninput="Prod.mod('altezza',this.value)"></div>
       <div class="prod-actions">
-        ${b.id ? `<button class="btn" onclick="Prod.duplicaModello()"><i class="ti ti-copy"></i> Duplica</button>
+        ${b.id && !b.commessa_id ? `<button class="btn" onclick="Prod.duplicaModello()"><i class="ti ti-copy"></i> Duplica</button>
         <button class="btn danger" onclick="Prod.eliminaModello()"><i class="ti ti-trash"></i></button>` : ''}
         <button class="btn btn-save" id="pm-salva" onclick="Prod.salvaModello()"><i class="ti ti-device-floppy"></i> Salva</button>
       </div>
@@ -262,7 +270,8 @@ async function eliminaModello(){
   const r = await sb.from('modelli').delete().eq('id', b.id);
   if(r.error){ showToast('Eliminazione non riuscita: ' + r.error.message, 'error'); return; }
   st.selModello = null; st.bozzaModello = null; st.sporco = false;
-  await ricarica(); showToast('Modello eliminato'); render();
+  await ricarica(); showToast('Modello eliminato');
+  if(b.commessa_id && st.commessaId===b.commessa_id){ st.daCommessa = false; showPage('prod-commessa'); } else render();
 }
 
 /* ═════════════ FILE DI STAMPA ═════════════ */
@@ -512,6 +521,266 @@ async function eliminaMacchina(id){
   chiudiModale(); await ricarica(); showToast('Eliminata'); render();
 }
 
+/* ═════════════ PRODUZIONE DI UNA COMMESSA ═════════════ */
+// Collegamento con il gestionale commesse: il codice fisso della commessa è nel database (sb_base)
+function baseCommesse(){ try{ return (typeof _leggiSbBase==='function' && _leggiSbBase()) || {}; }catch(err){ return {}; } }
+function nomeCommessaDaId(id){ const b = baseCommesse(); const k = Object.keys(b).find(k=>k.startsWith('commessa__') && b[k]?.id===id); return k ? k.slice('commessa__'.length) : null; }
+function idCommessaDaNome(nome){ return baseCommesse()[storageKey(nome)]?.id || null; }
+function datiCommessa(nome){ try{ return JSON.parse(localStorage.getItem(storageKey(nome))||'null'); }catch(err){ return null; } }
+const statoProd = (cid)=>st.cprod.find(x=>x.commessa_id===cid) || null;
+const righeDi = (cid)=>st.righe.filter(r=>r.commessa_id===cid);
+
+function problemiModello(mid){
+  const out = [];
+  const m = st.modelli.find(x=>x.id===mid);
+  if(!m) return ['modello da scegliere'];
+  const pz = st.pezzi.filter(p=>p.modello_id===mid);
+  if(!pz.length) out.push('nessun pezzo inserito');
+  pz.forEach(p=>{
+    const f = fileDelPezzo(p.id);
+    if(!f) out.push(p.nome + ': nessun file di stampa');
+    else{
+      if(!f.file.macchina_id) out.push(f.file.nome + ': macchina da scegliere');
+      if(!(f.file.minuti_durata>0)) out.push(f.file.nome + ': durata mancante');
+    }
+  });
+  if(pz.length && !pz.some(p=>p.minuti_decorazione>0)) out.push('tempi di decorazione mancanti');
+  if(!(m.minuti_imballaggio>0)) out.push('tempo di imballaggio mancante');
+  return out;
+}
+function problemiCommessa(cid){
+  const righe = righeDi(cid);
+  if(!righe.length) return ['nessuna statua da produrre'];
+  const out = [];
+  righe.forEach(r=>{
+    const etichetta = r.descrizione || nomeModello(r.modello_id);
+    (r.modello_id ? problemiModello(r.modello_id) : ['modello da scegliere']).forEach(x=>out.push(etichetta + ' · ' + x));
+  });
+  return out;
+}
+// Quante volte lanciare ogni file per coprire i pezzi della commessa (il magazzino arriverà dopo)
+function lanciCommessa(cid){
+  const serve = {};
+  righeDi(cid).forEach(r=>{
+    if(!r.modello_id) return;
+    st.pezzi.filter(p=>p.modello_id===r.modello_id).forEach(p=>{ serve[p.id] = (serve[p.id]||0) + p.quantita * r.quantita; });
+  });
+  const lanci = {};
+  Object.entries(serve).forEach(([pid, n])=>{
+    const f = fileDelPezzo(pid); if(!f) return;
+    lanci[f.file.id] = Math.max(lanci[f.file.id]||0, Math.ceil(n / f.quantita));
+  });
+  return Object.entries(lanci).map(([fid, n])=>({file: st.files.find(f=>f.id===fid), n})).filter(x=>x.file);
+}
+function orePersoneCommessa(cid){
+  return righeDi(cid).reduce((s,r)=>s + (r.modello_id ? oreLavoroModello(r.modello_id) * r.quantita : 0), 0);
+}
+
+async function apriCommessa(nome){
+  if(!nome) return;
+  if(typeof flushAutosave==='function') flushAutosave();
+  let id = idCommessaDaNome(nome);
+  if(!id && typeof salvaSuDrive==='function'){ await salvaSuDrive(); id = idCommessaDaNome(nome); }
+  if(!id){ showToast('La commessa non è ancora nel database: controlla la connessione e riprova','error'); return; }
+  st.commessaId = id; st.commessaNome = nome;
+  showPage('prod-commessa');
+}
+
+async function preparaCommessa(cid, nome){
+  // Primo accesso: crea lo stato e propone le statue prendendole dagli articoli della commessa
+  if(statoProd(cid)) return;
+  const r = await sb.from('commesse_produzione').insert({commessa_id:cid});
+  if(r.error && r.error.code!=='23505') throw r.error;
+  if(!righeDi(cid).length){
+    const art = (datiCommessa(nome)?.statue||[]).filter(s=>(s.desc||'').trim());
+    if(art.length){
+      const rr = await sb.from('produzione_righe').insert(art.map((s,i)=>({commessa_id:cid, ordine:i, descrizione:s.desc.trim(), quantita:Math.max(1, parseInt(s.qty)||1)})));
+      if(rr.error) throw rr.error;
+    }
+  }
+  await ricarica();
+}
+
+function renderCommessa(box){
+  const cid = st.commessaId, nome = st.commessaNome || nomeCommessaDaId(cid);
+  if(!cid || !nome){
+    box.innerHTML = testata('Produzione della commessa', '') + `<div class="card"><div class="empty"><i class="ti ti-list-details"></i><p>Apri una commessa e premi «Apri la produzione».</p><button class="btn" onclick="showPage('commesse')">Vai alle commesse</button></div></div>`;
+    return;
+  }
+  if(!statoProd(cid)){
+    box.innerHTML = testata(e(nome), 'Preparo la scheda di produzione…') + '<div class="card"><div class="empty"><span class="spinner"></span></div></div>';
+    preparaCommessa(cid, nome).then(()=>{ if(st.pagina==='prod-commessa') render(); }).catch(err=>{
+      box.innerHTML = testata(e(nome), '') + `<div class="prod-banner err"><i class="ti ti-alert-triangle"></i><span>Non riesco a creare la scheda di produzione: ${e(err.message||err)}</span></div>`;
+    });
+    return;
+  }
+  const sp = statoProd(cid);
+  const dati = datiCommessa(nome) || {};
+  const consegne = (dati.statue||[]).filter(s=>s.consegna && !s.consegnato).map(s=>s.consegna).sort();
+  const consegna = consegne.length ? new Date(consegne[0]+'T12:00').toLocaleDateString('it-IT',{weekday:'short', day:'numeric', month:'long'}) : 'non indicata';
+  const problemi = problemiCommessa(cid);
+  const inProd = sp.stato==='produzione';
+  const statoChip = inProd ? '<span class="pchip" style="background:var(--green-bg);color:var(--green)">In produzione</span>'
+    : problemi.length ? '<span class="pchip fdm">In attesa dei dati</span>' : '<span class="pchip" style="background:var(--blue-bg);color:var(--blue-ink)">Dati completi</span>';
+
+  const catalogo = modelliCatalogo();
+  const personali = st.modelli.filter(m=>m.commessa_id===cid).sort(perNome);
+  const righe = righeDi(cid).map((r,i)=>{
+    const opz = `<option value="">Scegli…</option>
+      ${personali.length ? `<optgroup label="Statue personalizzate di questa commessa">${personali.map(m=>`<option value="${m.id}" ${m.id===r.modello_id?'selected':''}>${e(m.nome)}</option>`).join('')}</optgroup>` : ''}
+      <optgroup label="Catalogo del negozio">${catalogo.map(m=>`<option value="${m.id}" ${m.id===r.modello_id?'selected':''}>${e(nomeModello(m.id))}</option>`).join('')}</optgroup>
+      <optgroup label="Nuova"><option value="__nuova">+ Nuova statua personalizzata</option><option value="__copia">+ Personalizzata partendo da un modello…</option></optgroup>`;
+    const prob = r.modello_id ? problemiModello(r.modello_id) : ['modello da scegliere'];
+    const m = st.modelli.find(x=>x.id===r.modello_id);
+    const statoRiga = !prob.length ? '<span class="prod-file-ref" style="color:var(--green)"><b><i class="ti ti-circle-check"></i> Completa</b></span>'
+      : `<span class="prod-file-ref none"><i class="ti ti-alert-triangle"></i> ${prob.length===1 ? e(prob[0]) : prob.length + ' dati mancanti'}</span>`;
+    const azione = m ? `<button class="btn sm" onclick="Prod.modificaModelloRiga('${m.id}')">${m.commessa_id ? '<i class="ti ti-edit"></i> Pezzi e tempi' : '<i class="ti ti-eye"></i> Vedi nel catalogo'}</button>` : '';
+    return `<tr>
+      <td><input type="text" value="${e(r.descrizione)}" placeholder="es. Madonna con manto azzurro" aria-label="Descrizione" ${inProd?'disabled':''} onchange="Prod.rigaCampo('${r.id}','descrizione',this.value)"></td>
+      <td class="q"><input type="number" min="1" value="${r.quantita}" aria-label="Quantità" ${inProd?'disabled':''} onchange="Prod.rigaCampo('${r.id}','quantita',this.value)"></td>
+      <td><select aria-label="Modello" ${inProd?'disabled':''} onchange="Prod.rigaModello('${r.id}',this)">${opz}</select></td>
+      <td>${statoRiga}</td>
+      <td style="white-space:nowrap">${azione} ${inProd ? '' : `<button type="button" class="btn-del" aria-label="Togli statua" onclick="Prod.togliRiga('${r.id}')">×</button>`}</td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="5"><div class="prod-empty">Nessuna statua: aggiungi quelle da produrre.</div></td></tr>`;
+
+  const lanci = lanciCommessa(cid);
+  const lanciTxt = lanci.length ? lanci.map(l=>`<span style="font-weight:600">${e(l.file.nome)}</span> ×${l.n} <span class="muted">(${e(nomeMacchina(l.file.macchina_id))}, ${hm(l.file.minuti_durata*l.n)})</span>`).join('<br>') : '<span class="muted">nessuno ancora</span>';
+  const elencoProblemi = problemi.length && !inProd ? `<div class="prod-banner"><i class="ti ti-alert-triangle"></i><span style="flex:1">Per mandarla in produzione mancano:<br>${problemi.slice(0,8).map(e).join('<br>')}${problemi.length>8 ? '<br>…e altri ' + (problemi.length-8) : ''}</span></div>` : '';
+  const azioni = inProd
+    ? `<button class="btn" onclick="Prod.riportaInPreparazione()"><i class="ti ti-arrow-back-up"></i> Riporta in preparazione</button>`
+    : `<button class="btn-primary" ${problemi.length?'disabled':''} onclick="Prod.mandaInProduzione()"><i class="ti ti-player-play"></i> Manda in produzione</button>`;
+
+  box.innerHTML = testata(e(nome), `${e(dati.cliente?.nome||'Cliente non indicato')} · consegna promessa: ${e(consegna)}`,
+      `<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" onclick="Prod.vaiAllaCommessa()"><i class="ti ti-arrow-left"></i> Torna alla commessa</button>${azioni}</div>`) +
+    `<div style="margin:-6px 0 16px">${statoChip}${inProd && sp.mandata_il ? ` <span class="muted" style="font-size:13px">dal ${new Date(sp.mandata_il).toLocaleDateString('it-IT',{day:'numeric',month:'long'})}</span>` : ''}</div>
+    ${elencoProblemi}
+    <div class="card" style="margin-bottom:18px">
+      <div class="card-hdr"><h2>Statue da produrre</h2><span class="sub">Dal catalogo del negozio, oppure personalizzate per questa commessa</span></div>
+      <div class="prod-tbl-wrap"><table class="prod-tbl" style="min-width:820px">
+        <thead><tr><th>Descrizione</th><th>Quantità</th><th>Modello</th><th>Dati</th><th></th></tr></thead>
+        <tbody>${righe}</tbody></table></div>
+      ${inProd ? '' : `<div class="prod-add"><button class="btn-add" onclick="Prod.aggiungiRiga()"><i class="ti ti-plus"></i> Aggiungi statua</button></div>`}
+    </div>
+    <div class="card">
+      <div class="card-hdr"><h2>Riepilogo</h2></div>
+      <div class="prod-tot">
+        <div class="hl"><small>Lavoro delle persone</small><b>${hm(orePersoneCommessa(cid))}</b></div>
+        <div style="grid-column:span 2"><small>Stampe da lanciare</small><span style="font-size:14px;line-height:1.7">${lanciTxt}</span></div>
+      </div>
+      <p class="muted" style="font-size:13px;padding:0 20px 16px">I pezzi in più delle stampe andranno in magazzino; quando il magazzino sarà attivo, i pezzi già presenti ridurranno le stampe.</p>
+    </div>`;
+}
+
+// Riquadro "Produzione" dentro la scheda della commessa
+function aggiornaRiquadro(){
+  const nome = (typeof ordineAttivo!=='undefined') ? ordineAttivo : null;
+  const chip = document.getElementById('prod-stato-commessa'), txt = document.getElementById('prod-stato-testo');
+  if(!chip || !txt || !nome) return;
+  const cid = idCommessaDaNome(nome);
+  const scrivi = (c, cls, t)=>{ chip.textContent = c; chip.className = 'pchip ' + cls; txt.textContent = t; };
+  if(!cid){ scrivi('Non impostata', 'grey', 'Imposta quali statue produrre, con pezzi, file di stampa e tempi.'); return; }
+  const fai = ()=>{
+    const sp = statoProd(cid);
+    if(!sp){ scrivi('Non impostata', 'grey', 'Imposta quali statue produrre, con pezzi, file di stampa e tempi.'); return; }
+    if(sp.stato==='produzione'){ scrivi('In produzione', 'resina', 'Mandata in produzione il ' + new Date(sp.mandata_il||sp.aggiornato_il).toLocaleDateString('it-IT',{day:'numeric',month:'long'}) + '.'); return; }
+    const p = problemiCommessa(cid);
+    if(p.length) scrivi('In attesa dei dati', 'fdm', (p.length===1 ? 'Manca 1 dato' : 'Mancano ' + p.length + ' dati') + ' prima di poterla mandare in produzione.');
+    else scrivi('Dati completi', 'grey', 'Pronta da mandare in produzione.');
+  };
+  if(st.caricato) fai();
+  else assicuraDati().then(fai).catch(()=>scrivi('Non disponibile', 'grey', 'Dati di produzione non raggiungibili in questo momento.'));
+}
+
+async function rigaCampo(id, campo, v){
+  const val = campo==='quantita' ? Math.max(1, parseInt(v)||1) : String(v).trim();
+  const r = await sb.from('produzione_righe').update({[campo]: val}).eq('id', id);
+  if(r.error){ showToast('Non salvato: ' + r.error.message, 'error'); return; }
+  const loc = st.righe.find(x=>x.id===id); if(loc) loc[campo] = val;
+  render();
+}
+async function rigaModello(id, sel){
+  const v = sel.value;
+  const riga = st.righe.find(x=>x.id===id);
+  if(v==='__nuova' || v==='__copia'){
+    let base = null;
+    if(v==='__copia'){
+      const elenco = modelliCatalogo();
+      if(!elenco.length){ showToast('Il catalogo è vuoto','error'); render(); return; }
+      scegliModelloDaCopiare(id); return;
+    }
+    await creaPersonalizzata(riga, base);
+    return;
+  }
+  const r = await sb.from('produzione_righe').update({modello_id: v || null}).eq('id', id);
+  if(r.error){ showToast('Non salvato: ' + r.error.message, 'error'); return; }
+  await ricarica(); render();
+}
+function scegliModelloDaCopiare(rigaId){
+  modale(`<h3><i class="ti ti-copy"></i> Parti da un modello</h3>
+    <p>Copio pezzi e tempi del modello scelto in una statua personalizzata di questa commessa: poi la modifichi come serve. I pezzi copiati vanno assegnati a un file di stampa.</p>
+    <div class="field"><label for="pc-mod">Modello del catalogo</label><select id="pc-mod">${modelliCatalogo().map(m=>`<option value="${m.id}">${e(nomeModello(m.id))}</option>`).join('')}</select></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn-primary" onclick="Prod.confermaCopia('${rigaId}')"><i class="ti ti-check"></i> Crea la copia</button>
+      <button class="btn-skip" onclick="Prod.chiudiModale(); Prod.ridisegna()">Annulla</button>
+    </div>`);
+}
+async function creaPersonalizzata(riga, daModelloId){
+  try{
+    const src = daModelloId ? st.modelli.find(m=>m.id===daModelloId) : null;
+    const rec = {nome: (riga.descrizione || (src ? src.nome : 'Statua personalizzata')), commessa_id: riga.commessa_id,
+      altezza_cm: src?.altezza_cm ?? null, minuti_montaggio: src?.minuti_montaggio || 0, minuti_imballaggio: src?.minuti_imballaggio || 0, note: src?.note || ''};
+    const r = await sb.from('modelli').insert(rec).select('id').single(); if(r.error) throw r.error;
+    const mid = r.data.id;
+    if(src){
+      const pz = st.pezzi.filter(p=>p.modello_id===src.id).map(p=>({modello_id:mid, ordine:p.ordine, nome:p.nome, tipo:p.tipo, tecnologia:p.tecnologia, quantita:p.quantita, minuti_carteggiatura:p.minuti_carteggiatura, minuti_decorazione:p.minuti_decorazione}));
+      if(pz.length){ const rp = await sb.from('modelli_pezzi').insert(pz); if(rp.error) throw rp.error; }
+    }
+    const ru = await sb.from('produzione_righe').update({modello_id: mid}).eq('id', riga.id); if(ru.error) throw ru.error;
+    await ricarica();
+    modificaModelloRiga(mid);
+  }catch(err){ showToast('Non riesco a creare la statua: ' + (err.message||err), 'error'); render(); }
+}
+function modificaModelloRiga(mid){
+  const m = st.modelli.find(x=>x.id===mid); if(!m) return;
+  if(!puoiLasciare()) return;
+  st.selModello = mid; st.bozzaModello = bozzaDa(m); st.sporco = false;
+  st.daCommessa = true;
+  showPage('prod-catalogo');
+}
+async function aggiungiRiga(){
+  const cid = st.commessaId;
+  const r = await sb.from('produzione_righe').insert({commessa_id:cid, ordine: righeDi(cid).length, descrizione:'', quantita:1});
+  if(r.error){ showToast('Non salvato: ' + r.error.message, 'error'); return; }
+  await ricarica(); render();
+  const ins = document.querySelectorAll('#prod-box-commessa tbody tr'); ins[ins.length-1]?.querySelector('input')?.focus();
+}
+async function togliRiga(id){
+  const riga = st.righe.find(x=>x.id===id);
+  const m = st.modelli.find(x=>x.id===riga?.modello_id);
+  const msg = m?.commessa_id ? `Togliere questa statua? Anche la statua personalizzata "${m.nome}" con i suoi pezzi verrà eliminata.` : 'Togliere questa statua dalla produzione?';
+  if(!confirm(msg)) return;
+  let r = await sb.from('produzione_righe').delete().eq('id', id);
+  if(!r.error && m?.commessa_id && !st.righe.some(x=>x.id!==id && x.modello_id===m.id)) r = await sb.from('modelli').delete().eq('id', m.id);
+  if(r.error){ showToast('Non riuscito: ' + r.error.message, 'error'); return; }
+  await ricarica(); render();
+}
+async function mandaInProduzione(){
+  const cid = st.commessaId;
+  const p = problemiCommessa(cid);
+  if(p.length){ showToast('Mancano ancora dei dati', 'error'); return; }
+  if(!confirm('Mandare la commessa in produzione? Entrerà nella programmazione e sui tablet.')) return;
+  const r = await sb.from('commesse_produzione').update({stato:'produzione', mandata_il: new Date().toISOString()}).eq('commessa_id', cid);
+  if(r.error){ showToast('Non riuscito: ' + r.error.message, 'error'); return; }
+  await ricarica(); showToast('Commessa in produzione ✓'); render(); aggiornaRiquadro();
+}
+async function riportaInPreparazione(){
+  if(!confirm('Riportarla in preparazione? Uscirà dalla programmazione finché non la rimandi in produzione.')) return;
+  const r = await sb.from('commesse_produzione').update({stato:'preparazione', mandata_il:null}).eq('commessa_id', st.commessaId);
+  if(r.error){ showToast('Non riuscito: ' + r.error.message, 'error'); return; }
+  await ricarica(); render(); aggiornaRiquadro();
+}
+
 /* ═════════════ PROGRAMMAZIONE E MAGAZZINO (prossimi passi) ═════════════ */
 function renderProgrammazione(box){
   const cat = modelliCatalogo();
@@ -577,6 +846,12 @@ window.Prod = {
   // personale e macchine
   apriPersona, salvaPersona, eliminaPersona, apriMacchina, salvaMacchina, eliminaMacchina,
   toggleEsterno(v){ document.getElementById('pk-ore-box').style.display = v ? 'none' : ''; document.getElementById('pk-gg-box').style.display = v ? '' : 'none'; },
+  // produzione della commessa
+  apriCommessa, aggiornaRiquadro, rigaCampo, rigaModello, aggiungiRiga, togliRiga, mandaInProduzione, riportaInPreparazione, modificaModelloRiga,
+  confermaCopia(rigaId){ const mid = document.getElementById('pc-mod')?.value; chiudiModale(); const riga = st.righe.find(x=>x.id===rigaId); if(riga && mid) creaPersonalizzata(riga, mid); },
+  ridisegna(){ render(); },
+  tornaACommessa(){ const cid = st.bozzaModello?.commessa_id; if(!cid || !puoiLasciare()) return; st.sporco = false; st.commessaId = cid; st.commessaNome = nomeCommessaDaId(cid); showPage('prod-commessa'); },
+  vaiAllaCommessa(){ const n = st.commessaNome; if(n && typeof apriCommessa==='function') window.apriCommessa(n); },
   // per i test
   _st: st, _leggiTempo: leggiTempo, _hm: hm
 };

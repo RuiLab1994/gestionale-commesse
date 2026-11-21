@@ -15,7 +15,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="produzione/produzione.css?v=1">
+<link rel="stylesheet" href="produzione/produzione.css?v=2">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.2/dist/umd/supabase.js"></script>
 <style>
@@ -766,7 +766,11 @@ td input[type=number]{text-align:right}
             </div>
 
             <div class="panel">
-              <div class="panel-hdr"><span class="panel-title">A che punto è</span></div>
+              <div class="panel-hdr"><span class="panel-title">Produzione</span><span class="pchip grey" id="prod-stato-commessa">—</span></div>
+              <p class="muted" id="prod-stato-testo" style="font-size:14px;margin:0 0 12px">Imposta quali statue produrre, con pezzi, file di stampa e tempi.</p>
+              <button class="btn" onclick="Prod.apriCommessa(ordineAttivo)"><i class="ti ti-building-factory-2"></i> Apri la produzione</button>
+              <!-- campi della vecchia sezione "A che punto è": nascosti, conservati per le viste che li usano -->
+              <div hidden>
               <div class="fase-pills" id="fase-pills" role="group" aria-label="Fase di lavorazione"></div>
               <details class="more">
                 <summary><i class="ti ti-chevron-down"></i> Stampante, persona, dimensioni e ore</summary>
@@ -779,6 +783,7 @@ td input[type=number]{text-align:right}
                 </div>
                 <button class="ai-setup-hint" onclick="apriConfig()" style="margin-top:8px"><i class="ti ti-adjustments"></i> Modifica l'elenco di fasi, stampanti e persone</button>
               </details>
+              </div>
             </div>
 
             <div class="panel">
@@ -1008,6 +1013,7 @@ td input[type=number]{text-align:right}
     <div class="page" id="page-prod-file"><div id="prod-box-file"></div></div>
     <div class="page" id="page-prod-magazzino"><div id="prod-box-magazzino"></div></div>
     <div class="page" id="page-prod-personale"><div id="prod-box-personale"></div></div>
+    <div class="page" id="page-prod-commessa"><div id="prod-box-commessa"></div></div>
 
   </main>
 
@@ -3312,6 +3318,7 @@ function onSelChange(){
   ordineAttivo = nome;
   let dati = null; try{ dati = JSON.parse(localStorage.getItem(storageKey(nome))); }catch(e){}
   renderPannello(dati);
+  if(window.Prod) Prod.aggiornaRiquadro();
   document.getElementById('pannello-vuoto').style.display = 'none';
   document.getElementById('pannello').style.display = 'flex';
   page.classList.add('has-open');
@@ -3837,6 +3844,6 @@ if('serviceWorker' in navigator){
   });
 }
 </script>
-<script src="produzione/produzione.js?v=1"></script>
+<script src="produzione/produzione.js?v=2"></script>
 </body>
 </html>
