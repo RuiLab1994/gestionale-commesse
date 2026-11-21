@@ -1929,34 +1929,124 @@ function buildBackup(){
   return b;
 }
 
+/* ═══════════════════════════════════════════════════
+   SINCRONIZZAZIONE CON UNIONE (più dispositivi insieme)
+   Prima di scrivere si rilegge sempre il file su Drive e si confronta, chiave
+   per chiave (una commessa = una chiave), con l'ultima versione condivisa
+   ("base", salvata su questo dispositivo):
+   - cambiata solo qui        → vince questo dispositivo
+   - cambiata solo su Drive   → vince Drive (modifica del socio)
+   - cambiata da entrambi     → conflitto: si tiene la versione di qui, si avvisa
+                                e quella di Drive resta copiata in 'conflitti_drive'
+   Così chi salva non cancella più le modifiche fatte dall'altro su altre commesse.
+═══════════════════════════════════════════════════ */
+const DRIVE_BASE = 'drive_base';            // {chiave: json} ultima versione condivisa con Drive
+const DRIVE_CONFLITTI = 'conflitti_drive';  // copie delle versioni di Drive scartate in un conflitto
+function _normJson(v){ try{ return JSON.stringify(JSON.parse(v)); }catch(e){ return v; } }
+function _leggiBase(){ try{ const b = localStorage.getItem(DRIVE_BASE); return b ? JSON.parse(b) : null; }catch(e){ return null; } }
+function _scriviBase(b){ try{ localStorage.setItem(DRIVE_BASE, JSON.stringify(b)); }catch(e){ console.warn('base sync non salvata', e); } }
+function _snapshotLocale(){
+  const s = {};
+  Object.keys(localStorage).filter(isSyncKey).forEach(k=>{ s[k] = _normJson(localStorage.getItem(k)); });
+  return s;
+}
+function _nomeChiave(k){ return k.startsWith('commessa__') ? '«'+k.slice(10)+'»' : 'le impostazioni'; }
+function _salvaConflitto(k, valoreDrive){
+  try{
+    const l = JSON.parse(localStorage.getItem(DRIVE_CONFLITTI)||'[]');
+    l.unshift({chiave:k, quando:new Date().toISOString(), versioneDrive:valoreDrive});
+    localStorage.setItem(DRIVE_CONFLITTI, JSON.stringify(l.slice(0,20)));
+  }catch(e){}
+}
+
+let _syncCoda = Promise.resolve();
+function _sincronizza(){            // una sincronizzazione alla volta
+  const run = ()=>_sincronizzaOra();
+  const p = _syncCoda.then(run, run);
+  _syncCoda = p.catch(()=>{});
+  return p;
+}
+
+async function _sincronizzaOra(){
+  if(!driveFileId) driveFileId = await trovaDriveFile();
+  let remotoObj = {};
+  if(driveFileId){
+    remotoObj = await leggiDaDrive(driveFileId);
+    if(!remotoObj || typeof remotoObj!=='object') throw new Error('file su Drive non leggibile, nessuna modifica inviata');
+  }
+  const R = {};
+  Object.keys(remotoObj).filter(isSyncKey).forEach(k=>{ R[k] = JSON.stringify(remotoObj[k]); });
+  const L = _snapshotLocale();
+  let B = _leggiBase();
+  if(!B){
+    // Primo avvio con la nuova sincronizzazione: senza modifiche in sospeso vince Drive,
+    // con modifiche in sospeso vince questo dispositivo (come prima). Nulla viene cancellato.
+    B = {};
+    const pend = drivePendente();
+    Object.keys(L).forEach(k=>{ if(R[k]!==undefined) B[k] = pend ? R[k] : L[k]; });
+  }
+
+  const chiavi = new Set([...Object.keys(B), ...Object.keys(L), ...Object.keys(R)]);
+  const M = {}, conflitti = [];
+  chiavi.forEach(k=>{
+    const l = L[k], r = R[k], b = B[k];
+    let m;
+    if(l===b) m = r;                       // qui invariata → prendi Drive
+    else if(r===b || l===r) m = l;         // cambiata solo qui (o uguale) → prendi qui
+    else {                                 // cambiata da entrambi in modo diverso
+      m = (l!==undefined) ? l : r;         // un'eliminazione non cancella le modifiche dell'altro
+      conflitti.push(k);
+      if(r!==undefined && m!==r) _salvaConflitto(k, JSON.parse(r));
+    }
+    if(m!==undefined) M[k] = m;
+  });
+
+  // Scrive su Drive solo se il risultato è diverso da quello che c'è già
+  const uguale = !!driveFileId && Object.keys(M).length===Object.keys(R).length && Object.keys(M).every(k=>M[k]===R[k]);
+  if(!uguale){
+    const out = {}; Object.keys(M).forEach(k=>{ out[k] = JSON.parse(M[k]); });
+    await scrivisuDrive(out);
+  }
+
+  // Applica qui le modifiche arrivate da Drive (senza toccare ciò che è cambiato nel frattempo)
+  let aggiornati = 0;
+  const ora = _snapshotLocale();
+  chiavi.forEach(k=>{
+    if(ora[k]!==L[k]) return;              // modificata durante la sincronizzazione: va al prossimo giro
+    if(M[k]===L[k]) return;
+    if(M[k]===undefined) localStorage.removeItem(k); else localStorage.setItem(k, M[k]);
+    aggiornati++;
+  });
+  _scriviBase(M);
+  const dopo = _snapshotLocale();
+  const ancoraPendente = Object.keys({...dopo, ...M}).some(k=>dopo[k]!==M[k]);
+  segnaDrivePendente(ancoraPendente);
+  const cambiateDurante = Object.keys({...ora, ...L}).some(k=>ora[k]!==L[k]);
+  if(ancoraPendente && cambiateDurante) _programmaDrive();   // salva ciò che è stato scritto nel frattempo
+
+  if(conflitti.length){
+    showToast(`Attenzione: ${conflitti.map(_nomeChiave).join(', ')} modificata anche da un altro dispositivo. Tenuta la versione di questo dispositivo.`, 'error');
+  }
+  return {aggiornati, conflitti, scritto:!uguale};
+}
+
+function _aggiornaVisteDopoSync(){
+  caricaListaOrdini();
+  refreshDashboard();
+  ricaricaSchedaAperta();
+}
+
 async function sincronizzaDrive(){
   if(!sessioneAttiva()){ showToast('Accedi con Google per sincronizzare','error'); return; }
   const btn = document.getElementById('btn-sync');
   btn.innerHTML = '<span class="spinner"></span> Sync...';
   btn.disabled = true;
   try{
-    if(!driveFileId) driveFileId = await trovaDriveFile();
-    if(drivePendente()){
-      // modifiche fatte mentre Google era scollegato: prima si inviano, così non vengono sovrascritte
-      await scrivisuDrive(buildBackup());
-      segnaDrivePendente(false);
-      showToast('Modifiche in sospeso salvate su Drive ✓');
-    } else if(driveFileId){
-      const remoto = await leggiDaDrive(driveFileId);
-      if(remoto){
-        let n = 0;
-        Object.keys(remoto).forEach(k=>{
-          if(isSyncKey(k)){
-            const loc = localStorage.getItem(k);
-            const rs = JSON.stringify(remoto[k]);
-            if(loc!==rs){ localStorage.setItem(k,rs); n++; }
-          }
-        });
-        showToast(n>0 ? `${n} elementi sincronizzati ✓` : 'Dati già aggiornati ✓');
-      }
-    } else {
-      await scrivisuDrive(buildBackup());
-      showToast('Dati caricati su Drive ✓');
+    const ris = await _sincronizza();
+    if(!ris.conflitti.length){
+      if(ris.aggiornati>0) showToast(`${ris.aggiornati} elementi aggiornati da Drive ✓`);
+      else if(ris.scritto) showToast('Modifiche salvate su Drive ✓');
+      else showToast('Dati già aggiornati ✓');
     }
   } catch(e){
     if(e.noToken) showToast('Google da ricollegare: clicca «Riconnetti» in alto','error');
@@ -1964,23 +2054,33 @@ async function sincronizzaDrive(){
   }
   btn.innerHTML = '<i class="ti ti-refresh"></i> Sync';
   btn.disabled = false;
-  caricaListaOrdini();
-  refreshDashboard();
-  ricaricaSchedaAperta();
+  _aggiornaVisteDopoSync();
   _apriDaLink();
   gcalAggiornaUI();
   gcalProgramma();
 }
 
-/* Salva tutto su Drive. Ritorna true se riuscito; se Google è scollegato le
-   modifiche restano sul dispositivo e partono al prossimo rinnovo del token. */
+/* Aggiornamento automatico in sottofondo: scarica le modifiche del socio senza
+   chiedere nulla (solo se il collegamento Google è già valido e non si sta salvando). */
+async function sincronizzaSilenziosa(){
+  if(document.visibilityState!=='visible' || !sessioneAttiva() || !tokenValido(60000)) return;
+  if(_autosaveTimer || _driveTimer) return;
+  try{
+    const ris = await _sincronizza();
+    if(ris.aggiornati>0){ _aggiornaVisteDopoSync(); gcalProgramma(); }
+  }catch(e){ /* riprova al prossimo giro */ }
+}
+setInterval(sincronizzaSilenziosa, 60000);
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') setTimeout(sincronizzaSilenziosa, 800); });
+
+/* Salva su Drive unendo le modifiche. Ritorna true se riuscito; se Google è scollegato
+   le modifiche restano sul dispositivo e partono al prossimo rinnovo del token. */
 async function salvaSuDrive(){
   if(!sessioneAttiva()) return false;
   try{
-    if(!driveFileId) driveFileId = await trovaDriveFile();
-    await scrivisuDrive(buildBackup());
-    segnaDrivePendente(false);
+    const ris = await _sincronizza();
     if(tokenValido(0)) statoGoogle('on');
+    if(ris.aggiornati>0) _aggiornaVisteDopoSync();
     gcalProgramma();
     return true;
   }catch(e){
@@ -3238,6 +3338,7 @@ function importaDati(event){
         if(isSyncKey(k)){ localStorage.setItem(k, JSON.stringify(backup[k])); if(k.startsWith('commessa__')) count++; }
       });
       caricaListaOrdini(); refreshDashboard();
+      segnaDrivePendente(true); _programmaDrive();
       showToast(`Importate ${count} commesse!`);
     }catch(e){ showToast('File non valido','error'); }
     event.target.value = '';
