@@ -1,4 +1,4 @@
-const CACHE = 'commesse-v6';
+const CACHE = 'commesse-v7';
 const SHELL = [
   './index.html',
   './manifest.json',
@@ -46,16 +46,18 @@ self.addEventListener('fetch', e => {
 
   // Pagina / navigazione / index.html → NETWORK-FIRST:
   // carica sempre l'ultima versione dalla rete, cade sulla cache solo se offline.
-  const isPagina = req.mode === 'navigate' || url.endsWith('/') || url.endsWith('/index.html') || url.endsWith('index.html');
+  const stessoSito = url.startsWith(self.location.origin);
+  const codiceNostro = stessoSito && /\.(js|css)(\?|$)/.test(url) && !url.endsWith('/sw.js');
+  const isPagina = req.mode === 'navigate' || url.endsWith('/') || url.endsWith('/index.html') || url.endsWith('index.html') || codiceNostro;
   if (isPagina) {
     e.respondWith(
       fetch(req)
         .then(resp => {
           const clone = resp.clone();
-          caches.open(CACHE).then(c => c.put('./index.html', clone)).catch(() => {});
+          caches.open(CACHE).then(c => c.put(codiceNostro ? req : './index.html', clone)).catch(() => {});
           return resp;
         })
-        .catch(() => caches.match('./index.html').then(r => r || caches.match(req)))
+        .catch(() => (codiceNostro ? caches.match(req) : caches.match('./index.html').then(r => r || caches.match(req))))
     );
     return;
   }

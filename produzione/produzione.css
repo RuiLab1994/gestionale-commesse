@@ -1,0 +1,111 @@
+/* ═══════════════════════════════════════════════════
+   PRODUZIONE — grafica dell'area produzione
+   Stessi componenti del gestionale; cambia il colore guida
+   (verde petrolio) per distinguere subito l'area.
+═══════════════════════════════════════════════════ */
+#app.mode-prod{--blue:#0F766E;--blue-dim:#0F766E;--blue-bg:#E1F5EE;--blue-ink:#085041}
+[data-theme="dark"] #app.mode-prod{--blue:#5DCAA5;--blue-dim:#1D9E75;--blue-bg:rgba(93,202,165,.15);--blue-ink:#9FE1CB}
+
+/* menu laterale: gruppo Produzione */
+.nav-group{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;padding:4px 12px 6px}
+.nav-group i{font-size:16px}
+.nav-prod .nav-item i{color:#0F766E}
+[data-theme="dark"] .nav-prod .nav-item i{color:#5DCAA5}
+.nav-prod .nav-item.active i{color:inherit}
+
+/* intestazione delle pagine di produzione */
+.prod-tag{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--blue-ink);background:var(--blue-bg);border-radius:99px;padding:4px 10px;margin-bottom:8px}
+.prod-tabs{display:none}
+
+/* elenco + editor */
+.prod-split{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start}
+.prod-list{flex:1 1 260px;max-width:320px;padding:0;overflow:hidden}
+.prod-edit{flex:999 1 560px;min-width:0}
+.prod-list-tools{padding:14px;display:flex;flex-direction:column;gap:10px;border-bottom:1px solid var(--border)}
+.prod-list-tools input{width:100%;min-height:44px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:8px 12px}
+.prod-list-tools input:focus{outline:none;border-color:var(--blue)}
+.prod-item{font:inherit;color:inherit;display:flex;align-items:center;gap:10px;width:100%;min-height:60px;padding:10px 14px;border:none;border-bottom:1px solid var(--bg4);background:var(--bg2);text-align:left;cursor:pointer}
+.prod-item:hover{background:var(--bg3)}
+.prod-item.sel{background:var(--blue-bg);box-shadow:inset 3px 0 0 var(--blue-dim)}
+.prod-item .tx{flex:1;min-width:0}
+.prod-item b{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prod-item span{display:block;font-size:13px;color:var(--text2)}
+.prod-item .warn{color:var(--amber);font-size:18px;flex-shrink:0}
+.prod-empty{padding:22px 16px;color:var(--text2);font-size:14px;text-align:center}
+
+.prod-pills{display:flex;flex-wrap:wrap;gap:6px}
+.prod-pill{min-height:36px;padding:0 12px;border-radius:99px;border:1px solid var(--border2);background:var(--bg2);font-size:14px;font-weight:500;cursor:pointer}
+.prod-pill.on{background:var(--blue-dim);border-color:var(--blue-dim);color:#fff;font-weight:600}
+
+.prod-form{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;padding:16px 20px;border-bottom:1px solid var(--border)}
+.prod-form .field{margin:0}
+.prod-form .grow{flex:2 1 240px}
+.prod-form .mid{flex:1 1 150px}
+.prod-form .small{flex:0 1 120px}
+.prod-actions{display:flex;flex-wrap:wrap;gap:8px;margin-left:auto}
+.prod-sec-title{font-family:var(--head);font-weight:600;font-size:16px;padding:16px 20px 4px}
+.prod-sec-sub{font-size:13px;color:var(--text2);padding:0 20px 8px}
+.prod-tbl-wrap{overflow-x:auto}
+.prod-tbl{min-width:760px}
+.prod-tbl th:first-child,.prod-tbl td:first-child{padding-left:20px}
+.prod-tbl th:last-child,.prod-tbl td:last-child{padding-right:16px}
+.prod-tbl td.t input{max-width:84px;min-width:70px;text-align:center}
+.prod-tbl td select{min-width:128px}
+.prod-tbl td:first-child input{min-width:150px}
+.prod-tbl td.q input{max-width:64px;text-align:center}
+.prod-add{display:flex;flex-wrap:wrap;gap:10px;padding:10px 20px 18px}
+.prod-add .btn-add{flex:1 1 220px;margin:0}
+.prod-file-ref{display:inline-flex;flex-direction:column;gap:2px;font-size:13px}
+.prod-file-ref b{font-weight:600}
+.prod-file-ref.none{color:var(--amber);font-weight:500}
+.t-err{border-color:var(--red)!important;background:var(--red-bg)!important}
+
+/* chip tecnologia / tipo / ruolo */
+.pchip{display:inline-flex;align-items:center;font-size:12px;font-weight:600;padding:4px 10px;border-radius:99px;white-space:nowrap}
+.pchip.resina{background:#E3F4E8;color:#1B6B3A}
+.pchip.fdm{background:#FFF1DF;color:#7A3B00}
+.pchip.acc{background:var(--purple-bg);color:var(--purple)}
+.pchip.est{background:var(--bg2);border:1px dashed var(--border2);color:var(--text2)}
+.pchip.grey{background:var(--bg4);color:var(--text2)}
+[data-theme="dark"] .pchip.resina{background:rgba(106,208,141,.15);color:#6AD08D}
+[data-theme="dark"] .pchip.fdm{background:rgba(242,180,102,.14);color:#F2B466}
+
+/* totali */
+.prod-tot{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;padding:4px 20px 20px}
+.prod-tot div{background:var(--bg3);border-radius:var(--radius);padding:12px}
+.prod-tot small{display:block;font-size:12px;color:var(--text2)}
+.prod-tot b{display:block;font-family:var(--head);font-weight:600;font-size:21px}
+.prod-tot .hl{background:var(--blue-bg)}
+.prod-tot .hl small,.prod-tot .hl b{color:var(--blue-ink)}
+
+.prod-banner{display:flex;flex-wrap:wrap;align-items:center;gap:10px;background:var(--amber-bg);border:1px solid var(--amber-line);color:var(--amber);border-radius:var(--radius);padding:10px 14px;margin-bottom:16px;font-size:14px;font-weight:500}
+.prod-banner i{font-size:18px}
+.prod-banner.err{background:var(--red-bg);border-color:transparent;color:var(--red)}
+
+.prod-checks{display:flex;flex-direction:column}
+.prod-check{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--bg4)}
+.prod-check:last-child{border-bottom:none}
+.prod-check i{font-size:22px}
+.prod-check .ok{color:var(--green)}
+.prod-check .no{color:var(--text3)}
+.prod-check .tx{flex:1}
+.prod-check .tx span{display:block;font-size:13px;color:var(--text2)}
+
+/* finestra di modifica persona / macchina */
+.prod-modal .setup-card{max-width:520px}
+.prod-modal .field{margin-bottom:12px}
+.prod-checkrow{display:flex;flex-wrap:wrap;gap:8px}
+.prod-checkrow label{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 12px;border:1px solid var(--border2);border-radius:var(--radius);cursor:pointer;font-size:14px}
+.prod-checkrow input{width:18px;height:18px;accent-color:var(--blue-dim)}
+
+/* telefono */
+@media(max-width:820px){
+  .tabbar{grid-template-columns:repeat(6,minmax(0,1fr))!important}
+  #app .tabbar button{font-size:10px;letter-spacing:-.2px;min-width:0;overflow:hidden;padding:0 1px}
+  #app .tabbar button{white-space:nowrap;text-overflow:ellipsis}
+  .prod-tabs{display:flex;gap:6px;overflow-x:auto;margin:-4px 0 14px;padding-bottom:4px}
+  .prod-tabs button{flex-shrink:0;min-height:40px;padding:0 14px;border-radius:99px;border:1px solid var(--border2);background:var(--bg2);font-size:14px;font-weight:500}
+  .prod-tabs button.on{background:var(--blue-dim);border-color:var(--blue-dim);color:#fff}
+  .prod-list{max-width:none}
+  .prod-form{padding:14px}
+}

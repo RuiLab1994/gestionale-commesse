@@ -15,6 +15,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="produzione/produzione.css?v=1">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.2/dist/umd/supabase.js"></script>
 <style>
@@ -606,6 +607,14 @@ td input[type=number]{text-align:right}
       <button class="nav-item" data-nav="incassi" onclick="showPage('incassi')"><i class="ti ti-credit-card"></i><span class="lbl">Incassi</span><span class="nav-badge alert" id="nav-badge-residuo" style="display:none"></span></button>
       <button class="nav-item" data-nav="impostazioni" onclick="showPage('impostazioni')"><i class="ti ti-adjustments-horizontal"></i><span class="lbl">Impostazioni</span></button>
     </div>
+    <div class="nav nav-prod" aria-label="Produzione">
+      <div class="nav-group"><i class="ti ti-building-factory-2"></i> Produzione</div>
+      <button class="nav-item" data-nav="prod-programmazione" onclick="showPage('prod-programmazione')"><i class="ti ti-timeline"></i><span class="lbl">Programmazione</span></button>
+      <button class="nav-item" data-nav="prod-catalogo" onclick="showPage('prod-catalogo')"><i class="ti ti-box-multiple"></i><span class="lbl">Catalogo modelli</span></button>
+      <button class="nav-item" data-nav="prod-file" onclick="showPage('prod-file')"><i class="ti ti-file-description"></i><span class="lbl">File di stampa</span></button>
+      <button class="nav-item" data-nav="prod-magazzino" onclick="showPage('prod-magazzino')"><i class="ti ti-building-warehouse"></i><span class="lbl">Magazzino pezzi</span></button>
+      <button class="nav-item" data-nav="prod-personale" onclick="showPage('prod-personale')"><i class="ti ti-users"></i><span class="lbl">Personale e macchine</span></button>
+    </div>
     <div class="side-foot">
       <button class="side-status off" id="side-status" onclick="clicChipDrive()"><i class="ti ti-cloud-off"></i> <span>Non collegato</span></button>
       <div id="side-sub"></div>
@@ -993,6 +1002,13 @@ td input[type=number]{text-align:right}
       </div>
     </div>
 
+    <!-- ══ PRODUZIONE (produzione/produzione.js) ══ -->
+    <div class="page" id="page-prod-programmazione"><div id="prod-box-programmazione"></div></div>
+    <div class="page" id="page-prod-catalogo"><div id="prod-box-catalogo"></div></div>
+    <div class="page" id="page-prod-file"><div id="prod-box-file"></div></div>
+    <div class="page" id="page-prod-magazzino"><div id="prod-box-magazzino"></div></div>
+    <div class="page" id="page-prod-personale"><div id="prod-box-personale"></div></div>
+
   </main>
 
   <nav class="tabbar" aria-label="Menu">
@@ -1001,6 +1017,7 @@ td input[type=number]{text-align:right}
     <button data-nav="calendario" onclick="showPage('calendario')"><i class="ti ti-calendar-month"></i>Calendario</button>
     <button data-nav="incassi" onclick="showPage('incassi')"><i class="ti ti-credit-card"></i>Incassi</button>
     <button data-nav="impostazioni" onclick="showPage('impostazioni')"><i class="ti ti-adjustments-horizontal"></i>Impostazioni</button>
+    <button data-nav="prod" onclick="showPage('prod-programmazione')"><i class="ti ti-building-factory-2"></i>Produzione</button>
   </nav>
 </div>
 
@@ -1392,12 +1409,17 @@ function fmtDate(iso){
 ═══════════════════════════════════════════════════ */
 function showPage(id){
   if(id==='pagamenti' || id==='previsioni') id = 'incassi';
+  if(window.Prod && !Prod.puoiLasciare(id)) return;     // modifiche di produzione non salvate
   flushAutosave();
+  const prod = id.startsWith('prod-');
+  document.getElementById('app')?.classList.toggle('mode-prod', prod);
+  const bn = document.querySelector('.brand-name'); if(bn) bn.textContent = prod ? 'Produzione' : 'Commesse';
+  const bi = document.querySelector('.brand-icon i'); if(bi) bi.className = prod ? 'ti ti-building-factory-2' : 'ti ti-package';
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+id)?.classList.add('active');
   const voce = id==='ai' ? 'impostazioni' : id;
   document.querySelectorAll('[data-nav]').forEach(n=>{
-    const on = n.dataset.nav===voce;
+    const on = n.dataset.nav===voce || (prod && n.dataset.nav==='prod');
     n.classList.toggle('active', on);
     if(on) n.setAttribute('aria-current','page'); else n.removeAttribute('aria-current');
   });
@@ -1406,6 +1428,7 @@ function showPage(id){
   if(id==='calendario') renderCalendario();
   if(id==='incassi') refreshIncassi();
   if(id==='ai') refreshAIPage();
+  if(window.Prod){ if(prod) Prod.mostra(id); else Prod.esci(); }
   const m = document.querySelector('.main'); if(m) m.scrollTop = 0;
 }
 
@@ -3814,5 +3837,6 @@ if('serviceWorker' in navigator){
   });
 }
 </script>
+<script src="produzione/produzione.js?v=1"></script>
 </body>
 </html>
