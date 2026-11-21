@@ -1,4 +1,4 @@
-const CACHE = 'commesse-v5';
+const CACHE = 'commesse-v6';
 const SHELL = [
   './index.html',
   './manifest.json',
@@ -34,6 +34,9 @@ self.addEventListener('message', e => {
 self.addEventListener('fetch', e => {
   const req = e.request;
   const url = req.url;
+
+  // Database e scritture → gestiti direttamente dal browser, mai dalla cache
+  if (req.method !== 'GET' || url.includes('supabase.co')) return;
 
   // Google APIs e OAuth → sempre rete (non cachare mai)
   if (url.includes('googleapis.com') || url.includes('accounts.google.com') || url.includes('gsi/client') || url.includes('generativelanguage')) {

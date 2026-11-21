@@ -16,6 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.2/dist/umd/supabase.js"></script>
 <style>
 /* ── BASE ── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -88,6 +89,10 @@ a{color:var(--blue)}
 .btn-google:hover{background:var(--bg4)}
 .btn-google img{width:18px;height:18px}
 .login-note{margin:16px 0 0!important;font-size:13px}
+.login-form{display:flex;flex-direction:column;gap:10px;text-align:left;margin-bottom:4px}
+.login-form input{width:100%;min-height:46px;font-size:16px}
+.login-form .btn-primary{min-height:48px;justify-content:center;font-size:15px}
+.login-err{color:var(--red);font-size:13.5px}
 .login-msg{background:var(--amber-bg);border:1px solid var(--amber-line);color:var(--amber);border-radius:var(--radius);padding:10px 12px;font-size:14px;margin:4px 0 16px}
 .overlay{position:fixed;inset:0;background:rgba(15,20,26,.55);display:flex;align-items:center;justify-content:center;z-index:900;padding:16px}
 .overlay.hidden{display:none}
@@ -489,12 +494,14 @@ td input[type=number]{text-align:right}
     <div class="login-logo"><i class="ti ti-package"></i></div>
     <h2>Gestionale Commesse</h2>
     <div id="login-msg" class="login-msg" style="display:none"></div>
-    <p>Accedi con Google per sincronizzare i dati su tutti i tuoi dispositivi tramite Google Drive.</p>
-    <button class="btn-google" onclick="avviaLogin()">
-      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
-      Accedi con Google
-    </button>
-    <p class="login-note">Dati nel tuo Google Drive personale. Nessun server esterno.</p>
+    <p>Accedi con il tuo account dello studio.</p>
+    <form class="login-form" onsubmit="accediDatabase(event)">
+      <input type="email" id="login-email" class="setup-input" placeholder="Email" autocomplete="username" required>
+      <input type="password" id="login-pw" class="setup-input" placeholder="Password" autocomplete="current-password" required>
+      <div id="login-err" class="login-err" style="display:none"></div>
+      <button type="submit" class="btn-primary" id="login-btn">Accedi</button>
+    </form>
+    <p class="login-note">Dati nel database dello studio, condivisi tra tutti i dispositivi.</p>
   </div>
 </div>
 
@@ -610,7 +617,7 @@ td input[type=number]{text-align:right}
 
     <div id="google-banner" role="status">
       <i class="ti ti-refresh-alert" style="font-size:20px"></i>
-      <span><b>Collegamento a Google da rinnovare.</b> <span class="hide-m">Le modifiche restano salvate su questo dispositivo.</span></span>
+      <span><b>Collegamento a Google Calendar da rinnovare.</b> <span class="hide-m">Le commesse sono salvate normalmente nel database.</span></span>
       <button class="btn sm" onclick="riconnettiGoogle()">Riconnetti</button>
     </div>
 
@@ -914,10 +921,14 @@ td input[type=number]{text-align:right}
       <div class="card" style="margin-bottom:18px">
         <div class="card-hdr"><h2>Collegamenti</h2></div>
         <div class="set-list">
-          <div class="set-row"><i class="ti ti-cloud"></i>
-            <div class="tx"><b>Google Drive</b><span>Salva e sincronizza i dati tra i tuoi dispositivi</span></div>
-            <div class="ac"><span class="chip chip-off" id="drive-status"><i class="ti ti-cloud-off"></i> Non connesso</span>
+          <div class="set-row"><i class="ti ti-database"></i>
+            <div class="tx"><b>Database dello studio</b><span>Commesse condivise in tempo reale tra tutti i dispositivi</span></div>
+            <div class="ac"><span class="chip chip-off" id="db-status"><i class="ti ti-cloud-off"></i> Non collegato</span>
               <button class="btn" id="btn-sync" onclick="sincronizzaDrive()" style="display:none"><i class="ti ti-refresh"></i> Sync</button></div></div>
+          <div class="set-row"><i class="ti ti-brand-google"></i>
+            <div class="tx"><b>Account Google</b><span>Serve solo per Google Calendar</span></div>
+            <div class="ac"><span class="chip chip-off" id="drive-status"><i class="ti ti-cloud-off"></i> Non connesso</span>
+              <button class="btn" onclick="riconnettiGoogle()">Collega</button></div></div>
           <div class="set-row"><i class="ti ti-calendar-event"></i>
             <div class="tx"><b>Google Calendar</b><span>Consegne e scadenze come eventi nel calendario «Commesse RuiLab»</span></div>
             <div class="ac"><span class="gcal-dot off" id="gcal-dot"></span><button class="btn gcal-btn" id="btn-gcal" onclick="apriGcal()" style="display:none">Gestisci</button></div></div>
@@ -1644,26 +1655,12 @@ function drivePendente(){ return localStorage.getItem(DRIVE_PENDING)==='1'; }
 /* Stato visivo del collegamento Google: 'on' | 'scaduto' | 'off' */
 function statoGoogle(stato){
   const chip = document.getElementById('drive-status');
-  const side = document.getElementById('side-status');
-  let sideTxt = 'Non collegato', sideIc = 'cloud-off', sideCls = 'off';
-  if(stato==='on'){
-    chip.className = 'chip chip-on'; chip.innerHTML = '<i class="ti ti-cloud-check"></i> Collegato';
-    sideTxt = 'Google collegato'; sideIc = 'cloud-check'; sideCls = 'ok';
-  } else if(stato==='scaduto'){
-    chip.className = 'chip chip-warn'; chip.innerHTML = '<i class="ti ti-refresh-alert"></i> Da rinnovare';
-    sideTxt = 'Riconnetti Google'; sideIc = 'refresh-alert'; sideCls = 'warn';
-  } else {
-    chip.className = 'chip chip-off'; chip.innerHTML = '<i class="ti ti-cloud-off"></i> Non connesso';
-  }
-  document.body.dataset.google = stato;
-  if(side){ side.className = 'side-status '+sideCls; side.innerHTML = `<i class="ti ti-${sideIc}"></i> <span>${sideTxt}</span>`; }
-  const sub = document.getElementById('side-sub');
-  if(sub) sub.textContent = stato==='off' ? '' : (gcalCfg().enabled ? 'Drive e Calendar' : 'Google Drive');
-  const em = document.getElementById('side-email');
-  if(em) em.textContent = stato==='off' ? '' : (localStorage.getItem(EMAIL_KEY)||'');
-  const loggato = stato!=='off';
-  document.getElementById('btn-sync').style.display = loggato ? 'inline-flex' : 'none';
-  document.getElementById('btn-logout').style.display = loggato ? 'inline-flex' : 'none';
+  if(stato==='on'){ chip.className = 'chip chip-on'; chip.innerHTML = '<i class="ti ti-cloud-check"></i> Collegato'; }
+  else if(stato==='scaduto'){ chip.className = 'chip chip-warn'; chip.innerHTML = '<i class="ti ti-refresh-alert"></i> Da rinnovare'; }
+  else { chip.className = 'chip chip-off'; chip.innerHTML = '<i class="ti ti-cloud-off"></i> Non connesso'; }
+  // il banner di rinnovo serve solo se si usa Google Calendar
+  document.body.dataset.google = gcalCfg().enabled ? stato : 'off';
+  statoCloud();
   gcalAggiornaUI();
 }
 
@@ -1674,10 +1671,6 @@ function _setLoggedIn(token, calOk, expiresIn){
   gcalHasScope = !!calOk;
   tokenScadenza = Date.now() + (parseInt(expiresIn)||3599)*1000;
   try{ localStorage.setItem(TOKEN_KEY, JSON.stringify({token, scad: tokenScadenza, cal: !!calOk})); }catch(e){}
-  // apre (o prolunga) la sessione del gestionale
-  const s = _sess() || {};
-  if(!s.attiva){ s.attiva = true; s.ultimaAttivita = Date.now(); delete s.motivoUscita; _setSess(s); }
-  _sbloccaApp();
   statoGoogle('on');
   _recuperaEmail();
 }
@@ -1705,13 +1698,16 @@ function _tokenClient(opts, onOk, onFail){
   });
 }
 
-/* Accesso esplicito dal pulsante "Accedi con Google" */
+/* Collegamento a Google (solo per Google Calendar) */
 function avviaLogin(){
   if(typeof google==='undefined' || !google.accounts){ showToast('Servizi Google non ancora caricati, riprova tra un attimo','error'); return; }
   _tokenClient({}, async(resp)=>{
     _setLoggedIn(resp.access_token, _calConcesso(resp), resp.expires_in);
-    await sincronizzaDrive();
-  }, (err)=>{ if(err!=='popup_closed') showToast('Accesso non completato: '+err,'error'); }).requestAccessToken();
+    showToast('Google collegato ✓');
+    if(!document.getElementById('sessione-overlay').classList.contains('hidden')) renderSessione();
+    if(_sbMigrazioneChiesta && !_leggiSbBase()){ _sbMigrazioneChiesta = false; sincronizzaDrive(); }   // migrazione rinviata: ora può partire da Drive
+    else gcalProgramma();
+  }, (err)=>{ if(err!=='popup_closed') showToast('Collegamento a Google non completato: '+err,'error'); }).requestAccessToken();
 }
 
 /* Rinnovo del token senza login: Google lo concede in automatico se l'account
@@ -1747,7 +1743,7 @@ function _adottaTokenCondiviso(){
   const t = _tokenSalvato();
   if(!t || (t.token===accessToken && tokenValido())) return false;
   accessToken = t.token; tokenScadenza = t.scad; gcalHasScope = !!t.cal;
-  if(sessioneAttiva()){ _sbloccaApp(); statoGoogle('on'); }
+  statoGoogle('on');
   return true;
 }
 
@@ -1774,6 +1770,9 @@ function _terminaSessione(motivo){
   accessToken = null; tokenScadenza = 0; driveFileId = null; gcalHasScope = false;
   try{ localStorage.removeItem(TOKEN_KEY); }catch(e){}
   _setSess({attiva:false, motivoUscita: motivo||''});
+  _sbChiudiCanale();
+  if(sbUtente){ sbUtente = null; try{ sb.auth.signOut({scope:'local'}); }catch(e){} }
+  _cloudErrore = false;
   statoGoogle('off');
   _mostraLogin(motivo);
   return tok;
@@ -1786,6 +1785,12 @@ function _mostraLogin(motivo){
       const m = minutiInattivita();
       msg.textContent = `Sei stato disconnesso dopo ${m>=60 ? (m/60)+' ore' : m+' minuti'} di inutilizzo. Le modifiche sono salvate.`;
       msg.style.display = 'block';
+    } else if(motivo==='nuovo'){
+      msg.textContent = 'Il gestionale ora salva le commesse nel database dello studio: accedi con la tua email e password.';
+      msg.style.display = 'block';
+    } else if(motivo==='scaduta'){
+      msg.textContent = 'Accesso scaduto: rientra con email e password. Le modifiche sono salvate.';
+      msg.style.display = 'block';
     } else { msg.style.display = 'none'; }
   }
   document.getElementById('login-overlay').classList.remove('hidden');
@@ -1793,7 +1798,7 @@ function _mostraLogin(motivo){
 
 function logout(){
   if(!confirm('Esci dal gestionale?')) return;
-  if(drivePendente() && !confirm('Ci sono modifiche non ancora salvate su Google Drive (restano su questo dispositivo).\nUscire comunque?')) return;
+  if(drivePendente() && !confirm('Ci sono modifiche non ancora salvate nel database (restano su questo dispositivo e partiranno al prossimo accesso).\nUscire comunque?')) return;
   _terminaSessione('manuale');
   chiudiSessione();
 }
@@ -1839,21 +1844,24 @@ function renderSessione(){
   const email = localStorage.getItem(EMAIL_KEY);
   const m = minutiInattivita();
   const opzioni = [[30,'30 minuti'],[60,'1 ora'],[120,'2 ore'],[240,'4 ore'],[480,'8 ore'],[1440,'24 ore'],[0,'Mai (resta sempre collegato)']];
+  const statoDb = !sbUtente ? '<span style="color:var(--text3)">Non collegato</span>'
+    : _cloudErrore ? '<span style="color:var(--amber)"><i class="ti ti-cloud-upload"></i> Non raggiungibile: le modifiche partono appena torna la rete</span>'
+    : '<span style="color:var(--green)"><i class="ti ti-circle-check"></i> Collegato</span>';
   let statoTok;
-  if(!sessioneAttiva()) statoTok = '<span style="color:var(--text3)">Non collegato</span>';
-  else if(tokenValido(0)) statoTok = `<span style="color:var(--green)"><i class="ti ti-circle-check"></i> Collegato</span> · si rinnova da solo tra ${Math.max(1,Math.round((tokenScadenza-Date.now())/60000))} min`;
-  else statoTok = '<span style="color:var(--amber)"><i class="ti ti-refresh-alert"></i> Da rinnovare</span> · succede al prossimo clic, oppure premi «Riconnetti»';
-  const pend = drivePendente() ? `<p style="color:var(--amber)"><i class="ti ti-alert-triangle"></i> Ci sono modifiche salvate solo su questo dispositivo: andranno su Drive appena Google è ricollegato.</p>` : '';
+  if(tokenValido(0)) statoTok = `<span style="color:var(--green)"><i class="ti ti-circle-check"></i> Collegato</span>${email ? ' · '+esc(email) : ''}`;
+  else if(email) statoTok = '<span style="color:var(--amber)"><i class="ti ti-refresh-alert"></i> Da rinnovare</span> · serve solo per Google Calendar';
+  else statoTok = '<span style="color:var(--text3)">Non collegato</span> · serve solo per Google Calendar';
+  const pend = drivePendente() && _cloudErrore ? `<p style="color:var(--amber)"><i class="ti ti-alert-triangle"></i> Ci sono modifiche salvate solo su questo dispositivo: andranno nel database appena è raggiungibile.</p>` : '';
   box.innerHTML = `
-    <p><b>Account:</b> ${email ? esc(email) : '—'}<br><b>Google Drive:</b> ${statoTok}</p>
+    <p><b>Account:</b> ${sbUtente?.email ? esc(sbUtente.email) : '—'}<br><b>Database:</b> ${statoDb}<br><b>Google:</b> ${statoTok}</p>
     ${pend}
     <label style="display:block;font-size:12px;color:var(--text2);margin:14px 0 6px">Disconnetti dopo un periodo di inutilizzo di</label>
     <select class="setup-input" id="sess-inatt" style="font-family:var(--font)" onchange="impostaInattivita(this.value)">
       ${opzioni.map(([v,l])=>`<option value="${v}" ${v===m?'selected':''}>${l}</option>`).join('')}
     </select>
-    <p style="font-size:11.5px;color:var(--text3)">Finché usi il gestionale resti collegato, anche se chiudi la scheda o riapri il browser. Il collegamento a Google si rinnova da solo ogni ora circa: al primo clic può comparire per un attimo una finestrella di Google che si chiude da sola.</p>
+    <p style="font-size:11.5px;color:var(--text3)">Finché usi il gestionale resti collegato, anche se chiudi la scheda o riapri il browser. Google serve solo per Google Calendar: il suo collegamento si rinnova da solo ogni ora circa.</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
-      ${sessioneAttiva() && !tokenValido(0) ? '<button class="btn-primary" onclick="riconnettiGoogle()"><i class="ti ti-refresh"></i> Riconnetti</button>' : ''}
+      ${!tokenValido(0) ? `<button class="btn-primary" onclick="riconnettiGoogle()"><i class="ti ti-brand-google"></i> ${email ? 'Riconnetti Google' : 'Collega Google'}</button>` : ''}
       <button class="btn-skip" onclick="logout()" style="color:var(--red)"><i class="ti ti-logout"></i> Esci</button>
       <button class="btn-skip" onclick="chiudiSessione()">Chiudi</button>
     </div>`;
@@ -1869,10 +1877,7 @@ async function riconnettiGoogle(){
   showToast('Google ricollegato ✓');
   if(!document.getElementById('sessione-overlay').classList.contains('hidden')) renderSessione();
 }
-function clicChipDrive(){
-  if(sessioneAttiva() && !tokenValido(0)) riconnettiGoogle();
-  else apriSessione();
-}
+function clicChipDrive(){ apriSessione(); }
 
 /* ═══════════════════════════════════════════════════
    GOOGLE DRIVE
@@ -1930,7 +1935,10 @@ function buildBackup(){
 }
 
 /* ═══════════════════════════════════════════════════
-   SINCRONIZZAZIONE CON UNIONE (più dispositivi insieme)
+   GOOGLE DRIVE → DATABASE (solo primo caricamento)
+   Il vecchio file su Drive viene letto un'ultima volta per caricare nel
+   database la versione più aggiornata delle commesse.
+   Unione con Drive (più dispositivi insieme)
    Prima di scrivere si rilegge sempre il file su Drive e si confronta, chiave
    per chiave (una commessa = una chiave), con l'ultima versione condivisa
    ("base", salvata su questo dispositivo):
@@ -1959,15 +1967,7 @@ function _salvaConflitto(k, valoreDrive){
   }catch(e){}
 }
 
-let _syncCoda = Promise.resolve();
-function _sincronizza(){            // una sincronizzazione alla volta
-  const run = ()=>_sincronizzaOra();
-  const p = _syncCoda.then(run, run);
-  _syncCoda = p.catch(()=>{});
-  return p;
-}
-
-async function _sincronizzaOra(){
+async function _sincronizzaDriveOra(){   // usata solo per il primo caricamento nel database
   if(!driveFileId) driveFileId = await trovaDriveFile();
   let remotoObj = {};
   if(driveFileId){
@@ -2030,27 +2030,284 @@ async function _sincronizzaOra(){
   return {aggiornati, conflitti, scritto:!uguale};
 }
 
+/* ═══════════════════════════════════════════════════
+   DATABASE SUPABASE — dati condivisi dello studio
+   Ogni commessa è una riga con un numero di versione: chi salva partendo da
+   una versione vecchia viene fermato e i dati vengono riuniti invece di
+   sovrascriversi. Le modifiche arrivano agli altri dispositivi in tempo reale.
+   Ogni versione precedente resta nella tabella "storico" del database.
+═══════════════════════════════════════════════════ */
+const SB_URL  = 'https://horygnawroxzbzrtxofx.supabase.co';
+const SB_KEY  = 'sb_publishable_xKOIpzd9TPygr7VpgUMcHw_yNxbm4za';
+const SB_BASE = 'sb_base';    // {chiave: {id, v, j}} ultima versione nota del database
+let sb = null, sbUtente = null, sbCanale = null, _sbPullTimer = null, _cloudErrore = false, _sbMigrazioneChiesta = false;
+
+function sbClient(){
+  if(sb) return sb;
+  if(!window.supabase?.createClient) return null;      // libreria non caricata (offline)
+  sb = window.supabase.createClient(SB_URL, SB_KEY, {auth:{persistSession:true, autoRefreshToken:true, storageKey:'sb_auth'}});
+  sb.auth.onAuthStateChange((ev)=>{
+    if(ev==='SIGNED_OUT' && sbUtente){ sbUtente = null; if(sessioneAttiva()) _terminaSessione('scaduta'); }
+  });
+  return sb;
+}
+function sbPronto(){ return !!(sb && sbUtente); }
+async function sbRecuperaUtente(){
+  const c = sbClient(); if(!c) return null;
+  try{ const {data} = await c.auth.getSession(); sbUtente = data?.session?.user || null; }catch(e){ sbUtente = null; }
+  return sbUtente;
+}
+
+/* Accesso con email e password (utenti creati in Supabase → Authentication → Users) */
+async function accediDatabase(ev){
+  if(ev) ev.preventDefault();
+  const email = document.getElementById('login-email').value.trim();
+  const pw    = document.getElementById('login-pw').value;
+  const btn = document.getElementById('login-btn'), err = document.getElementById('login-err');
+  const errore = (t)=>{ err.textContent = t; err.style.display = 'block'; };
+  err.style.display = 'none';
+  if(!email || !pw){ errore('Inserisci email e password'); return; }
+  const c = sbClient();
+  if(!c){ errore('Connessione non disponibile: controlla internet e ricarica la pagina'); return; }
+  btn.disabled = true; btn.textContent = 'Accesso…';
+  let res;
+  try{ res = await c.auth.signInWithPassword({email, password:pw}); }
+  catch(e){ res = {error:{message:e.message||'rete non raggiungibile'}}; }
+  btn.disabled = false; btn.textContent = 'Accedi';
+  if(res.error){ errore(/invalid/i.test(res.error.message) ? 'Email o password non corretti' : 'Accesso non riuscito: '+res.error.message); return; }
+  sbUtente = res.data.user;
+  document.getElementById('login-pw').value = '';
+  _setSess({attiva:true, ultimaAttivita:Date.now()});
+  _sbloccaApp();
+  sbAscoltaModifiche();
+  statoCloud();
+  await sincronizzaDrive();
+}
+
+/* Tempo reale: quando qualcuno modifica una commessa, gli altri la ricevono subito */
+function sbAscoltaModifiche(){
+  if(!sbPronto() || sbCanale) return;
+  sbCanale = sb.channel('ruilab-dati')
+    .on('postgres_changes', {event:'*', schema:'public', table:'commesse'}, _sbProgrammaPull)
+    .on('postgres_changes', {event:'*', schema:'public', table:'impostazioni'}, _sbProgrammaPull)
+    .subscribe();
+}
+function _sbProgrammaPull(){ clearTimeout(_sbPullTimer); _sbPullTimer = setTimeout(sincronizzaSilenziosa, 700); }
+function _sbChiudiCanale(){
+  clearTimeout(_sbPullTimer);
+  if(sbCanale){ try{ sb.removeChannel(sbCanale); }catch(e){} sbCanale = null; }
+}
+
+/* Stato visivo del database (barra laterale + Impostazioni) */
+function statoCloud(){
+  const side = document.getElementById('side-status'), chip = document.getElementById('db-status');
+  let txt, ic, cls, ctxt, ccls;
+  if(!sessioneAttiva() || !sbUtente){ txt='Non collegato'; ic='cloud-off'; cls='off'; ctxt='Non collegato'; ccls='chip-off'; }
+  else if(_cloudErrore){ txt='Modifiche in attesa'; ic='cloud-upload'; cls='warn'; ctxt='In attesa di rete'; ccls='chip-warn'; }
+  else { txt='Database collegato'; ic='cloud-check'; cls='ok'; ctxt='Collegato'; ccls='chip-on'; }
+  if(side){ side.className = 'side-status '+cls; side.innerHTML = `<i class="ti ti-${ic}"></i> <span>${txt}</span>`; }
+  if(chip){ chip.className = 'chip '+ccls; chip.innerHTML = `<i class="ti ti-${ic}"></i> ${ctxt}`; }
+  const sub = document.getElementById('side-sub'); if(sub) sub.textContent = sbUtente ? 'Database RuiLab' : '';
+  const em  = document.getElementById('side-email'); if(em) em.textContent = sbUtente?.email || '';
+  const on = sessioneAttiva();
+  const bs = document.getElementById('btn-sync');   if(bs) bs.style.display = on ? 'inline-flex' : 'none';
+  const bl = document.getElementById('btn-logout'); if(bl) bl.style.display = on ? 'inline-flex' : 'none';
+}
+
+/* ═══════════════════════════════════════════════════
+   SINCRONIZZAZIONE CON IL DATABASE
+   Unione a tre vie per ogni commessa: questo dispositivo, database, ultima
+   versione comune ("base", salvata qui con il numero di versione).
+   - cambiata solo qui        → si scrive nel database, solo se nessuno l'ha
+                                cambiata nel frattempo (controllo di versione)
+   - cambiata solo altrove    → si prende quella del database
+   - cambiata da entrambi     → si tiene quella di qui e si avvisa; la versione
+                                sovrascritta resta nello storico del database
+═══════════════════════════════════════════════════ */
+function _leggiSbBase(){ try{ const b = localStorage.getItem(SB_BASE); return b ? JSON.parse(b) : null; }catch(e){ return null; } }
+function _scriviSbBase(b){ try{ localStorage.setItem(SB_BASE, JSON.stringify(b)); }catch(e){ console.warn('base database non salvata', e); } }
+function _isCommessaKey(k){ return k.startsWith('commessa__'); }
+
+async function _sbScarica(){
+  const [c, i] = await Promise.all([
+    sb.from('commesse').select('id,nome,dati,eliminata,versione'),
+    sb.from('impostazioni').select('chiave,dati,versione')
+  ]);
+  if(c.error) throw new Error(c.error.message);
+  if(i.error) throw new Error(i.error.message);
+  return {commesse:c.data||[], impostazioni:i.data||[]};
+}
+
+function _sbMappaRemota(dati, base){
+  const R = {};
+  dati.commesse.forEach(r=>{
+    const k = storageKey(r.nome), cur = R[k];
+    const e = {id:r.id, v:r.versione, j:r.eliminata ? undefined : JSON.stringify(r.dati), eliminata:!!r.eliminata};
+    // a parità di nome vince la riga attiva; tra le eliminate quella già nota qui
+    if(!cur || (cur.eliminata && !e.eliminata) || (cur.eliminata && e.eliminata && base?.[k]?.id===e.id)) R[k] = e;
+  });
+  dati.impostazioni.forEach(r=>{
+    if(EXTRA_SYNC_KEYS.includes(r.chiave)) R[r.chiave] = {id:r.chiave, v:r.versione, j:JSON.stringify(r.dati), eliminata:false};
+  });
+  return R;
+}
+
+/* Scrive una chiave nel database. vAttesa = versione che deve esserci ancora
+   (null = senza controllo). Ritorna {id, v}, oppure null se nel frattempo è cambiata. */
+async function _sbScrivi(k, j, r, vAttesa){
+  const dati = j===undefined ? null : JSON.parse(j);
+  const fine = ({data, error}, campoId)=>{
+    if(error){ if(error.code==='23505') return null; throw new Error(error.message); }
+    return data?.length ? {id:data[0][campoId], v:data[0].versione} : null;
+  };
+  if(_isCommessaKey(k)){
+    const nome = k.slice('commessa__'.length);
+    if(r){
+      let q = sb.from('commesse').update(j===undefined ? {eliminata:true} : {nome, dati, eliminata:false}).eq('id', r.id);
+      if(vAttesa!=null) q = q.eq('versione', vAttesa);
+      return fine(await q.select('id,versione'), 'id');
+    }
+    if(j===undefined) return {id:null, v:null};
+    return fine(await sb.from('commesse').insert({nome, dati}).select('id,versione'), 'id');
+  }
+  if(j===undefined) return {id:null, v:null};            // le impostazioni non si eliminano
+  if(r){
+    let q = sb.from('impostazioni').update({dati}).eq('chiave', k);
+    if(vAttesa!=null) q = q.eq('versione', vAttesa);
+    return fine(await q.select('chiave,versione'), 'chiave');
+  }
+  return fine(await sb.from('impostazioni').insert({chiave:k, dati}).select('chiave,versione'), 'chiave');
+}
+
+async function _sbUnisci(dati, baseSalvata){
+  const R = _sbMappaRemota(dati, baseSalvata);
+  const L = _snapshotLocale();
+  let B = baseSalvata;
+  if(!B){
+    // primo collegamento di questo dispositivo: senza modifiche in sospeso vince il database,
+    // con modifiche in sospeso vince questo dispositivo. Nulla viene cancellato.
+    B = {};
+    const pend = drivePendente();
+    Object.keys(L).forEach(k=>{ const r = R[k]; if(r && r.j!==undefined) B[k] = {id:r.id, v:r.v, j: pend ? r.j : L[k]}; });
+  }
+  const chiavi = new Set([...Object.keys(B), ...Object.keys(L), ...Object.keys(R)]);
+  const nuovaBase = {}, daApplicare = {}, conflitti = [];
+  let scritto = false, riprova = false;
+  const daRemoto = (k, r)=>{ daApplicare[k] = r ? r.j : undefined; if(r) nuovaBase[k] = {id:r.id, v:r.v, j:r.j}; };
+
+  for(const k of chiavi){
+    const l = L[k], r = R[k], b = B[k];
+    const rj = r ? r.j : undefined, bj = b ? b.j : undefined;
+    if(l===bj){ daRemoto(k, r); continue; }                       // qui invariata
+    let senzaControllo = false;
+    if(!(rj===bj || l===rj)){                                     // cambiata da entrambi
+      conflitti.push(k);
+      if(l===undefined){ daRemoto(k, r); continue; }              // eliminata qui ma modificata altrove: si tiene la modifica
+      senzaControllo = true;
+    }
+    if(l===rj){ if(r) nuovaBase[k] = {id:r.id, v:r.v, j:l}; continue; }   // già uguale
+    const ris = await _sbScrivi(k, l, r, senzaControllo ? null : (r ? r.v : null));
+    if(ris===null){ riprova = true; if(b) nuovaBase[k] = b; continue; }   // cambiata nel frattempo: nuovo giro
+    scritto = true;
+    if(ris.id) nuovaBase[k] = {id:ris.id, v:ris.v, j:l};
+  }
+
+  // Applica qui ciò che arriva dal database (senza toccare ciò che è cambiato nel frattempo)
+  let aggiornati = 0;
+  const ora = _snapshotLocale();
+  Object.keys(daApplicare).forEach(k=>{
+    if(ora[k]!==L[k]) return;
+    const m = daApplicare[k];
+    if(m===L[k]) return;
+    if(m===undefined) localStorage.removeItem(k); else localStorage.setItem(k, m);
+    aggiornati++;
+  });
+  _scriviSbBase(nuovaBase);
+  const dopo = _snapshotLocale();
+  const pendente = Object.keys({...dopo, ...nuovaBase}).some(k=>dopo[k]!==nuovaBase[k]?.j);
+  segnaDrivePendente(pendente);
+  const cambiateDurante = Object.keys({...ora, ...L}).some(k=>ora[k]!==L[k]);
+  if(pendente && cambiateDurante) _programmaDrive();
+  return {aggiornati, conflitti, scritto, riprova};
+}
+
+/* Primo caricamento: il database è vuoto e questo dispositivo ha dei dati */
+async function _sbMigra(){
+  if(_sbMigrazioneChiesta) return false;
+  _sbMigrazioneChiesta = true;
+  let daDrive = false;
+  if(tokenValido(60000)){ try{ await _sincronizzaDriveOra(); daDrive = true; }catch(e){} }   // prima la versione più recente da Drive
+  const L = _snapshotLocale();
+  const chiaviComm = Object.keys(L).filter(_isCommessaKey);
+  if(!confirm(`Il database dello studio è vuoto.\n\nVuoi caricarci le ${chiaviComm.length} commesse presenti su questo dispositivo${daDrive ? ' (appena aggiornate da Google Drive)' : ''}?\n\nFallo da UN solo dispositivo, quello con i dati più aggiornati. Gli altri dispositivi le riceveranno da soli.`)) return false;
+  const righe = chiaviComm.map(k=>({nome:k.slice('commessa__'.length), dati:JSON.parse(L[k])}));
+  const imp = Object.keys(L).filter(k=>!_isCommessaKey(k)).map(k=>({chiave:k, dati:JSON.parse(L[k])}));
+  const nonCaricate = [];
+  for(let i=0; i<righe.length; i+=200){
+    const blocco = righe.slice(i, i+200);
+    const {error} = await sb.from('commesse').insert(blocco);
+    if(error){   // un nome doppio blocca il gruppo: si riprova una alla volta
+      for(const r of blocco){ const e = (await sb.from('commesse').insert(r)).error; if(e) nonCaricate.push(r.nome); }
+    }
+  }
+  if(imp.length){ const {error} = await sb.from('impostazioni').upsert(imp, {onConflict:'chiave'}); if(error) throw new Error('impostazioni: '+error.message); }
+  showToast(`${righe.length - nonCaricate.length} commesse caricate nel database ✓`);
+  if(nonCaricate.length) setTimeout(()=>alert('Queste commesse non sono state caricate perché il nome è già presente (maiuscole/minuscole a parte):\n\n'+nonCaricate.join('\n')+'\n\nRinominale e salvale di nuovo.'), 400);
+  return true;
+}
+
+let _syncCoda = Promise.resolve();
+function _sincronizza(){            // una sincronizzazione alla volta
+  const run = ()=>_sincronizzaOra();
+  const p = _syncCoda.then(run, run);
+  _syncCoda = p.catch(()=>{});
+  return p;
+}
+
+async function _sincronizzaOra(){
+  if(!sbClient() || !sbUtente){ const e = new Error('Database non collegato'); e.noToken = true; throw e; }
+  let dati = await _sbScarica();
+  let base = _leggiSbBase();
+  const vuoto = !dati.commesse.length && !dati.impostazioni.length;
+  if(!base && vuoto && Object.keys(_snapshotLocale()).length){
+    if(!(await _sbMigra())) return {aggiornati:0, conflitti:[], scritto:false, rinviata:true};
+    dati = await _sbScarica();
+  }
+  let ris;
+  for(let giro=0; giro<3; giro++){
+    ris = await _sbUnisci(dati, base);
+    if(!ris.riprova) break;
+    dati = await _sbScarica(); base = _leggiSbBase();
+  }
+  if(ris.conflitti.length){
+    showToast(`Attenzione: ${ris.conflitti.map(_nomeChiave).join(', ')} modificata anche da un altro dispositivo. Tenuta la versione di questo dispositivo (l'altra resta nello storico).`, 'error');
+  }
+  return ris;
+}
+
 function _aggiornaVisteDopoSync(){
   caricaListaOrdini();
   refreshDashboard();
   ricaricaSchedaAperta();
 }
+function _esitoCloud(ok){ _cloudErrore = !ok; statoCloud(); }
 
 async function sincronizzaDrive(){
-  if(!sessioneAttiva()){ showToast('Accedi con Google per sincronizzare','error'); return; }
+  if(!sessioneAttiva()) return;
+  if(!sbPronto()){ showToast('Database non collegato: esci e rientra con email e password','error'); return; }
   const btn = document.getElementById('btn-sync');
   btn.innerHTML = '<span class="spinner"></span> Sync...';
   btn.disabled = true;
   try{
     const ris = await _sincronizza();
-    if(!ris.conflitti.length){
-      if(ris.aggiornati>0) showToast(`${ris.aggiornati} elementi aggiornati da Drive ✓`);
-      else if(ris.scritto) showToast('Modifiche salvate su Drive ✓');
-      else showToast('Dati già aggiornati ✓');
+    _esitoCloud(true);
+    if(!ris.conflitti.length && !ris.rinviata){
+      if(ris.aggiornati>0) showToast(`${ris.aggiornati} elementi aggiornati dal database ✓`);
+      else if(ris.scritto) showToast('Modifiche salvate nel database ✓');
     }
   } catch(e){
-    if(e.noToken) showToast('Google da ricollegare: clicca «Riconnetti» in alto','error');
-    else showToast('Errore sync: '+e.message,'error');
+    _esitoCloud(false);
+    showToast('Database non raggiungibile ('+e.message+'): le modifiche restano su questo dispositivo','error');
   }
   btn.innerHTML = '<i class="ti ti-refresh"></i> Sync';
   btn.disabled = false;
@@ -2060,32 +2317,35 @@ async function sincronizzaDrive(){
   gcalProgramma();
 }
 
-/* Aggiornamento automatico in sottofondo: scarica le modifiche del socio senza
-   chiedere nulla (solo se il collegamento Google è già valido e non si sta salvando). */
+/* Aggiornamento in sottofondo: ogni minuto, al ritorno sulla finestra, al ritorno
+   della rete e quando il database segnala una modifica. */
 async function sincronizzaSilenziosa(){
-  if(document.visibilityState!=='visible' || !sessioneAttiva() || !tokenValido(60000)) return;
+  if(document.visibilityState!=='visible' || !sessioneAttiva() || !sbPronto()) return;
   if(_autosaveTimer || _driveTimer) return;
   try{
     const ris = await _sincronizza();
+    _esitoCloud(true);
     if(ris.aggiornati>0){ _aggiornaVisteDopoSync(); gcalProgramma(); }
-  }catch(e){ /* riprova al prossimo giro */ }
+  }catch(e){ _esitoCloud(false); }
 }
 setInterval(sincronizzaSilenziosa, 60000);
 document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') setTimeout(sincronizzaSilenziosa, 800); });
+window.addEventListener('online', ()=>setTimeout(sincronizzaSilenziosa, 1500));
 
-/* Salva su Drive unendo le modifiche. Ritorna true se riuscito; se Google è scollegato
-   le modifiche restano sul dispositivo e partono al prossimo rinnovo del token. */
+/* Salva nel database. Ritorna true se riuscito; senza rete le modifiche restano
+   sul dispositivo e partono appena il database è raggiungibile. */
 async function salvaSuDrive(){
   if(!sessioneAttiva()) return false;
+  if(!sbPronto()){ segnaDrivePendente(true); return false; }
   try{
     const ris = await _sincronizza();
-    if(tokenValido(0)) statoGoogle('on');
+    _esitoCloud(true);
     if(ris.aggiornati>0) _aggiornaVisteDopoSync();
     gcalProgramma();
     return true;
   }catch(e){
     segnaDrivePendente(true);
-    if(!e.noToken) showToast('Salvataggio su Drive non riuscito ('+e.message+'): riprovo al prossimo salvataggio','error');
+    _esitoCloud(false);
     return false;
   }
 }
@@ -2979,7 +3239,7 @@ function annullaNuovo(){
 function confermaNuovo(){
   const nome = document.getElementById('nuovo-input').value.trim().toUpperCase();
   if(!nome){ showToast('Scrivi il nome della commessa','error'); return; }
-  if(localStorage.getItem(storageKey(nome))){ showToast('Esiste già una commessa con questo nome','error'); return; }
+  if(localStorage.getItem(storageKey(nome)) || Object.keys(localStorage).some(k=>k.startsWith('commessa__') && k.slice(10).toLowerCase()===nome.toLowerCase())){ showToast('Esiste già una commessa con questo nome','error'); return; }
   flushAutosave();
   localStorage.setItem(storageKey(nome), JSON.stringify({cliente:{nome:'',tel:'',data:today},statue:[],pagamenti:[],note:'',fase:'',tecnica:'',assegnato:'',dim:'',scadenza:'',orelavoro:0}));
   annullaNuovo();
@@ -3519,22 +3779,25 @@ function _apriDaLink(){
 _apriDaLink();
 
 // Avvio: se la sessione è ancora valida (usata di recente) si entra senza login
-(function avvioSessione(){
+(async function avvioSessione(){
   try{ sessionStorage.removeItem('gis_token'); sessionStorage.removeItem('gis_token_ts'); sessionStorage.removeItem('gis_cal'); }catch(e){}   // vecchio sistema
-  if(sessioneAttiva() && sessioneValida()){
+  const t = _tokenSalvato();
+  if(t){ accessToken = t.token; tokenScadenza = t.scad; gcalHasScope = !!t.cal; }
+  await sbRecuperaUtente();
+  const libreria = !!sbClient();
+  if(sessioneAttiva() && sessioneValida() && (sbUtente || !libreria)){
+    // senza rete la libreria può non caricarsi: si lavora sul dispositivo e si sincronizza dopo
     _sbloccaApp();
-    const t = _tokenSalvato();
-    if(t){
-      accessToken = t.token; tokenScadenza = t.scad; gcalHasScope = !!t.cal;
-      statoGoogle('on');
-      sincronizzaDrive();          // se ci sono modifiche in sospeso le invia prima di scaricare
-    } else {
-      statoGoogle('scaduto');      // token scaduto: si rinnova da solo al primo clic
-    }
+    statoGoogle(t ? 'on' : (localStorage.getItem(EMAIL_KEY) ? 'scaduto' : 'off'));
+    if(sbUtente){ sbAscoltaModifiche(); sincronizzaDrive(); }
+    else _esitoCloud(false);
     segnaAttivita();
-  } else if(sessioneAttiva()){
+  } else if(sessioneAttiva() && !sessioneValida()){
     _terminaSessione('inattivita');   // tornato dopo troppo tempo di inutilizzo
+  } else if(sessioneAttiva()){
+    _terminaSessione(_leggiSbBase() ? 'scaduta' : 'nuovo');   // sessione Google della versione precedente
   } else {
+    statoGoogle(t ? 'on' : 'off');
     _mostraLogin(_sess()?.motivoUscita);
   }
 })();
