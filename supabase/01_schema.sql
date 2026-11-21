@@ -105,6 +105,11 @@ create policy "utenti leggono storico"   on public.storico  for select to authen
 
 revoke all on public.commesse, public.impostazioni, public.storico from anon;
 
+-- permessi di base per gli utenti collegati (nei progetti nuovi non sono automatici)
+grant usage on schema public to authenticated;
+grant select, insert, update, delete on public.commesse, public.impostazioni to authenticated;
+grant select on public.storico to authenticated;
+
 -- ── TEMPO REALE: le modifiche arrivano subito agli altri dispositivi ─
 do $$
 begin
