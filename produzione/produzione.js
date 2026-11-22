@@ -10,11 +10,11 @@
 const RUOLI  = [['post_produzione','Post-produzione'],['decorazione','Decorazione'],['montaggio','Montaggio'],['imballaggio','Imballaggio']];
 const GIORNI = [[1,'lun'],[2,'mar'],[3,'mer'],[4,'gio'],[5,'ven'],[6,'sab'],[7,'dom']];
 const PAGINE = [['prod-programmazione','Programmazione'],['prod-catalogo','Catalogo'],['prod-file','File di stampa'],['prod-magazzino','Magazzino'],['prod-personale','Personale']];
-const TABELLE = ['modelli','modelli_pezzi','file_stampa','file_stampa_contenuto','personale','macchine','commesse_produzione','produzione_righe'];
+const TABELLE = ['modelli','modelli_pezzi','file_stampa','file_stampa_contenuto','personale','macchine','commesse_produzione','produzione_righe','lavori','magazzino_pezzi'];
 
 const st = {
   pagina: null, caricato: false, errore: null, inCarica: null,
-  modelli: [], pezzi: [], files: [], contenuto: [], personale: [], macchine: [], cprod: [], righe: [],
+  modelli: [], pezzi: [], files: [], contenuto: [], personale: [], macchine: [], cprod: [], righe: [], lavori: [], magazzino: [],
   commessaId: null, commessaNome: null,
   selModello: null, bozzaModello: null,
   selFile: null, bozzaFile: null, filtroMacchina: '', vistaFile: 'commessa', fileCommessa: null,
@@ -47,7 +47,8 @@ async function carica(){
   if(!(typeof sbPronto==='function' && sbPronto())) throw new Error('Database non collegato: esci e rientra con email e password');
   const ris = await Promise.all(TABELLE.map(t=>sb.from(t).select('*')));
   ris.forEach((r,i)=>{ if(r.error) throw new Error(r.error.message + ' [' + TABELLE[i] + ']'); });
-  [st.modelli, st.pezzi, st.files, st.contenuto, st.personale, st.macchine, st.cprod, st.righe] = ris.map(r=>r.data||[]);
+  [st.modelli, st.pezzi, st.files, st.contenuto, st.personale, st.macchine, st.cprod, st.righe, st.lavori, st.magazzino] = ris.map(r=>r.data||[]);
+  st.lavori.sort((a,b)=>a.ordine-b.ordine);
   setTimeout(aggiornaPromemoria, 0);
   st.righe.sort((a,b)=>a.ordine-b.ordine);
   st.modelli.sort(perNome); st.files.sort(perNome); st.personale.sort(perNome); st.macchine.sort(perNome);
@@ -652,7 +653,8 @@ function renderCommessa(box){
   const statoChip = avviata ? '<span class="pchip" style="background:var(--green-bg);color:var(--green)">Avviata</span>'
     : inCoda ? '<span class="pchip" style="background:var(--blue-bg);color:var(--blue-ink)">In coda</span>'
     : problemi.length ? '<span class="pchip fdm">In attesa dei dati</span>' : '<span class="pchip grey">Dati completi</span>';
-  const statoNota = avviata ? 'avviata il ' + fmtData(new Date(sp.avviata_il||sp.aggiornato_il))
+  const lavC = lavoriDi(cid);
+  const statoNota = avviata ? 'avviata il ' + fmtData(new Date(sp.avviata_il||sp.aggiornato_il)) + (lavC.length ? ' · lavori fatti ' + lavC.filter(l=>l.stato==='fatto').length + ' di ' + lavC.length : '')
     : inCoda ? 'nel Gantt, non ancora sui tablet' + (pianoC?.inizioData ? ' · avvio previsto ' + fmtData(pianoC.inizioData) : '') + (pianoC?.fineData ? ' · fine prevista ' + fmtData(pianoC.fineData) : '')
     : '';
 
@@ -810,16 +812,22 @@ async function mandaInProduzione(){
   const p = problemiCommessa(cid);
   if(p.length){ showToast('Mancano ancora dei dati', 'error'); return; }
   if(!confirm('Mettere la commessa in coda di produzione? Entrerà nel Gantt; sui tablet comparirà solo quando la avvii.')) return;
-  const r = await sb.from('commesse_produzione').update({stato:'produzione', mandata_il: new Date().toISOString()}).eq('commessa_id', cid);
+  const nomeC = nomeCommessaDaId(cid) || '';
+  const r = await sb.from('commesse_produzione').update({stato:'produzione', mandata_il: new Date().toISOString(), nome:nomeC, consegna:consegnaIso(nomeC)}).eq('commessa_id', cid);
   if(r.error){ showToast('Non riuscito: ' + r.error.message, 'error'); return; }
   await ricarica(); showToast('Commessa in coda ✓'); render(); aggiornaRiquadro();
 }
 async function avviaProduzione(cid){
   const nome = nomeCommessaDaId(cid) || '';
   if(!confirm(`Avviare la produzione di ${nome}? Da ora i suoi lavori compaiono sui tablet.`)) return;
-  const r = await sb.from('commesse_produzione').update({stato:'avviata', avviata_il: new Date().toISOString()}).eq('commessa_id', cid);
+  let g;
+  try{ g = await generaLavori(cid); }
+  catch(err){ showToast(/lavori|magazzino/.test(err.message||'') ? 'Manca un aggiornamento del database: esegui supabase/06_tablet.sql su Supabase' : 'Non riesco a preparare i lavori: ' + (err.message||err), 'error'); await ricarica(); return; }
+  const r = await sb.from('commesse_produzione').update({stato:'avviata', avviata_il: new Date().toISOString(), nome, consegna: consegnaIso(nome)}).eq('commessa_id', cid);
   if(r.error){ showToast(/avviata|check/.test(r.error.message) ? 'Manca un aggiornamento del database: esegui supabase/05_avvio_produzione.sql su Supabase' : 'Non riuscito: ' + r.error.message, 'error'); return; }
-  await ricarica(); showToast('Produzione avviata ✓'); render(); aggiornaRiquadro();
+  await ricarica();
+  showToast(g?.tenuti ? 'Produzione riavviata ✓ (lavori già iniziati mantenuti)' : 'Produzione avviata ✓ · ' + g.creati + ' lavori sui tablet' + (g.dalMagazzino ? ' · ' + g.dalMagazzino + ' pezzi dal magazzino' : ''));
+  render(); aggiornaRiquadro();
 }
 async function riportaInCoda(){
   if(!confirm('Riportarla in coda? Sparirà dai tablet finché non la riavvii.')) return;
@@ -858,9 +866,10 @@ function calcolaPiano(){
   if(!st.caricato || !window.ProdPianifica) return null;
   const elenco = codaProduzione().map((x,i)=>{
     const nome = nomeCommessaDaId(x.commessa_id) || '?';
-    return {id:x.commessa_id, nome, stato:x.stato, righe:righeDi(x.commessa_id), colore:COLORI[i % COLORI.length], promessa:promessaDi(nome), cliente:datiCommessa(nome)?.cliente?.nome||''};
+    const lav = x.stato==='avviata' ? lavoriDi(x.commessa_id) : [];
+    return {id:x.commessa_id, nome, stato:x.stato, righe:righeDi(x.commessa_id), lavori: lav.length ? lav : null, colore:COLORI[i % COLORI.length], promessa:promessaDi(nome), cliente:datiCommessa(nome)?.cliente?.nome||''};
   });
-  const piano = window.ProdPianifica({oggi:new Date(), macchine:st.macchine, personale:st.personale, modelli:st.modelli, pezzi:st.pezzi, files:st.files, contenuto:st.contenuto, commesse:elenco});
+  const piano = window.ProdPianifica({adesso:new Date(), oggi:new Date(), macchine:st.macchine, personale:st.personale, modelli:st.modelli, pezzi:st.pezzi, files:st.files, contenuto:st.contenuto, commesse:elenco});
   piano.elenco = elenco;
   return piano;
 }
@@ -966,9 +975,10 @@ function renderProgrammazione(box){
 
   const ultima = comm.map(c=>piano.commesse[c.id]?.fineData).filter(Boolean).sort((a,b)=>b-a)[0];
   const avvisi = piano.avvisi.map(a=>`<div class="prod-banner err"><i class="ti ti-alert-triangle"></i><span>${e(a)}</span></div>`).join('');
-  box.innerHTML = testata('Programmazione', `${comm.length} ${comm.length===1?'commessa':'commesse'} in produzione · ultima consegna prevista ${fmtData(ultima)}${inRitardo ? ' · <b style="color:var(--red)">' + inRitardo + ' in ritardo</b>' : ''}`) +
+  box.innerHTML = testata('Programmazione', `${comm.length} ${comm.length===1?'commessa':'commesse'} in produzione · ultima consegna prevista ${fmtData(ultima)}${inRitardo ? ' · <b style="color:var(--red)">' + inRitardo + ' in ritardo</b>' : ''}`,
+      `<a class="btn" href="tablet.html" target="_blank" rel="noopener"><i class="ti ti-device-tablet"></i> Apri la pagina dei tablet</a>`) +
     avvisi +
-    `<div class="prod-banner" style="background:var(--bg3);border-color:var(--border);color:var(--text2);font-weight:400"><i class="ti ti-info-circle"></i><span>Il calcolo parte da oggi e considera tutto il lavoro ancora da fare: finché i tablet non registrano l'avanzamento, anche le commesse già iniziate sono calcolate dall'inizio. Macchine dal lunedì al venerdì; festività non considerate.</span></div>
+    `<div class="prod-banner" style="background:var(--bg3);border-color:var(--border);color:var(--text2);font-weight:400"><i class="ti ti-info-circle"></i><span>Le commesse avviate sono calcolate da quello che i tablet hanno già registrato; quelle in coda dall'inizio. Macchine dal lunedì al venerdì; festività non considerate.</span></div>
     <div class="prod-split">
       <div class="card prod-list prod-coda"><div class="card-hdr"><h2>Coda</h2><span class="sub">Usa le frecce per la priorità</span></div>${righeCoda}</div>
       <div class="card prod-edit" style="padding:0;overflow:hidden">
@@ -992,10 +1002,115 @@ async function sposta(id, dir){
   await ricarica(); render();
 }
 
-/* ═════════════ MAGAZZINO (prossimo passo) ═════════════ */
+/* ═════════════ LAVORI (creati all'avvio della produzione) ═════════════ */
+const nuovoId = ()=> (crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c=>{ const r = Math.random()*16|0; return (c==='x' ? r : (r&0x3|0x8)).toString(16); }));
+const lavoriDi = (cid)=>st.lavori.filter(l=>l.commessa_id===cid);
+function consegnaIso(nome){
+  const s = (datiCommessa(nome)?.statue||[]).filter(x=>x.consegna && !x.consegnato).map(x=>x.consegna).sort();
+  return s[0] || null;
+}
+
+// Trasforma statue, pezzi e file della commessa in lavori concreti per i tablet
+async function generaLavori(cid){
+  const esistenti = lavoriDi(cid);
+  if(esistenti.some(l=>l.stato!=='da_fare')) return {tenuti:true};   // il lavoro è già iniziato: si tengono
+  if(esistenti.length){
+    // nessun lavoro iniziato: si rifanno da capo, restituendo al magazzino i pezzi presi
+    const presi = {};
+    esistenti.filter(l=>l.tipo==='carteggiatura' || l.tipo==='decorazione').forEach(l=>{ if(l.contenuto==='dal magazzino' && l.pezzo_id && !(l.tipo==='decorazione' && esistenti.some(x=>x.tipo==='carteggiatura' && x.pezzo_id===l.pezzo_id && x.statua===l.statua))) presi[l.pezzo_id] = (presi[l.pezzo_id]||0) + 1; });
+    for(const [pid, n] of Object.entries(presi)){ const r = await sb.rpc('magazzino_aggiungi', {p_pezzo:pid, p_n:n}); if(r.error) throw r.error; }
+    const r = await sb.from('lavori').delete().eq('commessa_id', cid); if(r.error) throw r.error;
+  }
+  const nome = nomeCommessaDaId(cid) || '';
+  const scorta = new Map(st.magazzino.map(m=>[m.pezzo_id, m.quantita]));
+  const consumo = new Map();
+  const out = []; let ordine = 0, nStatua = 0;
+  const statue = [], istanze = [];
+  righeDi(cid).forEach(riga=>{
+    const m = st.modelli.find(x=>x.id===riga.modello_id); if(!m) return;
+    const gia = Math.max(0, riga.gia_stampate||0);
+    for(let k=1; k<=riga.quantita; k++){
+      nStatua++;
+      const s = {n:nStatua, nome:(riga.descrizione || m.nome) + (riga.quantita>1 ? ' ' + k + '/' + riga.quantita : ''), m, stampata: k<=gia};
+      statue.push(s);
+      st.pezzi.filter(p=>p.modello_id===m.id).forEach(p=>{ for(let q=0; q<p.quantita; q++) istanze.push({s, p, fonte: s.stampata ? 'già stampato' : '', dip:null}); });
+    }
+  });
+  // prima i pezzi del magazzino
+  istanze.forEach(i=>{
+    if(i.fonte) return;
+    const n = scorta.get(i.p.id) || 0;
+    if(n>0){ scorta.set(i.p.id, n-1); consumo.set(i.p.id, (consumo.get(i.p.id)||0) + 1); i.fonte = 'dal magazzino'; }
+  });
+  // poi i lanci dei file
+  const perFile = new Map();
+  istanze.filter(i=>!i.fonte).forEach(i=>{
+    const f = fileDelPezzo(i.p.id); if(!f) return;
+    if(!perFile.has(f.file.id)) perFile.set(f.file.id, new Map());
+    const t = perFile.get(f.file.id);
+    if(!t.has(i.p.id)) t.set(i.p.id, []);
+    t.get(i.p.id).push(i);
+  });
+  perFile.forEach((tipi, fid)=>{
+    const f = st.files.find(x=>x.id===fid);
+    const resa = new Map(st.contenuto.filter(c=>c.file_id===fid).map(c=>[c.pezzo_id, c.quantita]));
+    const lanci = Math.max(...[...tipi.entries()].map(([pid, l])=>Math.ceil(l.length / (resa.get(pid)||1))));
+    for(let n=0; n<lanci; n++){
+      const id = nuovoId(), extra = {}, righeTesto = [];
+      resa.forEach((q, pid)=>{
+        const mie = (tipi.get(pid)||[]).slice(n*q, (n+1)*q);
+        mie.forEach(i=>{ i.dip = id; });
+        const avanzo = q - mie.length;
+        if(avanzo>0) extra[pid] = avanzo;
+        const p = modelloDi(pid);
+        righeTesto.push(q + ' ' + (p?.nome||'pezzo') + (st.modelli.find(m=>m.id===p?.modello_id)?.commessa_id ? '' : '') + (avanzo>0 ? ' (' + (avanzo===q ? 'tutti' : avanzo) + ' a magazzino)' : ''));
+      });
+      out.push({id, commessa_id:cid, commessa_nome:nome, tipo:'stampa', ordine:ordine++, statua_nome:'Lancio ' + (n+1) + ' di ' + lanci,
+        file_id:fid, file_nome:f?.nome||'', macchina_id:f?.macchina_id||null, contenuto:righeTesto.join(', '), extra, minuti_previsti:f?.minuti_durata||0});
+    }
+  });
+  // carteggiatura e decorazione per pezzo
+  istanze.forEach(i=>{
+    const base = {commessa_id:cid, commessa_nome:nome, statua:i.s.n, statua_nome:i.s.nome, pezzo_id:i.p.id, pezzo_nome:i.p.nome, accessorio:i.p.tipo==='accessorio', tecnologia:i.p.tecnologia, contenuto:i.fonte};
+    let prec = i.dip;
+    if(i.p.minuti_carteggiatura>0){ const id = nuovoId(); out.push({...base, id, tipo:'carteggiatura', ordine:ordine++, dipende_da:prec, minuti_previsti:i.p.minuti_carteggiatura}); prec = id; }
+    if(i.p.minuti_decorazione>0){ out.push({...base, id:nuovoId(), tipo:'decorazione', ordine:ordine++, dipende_da:prec, minuti_previsti:i.p.minuti_decorazione, contenuto: i.p.minuti_carteggiatura>0 ? '' : i.fonte}); }
+  });
+  // montaggio e imballaggio per statua
+  statue.forEach(s=>{
+    const base = {commessa_id:cid, commessa_nome:nome, statua:s.n, statua_nome:s.nome};
+    if(s.m.minuti_montaggio>0) out.push({...base, id:nuovoId(), tipo:'montaggio', ordine:ordine++, minuti_previsti:s.m.minuti_montaggio});
+    if(s.m.minuti_imballaggio>0) out.push({...base, id:nuovoId(), tipo:'imballaggio', ordine:ordine++, minuti_previsti:s.m.minuti_imballaggio});
+  });
+  for(let i=0; i<out.length; i+=400){ const r = await sb.from('lavori').insert(out.slice(i, i+400)); if(r.error) throw r.error; }
+  for(const [pid, n] of consumo){ const r = await sb.rpc('magazzino_aggiungi', {p_pezzo:pid, p_n:-n}); if(r.error) throw r.error; }
+  return {creati: out.length, dalMagazzino: [...consumo.values()].reduce((a,b)=>a+b, 0)};
+}
+
+/* ═════════════ MAGAZZINO ═════════════ */
 function renderMagazzino(box){
-  box.innerHTML = testata('Magazzino pezzi', 'I pezzi stampati in più, usati dalle commesse successive prima di lanciare una nuova stampa.') +
-    `<div class="card"><div class="empty"><i class="ti ti-building-warehouse"></i><p>Il magazzino si riempie da solo quando una stampa produce più pezzi del necessario.<br>Arriva insieme ai tablet della stampa, nel prossimo passo.</p></div></div>`;
+  const righe = st.magazzino.map(m=>({m, p:modelloDi(m.pezzo_id)})).filter(x=>x.p)
+    .sort((a,b)=>nomeModello(a.p.modello_id).localeCompare(nomeModello(b.p.modello_id),'it') || a.p.nome.localeCompare(b.p.nome,'it'));
+  const tot = righe.reduce((s,x)=>s + x.m.quantita, 0);
+  const corpo = righe.map(({m,p})=>`<tr ${m.quantita? '' : 'style="opacity:.5"'}>
+      <td>${e(nomeModello(p.modello_id))}</td>
+      <td><b>${e(p.nome)}</b>${p.tipo==='accessorio' ? ' <span class="pchip acc">accessorio</span>' : ''}</td>
+      <td>${tecChip(p.tecnologia)}</td>
+      <td class="muted">${e(fileDelPezzo(p.id)?.file.nome || '—')}</td>
+      <td style="white-space:nowrap;text-align:right">
+        <button class="btn sm" aria-label="Togli uno" onclick="Prod.magazzino('${p.id}',-1)">−</button>
+        <b style="display:inline-block;min-width:36px;text-align:center;font-family:var(--head);font-size:17px">${m.quantita}</b>
+        <button class="btn sm" aria-label="Aggiungi uno" onclick="Prod.magazzino('${p.id}',1)">+</button>
+      </td></tr>`).join('') || `<tr><td colspan="5"><div class="prod-empty">Il magazzino è vuoto. Si riempie da solo quando una stampa riuscita produce più pezzi di quelli che servono.</div></td></tr>`;
+  box.innerHTML = testata('Magazzino pezzi', 'Pezzi stampati in più. Quando avvii una commessa, i pezzi presenti qui vengono usati prima di lanciare nuove stampe.') +
+    `<div class="kpi-row"><div class="kpi card" style="padding:16px 18px"><div class="kpi-label">Pezzi in magazzino</div><div class="kpi-val">${tot}</div><div class="kpi-sub">${righe.filter(x=>x.m.quantita).length} tipi diversi</div></div></div>
+    <div class="card"><div class="card-hdr"><h2>Disponibili</h2><span class="sub">Con + e − correggi i numeri se non tornano con lo scaffale</span></div>
+      <div class="prod-tbl-wrap"><table class="prod-tbl"><thead><tr><th>Modello</th><th>Pezzo</th><th>Tecnologia</th><th>File</th><th style="text-align:right">Quantità</th></tr></thead><tbody>${corpo}</tbody></table></div></div>`;
+}
+async function magazzinoCorreggi(pid, n){
+  const r = await sb.rpc('magazzino_aggiungi', {p_pezzo:pid, p_n:n});
+  if(r.error){ showToast('Non riuscito: ' + r.error.message, 'error'); return; }
+  await ricarica(); render();
 }
 
 /* Promemoria: carica i dati di produzione appena il database è collegato, poi li tiene aggiornati */
@@ -1060,7 +1175,7 @@ window.Prod = {
   ridisegna(){ render(); },
   tornaACommessa(){ const cid = st.bozzaModello?.commessa_id; if(!cid || !puoiLasciare()) return; st.sporco = false; st.commessaId = cid; st.commessaNome = nomeCommessaDaId(cid); showPage('prod-commessa'); },
   vaiAllaCommessa(){ const n = st.commessaNome; if(n && typeof apriCommessa==='function') window.apriCommessa(n); },
-  sposta,
+  sposta, magazzino: magazzinoCorreggi,
   apriCommessaId(id){ st.commessaId = id; st.commessaNome = nomeCommessaDaId(id); showPage('prod-commessa'); },
   // per i test
   _st: st, _leggiTempo: leggiTempo, _hm: hm

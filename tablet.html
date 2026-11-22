@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0F766E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Studio RuiLab · Tablet</title>
+<link rel="icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.2/dist/umd/supabase.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F3F4F6;--bg2:#FFFFFF;--bg3:#F7F8FA;--bg4:#EEF0F3;--border:#E3E6EB;--border2:#C9CED6;
+  --text:#17202B;--text2:#5A6472;--text3:#6B7480;
+  --acc:#0F766E;--acc-bg:#E1F5EE;--acc-ink:#085041;
+  --blue:#1F4FD1;--blue-bg:#E8EEFC;--blue-ink:#173BA0;
+  --green:#1B6B3A;--green-bg:#E3F4E8;--amber:#7A3B00;--amber-bg:#FFF1DF;--amber-line:#F1C58F;
+  --red:#B3261E;--red-bg:#FCE8E6;--purple:#6B3FC4;--purple-bg:#EFE8FB;
+  --font:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;--head:'Space Grotesk','Inter',sans-serif;
+}
+html,body{height:100%}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:16px;-webkit-font-smoothing:antialiased;overscroll-behavior:none;user-select:none;-webkit-user-select:none}
+button{font:inherit;color:inherit;cursor:pointer}
+input{font:inherit;color:inherit}
+.hidden{display:none!important}
+
+/* accesso e scelta reparto */
+.full{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.box{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:32px;width:100%;max-width:460px;text-align:center}
+.box h1{font-family:var(--head);font-weight:600;font-size:26px;margin:14px 0 6px}
+.box p{color:var(--text2);margin-bottom:18px}
+.logo{width:56px;height:56px;border-radius:14px;background:var(--acc);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:30px}
+.form{display:flex;flex-direction:column;gap:12px;text-align:left}
+.form input{width:100%;min-height:52px;border:1px solid var(--border2);border-radius:12px;padding:10px 14px;font-size:17px;background:var(--bg2);user-select:text;-webkit-user-select:text}
+.form input:focus{outline:none;border-color:var(--acc)}
+.err{color:var(--red);font-size:14px}
+.big{min-height:56px;border:none;border-radius:14px;background:var(--acc);color:#fff;font-size:18px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:10px}
+.big:disabled{opacity:.6}
+.reparti{display:grid;gap:12px;margin-top:6px}
+.reparto{display:flex;align-items:center;gap:16px;min-height:84px;padding:0 20px;border:1px solid var(--border2);border-radius:16px;background:var(--bg2);text-align:left}
+.reparto i{font-size:32px;width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff}
+.reparto b{font-size:20px;font-weight:600;display:block}
+.reparto span{color:var(--text2);font-size:14px}
+
+/* schermata reparto */
+.app{min-height:100vh;display:flex;flex-direction:column}
+.top{display:flex;align-items:center;gap:14px;padding:12px 22px;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:5}
+.top .ico{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px}
+.top .tt{flex:1;min-width:0}
+.top .tt b{display:block;font-family:var(--head);font-weight:600;font-size:21px}
+.top .tt span{font-size:13px;color:var(--text2)}
+.stato{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:500;color:var(--green)}
+.stato.off{color:var(--red)}
+.ibtn{width:48px;height:48px;border-radius:12px;border:1px solid var(--border2);background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:22px}
+.corpo{flex:1;padding:18px 22px 12px;display:flex;flex-direction:column;gap:16px}
+.griglia{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;align-items:start}
+.col{background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.col-hdr{display:flex;align-items:center;gap:10px}
+.av{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:18px;flex-shrink:0}
+.col-hdr b{font-size:19px;font-weight:600;display:block}
+.col-hdr small{font-size:13px;font-weight:600}
+.lav{background:var(--bg3);border-radius:14px;padding:14px}
+.lav .cm{font-size:13px;color:var(--text2)}
+.lav .pz{font-weight:600;font-size:18px;margin-top:2px}
+.lav .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.tag{font-size:12px;font-weight:600;padding:4px 10px;border-radius:99px;background:var(--bg4);color:var(--text2)}
+.tag.res{background:var(--green-bg);color:var(--green)}
+.tag.fdm{background:var(--amber-bg);color:var(--amber)}
+.tag.acc{background:var(--purple-bg);color:var(--purple)}
+.tag.mag{background:var(--blue-bg);color:var(--blue-ink)}
+.timer{display:flex;align-items:baseline;gap:8px;margin-top:10px}
+.timer b{font-family:var(--head);font-weight:600;font-size:40px;line-height:1}
+.timer span{font-size:14px;color:var(--text2)}
+.barra{height:10px;border-radius:99px;background:var(--border);margin-top:10px;overflow:hidden}
+.barra div{height:100%;background:var(--blue);border-radius:99px}
+.over .timer b,.over .nota{color:var(--red)}
+.over .barra div{background:var(--red)}
+.nota{font-size:13px;color:var(--text2);margin-top:6px}
+.bt{display:flex;gap:10px}
+.b{flex:1;min-height:60px;border-radius:12px;border:1px solid var(--border2);background:var(--bg2);font-size:17px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px}
+.b.ok{background:var(--green);border-color:var(--green);color:#fff;flex:1.4}
+.b.go{background:var(--acc);border-color:var(--acc);color:#fff}
+.b.ko{color:var(--red);border-color:var(--red)}
+.b.sm{min-height:48px;font-size:15px;flex:0 0 auto;padding:0 16px}
+.b:disabled{opacity:.5}
+.prossimo{background:var(--acc-bg);border-radius:14px;padding:14px}
+.prossimo .cm,.prossimo .pz{color:var(--acc-ink)}
+.vuoto{color:var(--text2);font-size:15px;padding:14px;text-align:center;background:var(--bg3);border-radius:14px}
+.dopo{border-top:1px solid var(--bg4);padding-top:10px}
+.dopo h4{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:6px}
+.dopo div{display:flex;justify-content:space-between;gap:8px;font-size:14px;padding:3px 0}
+.dopo div span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pausa{display:flex;align-items:center;gap:10px;background:var(--amber-bg);border-radius:12px;padding:10px 12px;font-size:14px;color:var(--amber)}
+.pausa span{flex:1}
+.sez{background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:14px 16px}
+.sez.tratt{border-style:dashed;border-width:1.5px;border-color:var(--border2)}
+.sez h3{font-size:18px;font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.riga{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--bg4)}
+.riga:first-of-type{border-top:none}
+.riga .tx{flex:1;min-width:0}
+.riga .tx b{display:block;font-weight:600}
+.riga .tx span{font-size:14px;color:var(--text2)}
+.jolly{display:flex;flex-wrap:wrap;gap:10px}
+.jolly .j{flex:1 1 300px;display:flex;align-items:center;gap:10px;background:var(--bg3);border-radius:12px;padding:8px 8px 8px 14px}
+.jolly .j .tx{flex:1;min-width:0}
+.jolly .j b{display:block;font-size:15px;font-weight:600}
+.jolly .j span{font-size:13px;color:var(--text2)}
+.jolly .j.attivo{background:var(--acc-bg)}
+.jolly .j .t{font-family:var(--head);font-weight:600;font-size:20px;min-width:64px;text-align:right}
+
+/* finestra */
+.modal{position:fixed;inset:0;background:rgba(13,17,23,.55);display:flex;align-items:center;justify-content:center;padding:20px;z-index:20}
+.modal .box{max-width:520px;text-align:left}
+.modal h2{font-family:var(--head);font-weight:600;font-size:22px;margin-bottom:12px}
+.persone{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin:10px 0 16px}
+.persone button{min-height:72px;border:1px solid var(--border2);border-radius:14px;background:var(--bg2);font-size:17px;font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#17202B;color:#fff;padding:14px 20px;border-radius:12px;font-size:16px;font-weight:500;z-index:30;max-width:90vw}
+.toast.err{background:var(--red)}
+.spin{width:22px;height:22px;border:3px solid var(--border);border-top-color:var(--acc);border-radius:50%;animation:g .8s linear infinite;display:inline-block}
+@keyframes g{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<!-- accesso -->
+<div id="v-login" class="full hidden">
+  <div class="box">
+    <div class="logo"><i class="ti ti-building-factory-2"></i></div>
+    <h1>Studio RuiLab</h1>
+    <p>Tablet di produzione · accedi una volta sola</p>
+    <form class="form" onsubmit="accedi(event)">
+      <input type="email" id="l-email" placeholder="Email del tablet" autocomplete="username" required>
+      <input type="password" id="l-pw" placeholder="Password" autocomplete="current-password" required>
+      <div class="err hidden" id="l-err"></div>
+      <button class="big" id="l-btn" type="submit">Accedi</button>
+    </form>
+  </div>
+</div>
+
+<!-- scelta reparto -->
+<div id="v-reparto" class="full hidden">
+  <div class="box">
+    <h1>Che tablet è questo?</h1>
+    <p>Si sceglie una volta: il tablet resterà su questo reparto.</p>
+    <div class="reparti">
+      <button class="reparto" onclick="scegliReparto('stampa')"><i class="ti ti-printer" style="background:#A16207"></i><span><b>Stampa</b><span>Macchine e stampatore esterno</span></span></button>
+      <button class="reparto" onclick="scegliReparto('post')"><i class="ti ti-tools" style="background:#0F766E"></i><span><b>Post-produzione</b><span>Carteggiatura dei pezzi</span></span></button>
+      <button class="reparto" onclick="scegliReparto('decorazione')"><i class="ti ti-brush" style="background:#6B3FC4"></i><span><b>Decorazione</b><span>Decorazione di pezzi e accessori</span></span></button>
+    </div>
+  </div>
+</div>
+
+<!-- reparto -->
+<div id="v-app" class="app hidden">
+  <header class="top">
+    <div class="ico" id="t-ico"></div>
+    <div class="tt"><b id="t-nome"></b><span id="t-data"></span></div>
+    <span class="stato" id="t-stato"><i class="ti ti-wifi"></i> Collegato</span>
+    <button class="ibtn" aria-label="Aggiorna" onclick="carica(true)"><i class="ti ti-refresh"></i></button>
+    <button class="ibtn" aria-label="Impostazioni del tablet" onclick="apriMenu()"><i class="ti ti-settings"></i></button>
+  </header>
+  <main class="corpo" id="corpo"><div class="vuoto"><span class="spin"></span></div></main>
+</div>
+
+<div id="modal" class="modal hidden" onclick="if(event.target===this) chiudiModal()"><div class="box" id="modal-box"></div></div>
+<div id="toast" class="toast hidden"></div>
+
+<script>
+'use strict';
+/* ═══════════════════════════════════════════════════
+   TABLET RuiLab — riscontro dell'avanzamento in studio
+   Legge e scrive solo i dati di produzione (lavori, magazzino);
+   l'account del tablet non può leggere prezzi né clienti.
+═══════════════════════════════════════════════════ */
+const SB_URL = 'https://horygnawroxzbzrtxofx.supabase.co';
+const SB_KEY = 'sb_publishable_xKOIpzd9TPygr7VpgUMcHw_yNxbm4za';
+const REPARTI = {
+  stampa:      {nome:'Stampa',          icona:'ti-printer', colore:'#A16207'},
+  post:        {nome:'Post-produzione', icona:'ti-tools',   colore:'#0F766E', tipo:'carteggiatura', ruolo:'post_produzione', verbo:'carteggiatura'},
+  decorazione: {nome:'Decorazione',     icona:'ti-brush',   colore:'#6B3FC4', tipo:'decorazione',   ruolo:'decorazione',     verbo:'decorazione'}
+};
+const AVATAR = [['#EFE8FB','#6B3FC4'],['#E3F4E8','#1B6B3A'],['#FFF1DF','#7A3B00'],['#E8EEFC','#173BA0'],['#FCE8F1','#9D174D'],['#E1F5EE','#085041']];
+
+let sb = null, utente = null, canale = null, timerCarica = null;
+const D = {lavori:[], cprod:[], personale:[], macchine:[], caricato:false};
+const reparto = ()=>{ try{ return localStorage.getItem('tablet_reparto'); }catch(e){ return null; } };
+const $ = (id)=>document.getElementById(id);
+const esc = (s)=>String(s ?? '').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function hm(min){ min = Math.max(0, Math.round(Number(min)||0)); return Math.floor(min/60) + ':' + String(min%60).padStart(2,'0'); }
+function toast(t, err){ const el = $('toast'); el.textContent = t; el.className = 'toast' + (err ? ' err' : ''); clearTimeout(toast._t); toast._t = setTimeout(()=>el.classList.add('hidden'), 3200); }
+function mostra(v){ ['v-login','v-reparto','v-app'].forEach(x=>$(x).classList.toggle('hidden', x!==v)); }
+
+/* ── accesso ── */
+async function avvio(){
+  if(!window.supabase){ document.body.innerHTML = '<div class="full"><div class="box"><h1>Nessuna connessione</h1><p>Controlla il Wi-Fi e ricarica la pagina.</p><button class="big" onclick="location.reload()">Ricarica</button></div></div>'; return; }
+  sb = window.supabase.createClient(SB_URL, SB_KEY, {auth:{persistSession:true, autoRefreshToken:true, storageKey:'sb_tablet'}});
+  sb.auth.onAuthStateChange((ev, sess)=>{ if(ev==='SIGNED_OUT'){ utente = null; mostra('v-login'); } });
+  const {data} = await sb.auth.getSession();
+  utente = data?.session?.user || null;
+  if(!utente) return mostra('v-login');
+  entra();
+}
+async function accedi(ev){
+  ev.preventDefault();
+  const btn = $('l-btn'), err = $('l-err');
+  err.classList.add('hidden'); btn.disabled = true; btn.innerHTML = '<span class="spin"></span>';
+  const {data, error} = await sb.auth.signInWithPassword({email:$('l-email').value.trim(), password:$('l-pw').value});
+  btn.disabled = false; btn.textContent = 'Accedi';
+  if(error){ err.textContent = /invalid/i.test(error.message) ? 'Email o password non corretti' : 'Accesso non riuscito: ' + error.message; err.classList.remove('hidden'); return; }
+  utente = data.user; $('l-pw').value = '';
+  entra();
+}
+function entra(){
+  if(!reparto()) return mostra('v-reparto');
+  const r = REPARTI[reparto()];
+  $('t-nome').textContent = r.nome;
+  $('t-ico').innerHTML = `<i class="ti ${r.icona}"></i>`; $('t-ico').style.background = r.colore;
+  document.querySelector('meta[name="theme-color"]').content = r.colore;
+  mostra('v-app');
+  carica(); ascolta();
+}
+function scegliReparto(k){ try{ localStorage.setItem('tablet_reparto', k); }catch(e){} entra(); }
+
+/* ── dati ── */
+async function carica(manuale){
+  try{
+    const [l, c, p, m] = await Promise.all([
+      sb.from('lavori').select('*').neq('stato','fatto'),
+      sb.from('commesse_produzione').select('commessa_id,stato,nome,consegna,priorita,avviata_il').eq('stato','avviata'),
+      sb.from('personale').select('id,nome,ruoli,attivo').eq('attivo', true),
+      sb.from('macchine').select('id,nome,esterno,attiva').eq('attiva', true)
+    ]);
+    for(const r of [l,c,p,m]) if(r.error) throw r.error;
+    D.cprod = c.data; D.personale = p.data.sort((a,b)=>a.nome.localeCompare(b.nome,'it')); D.macchine = m.data.sort((a,b)=>a.nome.localeCompare(b.nome,'it'));
+    const ordine = new Map(D.cprod.slice().sort((a,b)=>(a.priorita ?? 1e9) - (b.priorita ?? 1e9) || String(a.avviata_il).localeCompare(String(b.avviata_il))).map((x,i)=>[x.commessa_id, i]));
+    D.ordineCommessa = ordine;
+    D.lavori = l.data.filter(x=>ordine.has(x.commessa_id)).sort((a,b)=>ordine.get(a.commessa_id) - ordine.get(b.commessa_id) || a.ordine - b.ordine);
+    D.aperti = new Set(l.data.map(x=>x.id));
+    D.caricato = true;
+    statoRete(true);
+    disegna();
+    if(manuale) toast('Aggiornato');
+  }catch(err){
+    statoRete(false);
+    if(/lavori|schema cache/i.test(err.message||'')) $('corpo').innerHTML = '<div class="vuoto">Il database non è ancora pronto per i tablet: in ufficio va eseguito <b>supabase/06_tablet.sql</b>.</div>';
+    else if(!D.caricato) $('corpo').innerHTML = '<div class="vuoto">Non riesco a leggere i dati: ' + esc(err.message||err) + '</div>';
+  }
+}
+function ascolta(){
+  if(canale) return;
+  let ch = sb.channel('tablet-' + reparto());
+  ['lavori','commesse_produzione','personale','macchine'].forEach(t=>{ ch = ch.on('postgres_changes', {event:'*', schema:'public', table:t}, ()=>{ clearTimeout(timerCarica); timerCarica = setTimeout(carica, 500); }); });
+  canale = ch.subscribe();
+  setInterval(carica, 60000);                                  // sicurezza: ricarica ogni minuto
+  window.addEventListener('online', ()=>carica());
+}
+function statoRete(ok){
+  const el = $('t-stato');
+  el.className = 'stato' + (ok ? '' : ' off');
+  el.innerHTML = ok ? '<i class="ti ti-wifi"></i> Collegato' : '<i class="ti ti-wifi-off"></i> Non collegato';
+}
+
+/* ── regole: quando un lavoro si può fare ── */
+const fatto = (id)=>!D.aperti.has(id);                         // i lavori fatti non vengono caricati
+function disponibile(l){
+  if(l.stato!=='da_fare') return false;
+  if(l.tipo==='stampa') return true;
+  if(l.tipo==='carteggiatura' || l.tipo==='decorazione') return !l.dipende_da || fatto(l.dipende_da);
+  const pezzi = D.lavori.filter(x=>x.commessa_id===l.commessa_id && x.statua===l.statua && (x.tipo==='carteggiatura' || x.tipo==='decorazione'));
+  if(pezzi.length) return false;                               // ci sono ancora pezzi da finire
+  if(l.tipo==='imballaggio') return !D.lavori.some(x=>x.commessa_id===l.commessa_id && x.statua===l.statua && x.tipo==='montaggio');
+  return true;
+}
+const minuti = (l)=>Number(l.minuti_lavorati||0) + (l.stato==='in_corso' && l.ripreso_il ? (Date.now() - new Date(l.ripreso_il))/60000 : 0);
+const minutiStampa = (l)=>l.iniziato_il ? (Date.now() - new Date(l.iniziato_il))/60000 : 0;
+const consegna = (cid)=>{ const c = D.cprod.find(x=>x.commessa_id===cid); return c?.consegna ? new Date(c.consegna + 'T12:00').toLocaleDateString('it-IT',{weekday:'short', day:'numeric', month:'short'}) : ''; };
+function tags(l){
+  const t = [];
+  if(l.tecnologia) t.push(`<span class="tag ${l.tecnologia==='resina'?'res':'fdm'}">${l.tecnologia==='resina'?'Resina':'FDM'}</span>`);
+  if(l.accessorio) t.push('<span class="tag acc">Accessorio</span>');
+  if(l.contenuto==='dal magazzino') t.push('<span class="tag mag">Dal magazzino</span>');
+  if(l.contenuto==='già stampato') t.push('<span class="tag mag">Già stampato</span>');
+  return t.length ? `<div class="tags">${t.join('')}</div>` : '';
+}
+
+/* ── disegno ── */
+function disegna(){
+  const r = reparto();
+  $('t-data').textContent = new Date().toLocaleDateString('it-IT',{weekday:'long', day:'numeric', month:'long'}) + (D.cprod.length ? ' · ' + D.cprod.length + (D.cprod.length===1 ? ' commessa avviata' : ' commesse avviate') : ' · nessuna commessa avviata');
+  const html = (r==='stampa' ? disegnaStampa() : disegnaPersone(REPARTI[r])) + disegnaJolly();
+  $('corpo').innerHTML = html;
+  aggiornaTimer();
+}
+function cardLavoro(l, conTimer){
+  const prev = Number(l.minuti_previsti||0);
+  const fatti = l.tipo==='stampa' ? minutiStampa(l) : minuti(l);
+  const over = prev && fatti > prev;
+  return `<div class="lav ${over?'over':''}" data-lav="${l.id}">
+    <div class="cm">${esc(l.commessa_nome)} · ${esc(l.statua_nome)}</div>
+    <div class="pz">${esc(l.tipo==='stampa' ? l.file_nome : (l.pezzo_nome || l.tipo))}</div>
+    ${l.tipo==='stampa' && l.contenuto ? `<div class="nota">Esce: ${esc(l.contenuto)}</div>` : ''}
+    ${tags(l)}
+    ${conTimer ? `<div class="timer"><b data-timer="${l.id}">${hm(fatti)}</b><span>di ${hm(prev)} previste</span></div>
+      <div class="barra"><div data-barra="${l.id}" style="width:${Math.min(100, prev ? fatti/prev*100 : 0)}%"></div></div>
+      <div class="nota" data-nota="${l.id}"></div>` : ''}
+  </div>`;
+}
+
+// Decorazione e post-produzione: una colonna per persona
+function disegnaPersone(rep){
+  const persone = D.personale.filter(p=>(p.ruoli||[]).includes(rep.ruolo));
+  if(!persone.length) return `<div class="vuoto">Nessuna persona con il ruolo ${esc(rep.nome)}: aggiungila in ufficio, in Personale e macchine.</div>`;
+  const miei = D.lavori.filter(l=>l.tipo===rep.tipo);
+  const liberi = miei.filter(disponibile);
+  const assegnati = new Set();
+  const cols = persone.map((p,i)=>{
+    const [bg, fg] = AVATAR[i % AVATAR.length];
+    const corrente = D.lavori.find(l=>l.persona_id===p.id && l.stato==='in_corso' && l.tipo===rep.tipo);
+    const altrove = !corrente && D.lavori.find(l=>l.persona_id===p.id && l.stato==='in_corso');
+    const pause = miei.filter(l=>l.persona_id===p.id && l.stato==='in_pausa');
+    let centro;
+    if(altrove){
+      centro = `<div class="vuoto">Sta facendo un lavoro jolly: <b>${altrove.tipo}</b> · ${esc(altrove.commessa_nome)} · ${esc(altrove.statua_nome)}</div>`;
+    } else if(corrente){
+      centro = cardLavoro(corrente, true) + `<div class="bt">
+        <button class="b" onclick="pausa('${corrente.id}')"><i class="ti ti-player-pause"></i> Pausa</button>
+        <button class="b ok" onclick="finito('${corrente.id}')"><i class="ti ti-check"></i> Finito</button></div>`;
+    } else {
+      const prossimo = liberi.find(l=>!assegnati.has(l.id));
+      if(prossimo){
+        assegnati.add(prossimo.id);
+        centro = `<div class="prossimo"><div class="cm">Prossimo · ${esc(prossimo.commessa_nome)} · ${esc(prossimo.statua_nome)}</div><div class="pz">${esc(prossimo.pezzo_nome)}</div>${tags(prossimo)}<div class="nota">Previste ${hm(prossimo.minuti_previsti)}${consegna(prossimo.commessa_id) ? ' · consegna ' + consegna(prossimo.commessa_id) : ''}</div></div>
+          <button class="b go" onclick="inizia('${prossimo.id}','${p.id}')"><i class="ti ti-player-play"></i> Inizia</button>`;
+      } else centro = `<div class="vuoto">Nessun pezzo pronto per la ${rep.verbo}.</div>`;
+    }
+    const pausaHtml = pause.map(l=>`<div class="pausa"><i class="ti ti-player-pause"></i><span>In pausa: <b>${esc(l.pezzo_nome)}</b> · ${esc(l.commessa_nome)} · ${hm(minuti(l))}</span><button class="b sm" onclick="riprendi('${l.id}')">Riprendi</button></div>`).join('');
+    const stato = corrente ? (minuti(corrente) > corrente.minuti_previsti ? ['Oltre il tempo previsto','#B3261E'] : ['Al lavoro','#1B6B3A']) : altrove ? ['Lavoro jolly','#0F766E'] : ['Libero','#5A6472'];
+    return `<section class="col" aria-label="${esc(p.nome)}">
+      <div class="col-hdr"><span class="av" style="background:${bg};color:${fg}">${esc(p.nome[0]||'?')}</span><div><b>${esc(p.nome)}</b><small style="color:${stato[1]}">${stato[0]}</small></div></div>
+      ${centro}${pausaHtml}
+    </section>`;
+  }).join('');
+  const resto = liberi.filter(l=>!assegnati.has(l.id));
+  const attesa = miei.filter(l=>l.stato==='da_fare' && !disponibile(l)).length;
+  const coda = `<div class="sez"><h3><i class="ti ti-list"></i> Pronti per la ${rep.verbo}: ${liberi.length}</h3>
+    ${resto.slice(0,6).map(l=>`<div class="riga"><div class="tx"><b>${esc(l.pezzo_nome)}</b><span>${esc(l.commessa_nome)} · ${esc(l.statua_nome)}${l.accessorio ? ' · accessorio' : ''}</span></div><b>${hm(l.minuti_previsti)}</b></div>`).join('')}
+    ${resto.length>6 ? `<div class="nota">…e altri ${resto.length-6}</div>` : ''}
+    ${attesa ? `<div class="nota">${attesa} ${attesa===1?'pezzo arriverà':'pezzi arriveranno'} dalla fase precedente.</div>` : ''}
+  </div>`;
+  return `<div class="griglia">${cols}</div>` + coda;
+}
+
+// Stampa: una scheda per macchina + stampatore esterno
+function disegnaStampa(){
+  const stampe = D.lavori.filter(l=>l.tipo==='stampa');
+  const interne = D.macchine.filter(m=>!m.esterno);
+  const cols = interne.map(m=>{
+    const corrente = stampe.find(l=>l.macchina_id===m.id && l.stato==='in_corso');
+    const coda = stampe.filter(l=>l.macchina_id===m.id && l.stato==='da_fare');
+    let centro;
+    if(corrente){
+      centro = cardLavoro(corrente, true) + `<div class="bt">
+        <button class="b ko" onclick="fallita('${corrente.id}')"><i class="ti ti-x"></i> Fallita</button>
+        <button class="b ok" onclick="riuscita('${corrente.id}')"><i class="ti ti-check"></i> Riuscita</button></div>`;
+    } else if(coda.length){
+      const l = coda[0];
+      centro = `<div class="prossimo"><div class="cm">Da lanciare · ${esc(l.commessa_nome)} · ${esc(l.statua_nome)}</div><div class="pz">${esc(l.file_nome)}</div><div class="nota">Esce: ${esc(l.contenuto)} · ${hm(l.minuti_previsti)}${l.fallimenti ? ' · ristampa (' + l.fallimenti + ' fallita)' : ''}</div></div>
+        <button class="b go" onclick="avviaStampa('${l.id}')"><i class="ti ti-player-play"></i> Avvia stampa</button>`;
+    } else centro = '<div class="vuoto">Nessuna stampa in coda.</div>';
+    const dopo = coda.slice(corrente ? 0 : 1, (corrente ? 0 : 1) + 3);
+    return `<section class="col" aria-label="${esc(m.nome)}">
+      <div class="col-hdr"><div style="flex:1"><b>${esc(m.nome)}</b><small style="color:${corrente?'#1B6B3A':'#7A3B00'}">${corrente ? 'In stampa' : 'Ferma'}</small></div></div>
+      ${centro}
+      ${dopo.length ? `<div class="dopo"><h4>Dopo</h4>${dopo.map(l=>`<div><span>${esc(l.file_nome)} · ${esc(l.commessa_nome)}</span><b>${hm(l.minuti_previsti)}</b></div>`).join('')}</div>` : ''}
+    </section>`;
+  }).join('') || '<div class="vuoto">Nessuna macchina attiva.</div>';
+  const esterni = D.macchine.filter(m=>m.esterno).map(m=>m.id);
+  const est = stampe.filter(l=>esterni.includes(l.macchina_id));
+  const sezEst = esterni.length ? `<div class="sez tratt"><h3><i class="ti ti-truck-delivery"></i> Stampatore esterno</h3>
+    ${est.map(l=>`<div class="riga"><div class="tx"><b>${esc(l.file_nome)} · ${esc(l.commessa_nome)}</b><span>Esce: ${esc(l.contenuto)}</span></div><button class="b sm ok" style="flex:0 0 auto" onclick="riuscita('${l.id}')"><i class="ti ti-package-import"></i> Ricevuto</button></div>`).join('') || '<div class="nota">Nessun pezzo in attesa dallo stampatore esterno.</div>'}
+  </div>` : '';
+  return `<div class="griglia">${cols}</div>` + sezEst;
+}
+
+// Montaggio e imballaggio: per chi è libero, su tutti i tablet
+function disegnaJolly(){
+  const jolly = D.lavori.filter(l=>l.tipo==='montaggio' || l.tipo==='imballaggio');
+  const attivi = jolly.filter(l=>l.stato==='in_corso' || l.stato==='in_pausa');
+  const pronti = jolly.filter(disponibile);
+  if(!attivi.length && !pronti.length) return '';
+  const nomeP = (id)=>D.personale.find(p=>p.id===id)?.nome || '?';
+  const tipoN = (t)=>t==='montaggio' ? 'Montaggio' : 'Imballaggio';
+  return `<div class="sez tratt"><h3><i class="ti ti-arrows-shuffle"></i> Lavori jolly · per chi è libero</h3><div class="jolly">
+    ${attivi.map(l=>`<div class="j attivo"><div class="tx"><b>${tipoN(l.tipo)} · ${esc(nomeP(l.persona_id))}${l.stato==='in_pausa' ? ' (in pausa)' : ''}</b><span>${esc(l.commessa_nome)} · ${esc(l.statua_nome)}</span></div>
+      <span class="t" data-timer="${l.id}">${hm(minuti(l))}</span>
+      ${l.stato==='in_corso' ? `<button class="b sm" onclick="pausa('${l.id}')">Pausa</button>` : `<button class="b sm" onclick="riprendi('${l.id}')">Riprendi</button>`}
+      <button class="b sm ok" style="flex:0 0 auto" onclick="finito('${l.id}')">Finito</button></div>`).join('')}
+    ${pronti.slice(0,4).map(l=>`<div class="j"><div class="tx"><b>${tipoN(l.tipo)} · ${hm(l.minuti_previsti)}</b><span>${esc(l.commessa_nome)} · ${esc(l.statua_nome)}</span></div><button class="b sm" onclick="prendoIo('${l.id}')">Lo prendo io</button></div>`).join('')}
+  </div></div>`;
+}
+
+/* ── timer: si aggiornano ogni secondo senza ridisegnare ── */
+function aggiornaTimer(){
+  document.querySelectorAll('[data-timer]').forEach(el=>{
+    const l = D.lavori.find(x=>x.id===el.dataset.timer); if(!l) return;
+    const m = l.tipo==='stampa' ? minutiStampa(l) : minuti(l);
+    el.textContent = hm(m);
+    const prev = Number(l.minuti_previsti||0);
+    const bar = document.querySelector(`[data-barra="${l.id}"]`); if(bar) bar.style.width = Math.min(100, prev ? m/prev*100 : 0) + '%';
+    const nota = document.querySelector(`[data-nota="${l.id}"]`);
+    if(nota) nota.textContent = !prev ? '' : m <= prev ? (l.tipo==='stampa' ? 'Mancano circa ' : 'Restano ') + hm(prev - m) : '+' + hm(m - prev) + ' sul previsto';
+    el.closest('.lav')?.classList.toggle('over', prev && m > prev);
+  });
+}
+setInterval(aggiornaTimer, 15000);
+
+/* ── azioni ── */
+async function aggiorna(id, valori, statoAtteso){
+  let q = sb.from('lavori').update(valori).eq('id', id);
+  if(statoAtteso) q = q.eq('stato', statoAtteso);
+  const {data, error} = await q.select('id');
+  if(error){ toast('Non salvato: ' + error.message, true); return false; }
+  if(!data.length){ toast('Qualcun altro l\'ha appena cambiato', true); await carica(); return false; }
+  return true;
+}
+async function fermaAltri(personaId){
+  // una persona fa una cosa alla volta: l'eventuale lavoro in corso va in pausa
+  for(const l of D.lavori.filter(x=>x.persona_id===personaId && x.stato==='in_corso')){
+    await aggiorna(l.id, {stato:'in_pausa', minuti_lavorati: Math.round(minuti(l)*100)/100, ripreso_il:null}, 'in_corso');
+  }
+}
+async function inizia(id, personaId){
+  const l = D.lavori.find(x=>x.id===id); if(!l) return;
+  await fermaAltri(personaId);
+  const ora = new Date().toISOString();
+  if(await aggiorna(id, {stato:'in_corso', persona_id:personaId, iniziato_il: l.iniziato_il || ora, ripreso_il: ora}, 'da_fare')) await carica();
+}
+async function pausa(id){
+  const l = D.lavori.find(x=>x.id===id); if(!l) return;
+  if(await aggiorna(id, {stato:'in_pausa', minuti_lavorati: Math.round(minuti(l)*100)/100, ripreso_il:null}, 'in_corso')) await carica();
+}
+async function riprendi(id){
+  const l = D.lavori.find(x=>x.id===id); if(!l) return;
+  if(l.persona_id) await fermaAltri(l.persona_id);
+  if(await aggiorna(id, {stato:'in_corso', ripreso_il: new Date().toISOString()}, 'in_pausa')) await carica();
+}
+async function finito(id){
+  const l = D.lavori.find(x=>x.id===id); if(!l) return;
+  const dati = {stato:'fatto', minuti_lavorati: Math.round(minuti(l)*100)/100, ripreso_il:null, finito_il: new Date().toISOString()};
+  if(await aggiorna(id, dati, l.stato)){ toast('Fatto ✓ · ' + (l.pezzo_nome || l.tipo) + ' in ' + hm(dati.minuti_lavorati)); await carica(); }
+}
+async function avviaStampa(id){
+  const ora = new Date().toISOString();
+  if(await aggiorna(id, {stato:'in_corso', iniziato_il: ora, ripreso_il: ora}, 'da_fare')) await carica();
+}
+async function riuscita(id){
+  const l = D.lavori.find(x=>x.id===id); if(!l) return;
+  const ora = new Date();
+  const dati = {stato:'fatto', finito_il: ora.toISOString(), ripreso_il:null, minuti_lavorati: l.iniziato_il ? Math.round((ora - new Date(l.iniziato_il))/600)/100 : 0};
+  if(!await aggiorna(id, dati, l.stato)) return;
+  let mag = 0;
+  for(const [pid, n] of Object.entries(l.extra||{})){
+    if(!(n>0)) continue;
+    const r = await sb.rpc('magazzino_aggiungi', {p_pezzo:pid, p_n:n});
+    if(r.error) toast('Magazzino non aggiornato: ' + r.error.message, true); else mag += n;
+  }
+  toast('Stampa riuscita ✓' + (mag ? ' · ' + mag + ' pezzi a magazzino' : ''));
+  await carica();
+}
+async function fallita(id){
+  const l = D.lavori.find(x=>x.id===id); if(!l) return;
+  if(!confirm('Stampa fallita? Torna in coda da ristampare su questa macchina.')) return;
+  if(await aggiorna(id, {stato:'da_fare', iniziato_il:null, ripreso_il:null, fallimenti:(l.fallimenti||0) + 1}, 'in_corso')){ toast('Rimessa in coda per la ristampa'); await carica(); }
+}
+function prendoIo(id){
+  const l = D.lavori.find(x=>x.id===id); if(!l) return;
+  const ruolo = l.tipo==='montaggio' ? 'montaggio' : 'imballaggio';
+  const persone = D.personale.slice().sort((a,b)=>((b.ruoli||[]).includes(ruolo)) - ((a.ruoli||[]).includes(ruolo)));
+  $('modal-box').innerHTML = `<h2>Chi lo prende?</h2><p style="color:var(--text2)">${l.tipo==='montaggio'?'Montaggio':'Imballaggio'} · ${esc(l.commessa_nome)} · ${esc(l.statua_nome)}</p>
+    <div class="persone">${persone.map(p=>`<button onclick="chiudiModal(); inizia('${l.id}','${p.id}')">${esc(p.nome)}</button>`).join('')}</div>
+    <button class="b" style="width:100%" onclick="chiudiModal()">Annulla</button>`;
+  $('modal').classList.remove('hidden');
+}
+function apriMenu(){
+  $('modal-box').innerHTML = `<h2>Impostazioni del tablet</h2>
+    <p style="color:var(--text2)">Reparto: <b>${esc(REPARTI[reparto()]?.nome||'')}</b> · account: ${esc(utente?.email||'')}</p>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button class="b" onclick="cambiaReparto()"><i class="ti ti-arrows-exchange"></i> Cambia reparto</button>
+      <button class="b ko" onclick="esci()"><i class="ti ti-logout"></i> Esci dall'account</button>
+      <button class="b" onclick="chiudiModal()">Chiudi</button>
+    </div>`;
+  $('modal').classList.remove('hidden');
+}
+function chiudiModal(){ $('modal').classList.add('hidden'); }
+function cambiaReparto(){ chiudiModal(); try{ localStorage.removeItem('tablet_reparto'); }catch(e){} mostra('v-reparto'); }
+async function esci(){ if(!confirm('Uscire dall\'account del tablet?')) return; chiudiModal(); await sb.auth.signOut(); }
+
+setInterval(()=>{ if(D.caricato) $('t-data') && disegna(); }, 10*60*1000);     // ogni 10 minuti ridisegna (data, pezzi pronti)
+avvio();
+</script>
+</body>
+</html>

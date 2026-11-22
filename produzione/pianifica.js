@@ -85,6 +85,7 @@ function pianifica(inp){
   const fileDi = new Map((inp.contenuto||[]).map(c=>[c.pezzo_id, c]));
 
   const esito = {};
+  const adesso = inp.adesso ? new Date(inp.adesso) : new Date();
   (inp.commesse||[]).forEach(c=>{
     const problemi = [];
     const blocco = (r, da, a, fase, testo, dettaglio)=>{
@@ -92,6 +93,68 @@ function pianifica(inp){
       (r.tipo==='imballaggio' ? laneImballaggio : r).blocchi.push(b);
       return b;
     };
+
+    // ── commessa avviata: si parte dai lavori reali (fatti, in corso, da fare) ──
+    if(c.lavori && c.lavori.length){
+      const fine = new Map();
+      const minutiFatti = (l)=>Number(l.minuti_lavorati||0) + (l.stato==='in_corso' && l.ripreso_il ? (adesso - new Date(l.ripreso_il))/60000 : 0);
+      const resto = (l)=>Math.max(10, Number(l.minuti_previsti||0) - minutiFatti(l));   // se ha già sforato, si stimano almeno 10 minuti
+      c.lavori.filter(l=>l.tipo==='stampa').forEach(l=>{
+        if(l.stato==='fatto'){ fine.set(l.id, 0); return; }
+        const r = risorse[l.macchina_id];
+        let x;
+        if(!r){ problemi.push(l.file_nome + ': macchina non disponibile'); x = {da:0, a:0}; }
+        else if(r.tipo==='esterno'){
+          const passati = Math.max(0, (adesso - new Date(l.creato_il || adesso)) / 86400000);
+          x = {da:0, a:Math.max(0.3, r.giorniConsegna - passati)};
+          blocco(r, x.da, x.a, 'stampa', c.nome + ' · ' + l.file_nome, 'Stampatore esterno · in attesa di consegna');
+        } else {
+          const dur = l.stato==='in_corso' && l.iniziato_il ? Math.max(5, Number(l.minuti_previsti||0) - (adesso - new Date(l.iniziato_il))/60000) : Number(l.minuti_previsti||0);
+          x = alloca(r, 0, dur);
+          blocco(r, x.da, x.a, 'stampa', c.nome + ' · ' + l.file_nome, (l.stato==='in_corso' ? 'In stampa · ' : '') + l.statua_nome);
+        }
+        fine.set(l.id, x.a);
+      });
+      const ruoloDi = {carteggiatura:'post_produzione', decorazione:'decorazione', montaggio:'montaggio', imballaggio:'imballaggio'};
+      const esegui = (l, dalle)=>{
+        if(l.stato==='fatto'){ fine.set(l.id, 0); return; }
+        const dur = resto(l);
+        const mia = (l.stato==='in_corso' || l.stato==='in_pausa') && l.persona_id && risorse[l.persona_id];
+        let x;
+        if(mia){ x = {r:mia, ...alloca(mia, dalle, dur)}; }
+        else{
+          x = allocaRuolo(ruoloDi[l.tipo], dalle, dur);
+          if(!x){ avvisa('Nessuna persona attiva con il ruolo ' + nomiRuolo[ruoloDi[l.tipo]] + ': aggiungila in Personale e macchine.'); fine.set(l.id, dalle); return; }
+        }
+        const testo = c.nome + ' · ' + (l.pezzo_nome || l.tipo);
+        const dett = l.statua_nome + (l.stato==='in_corso' ? ' · in lavorazione' : l.stato==='in_pausa' ? ' · in pausa' : '');
+        if(l.tipo==='imballaggio') blocco(laneImballaggio, x.da, x.a, 'imballaggio', c.nome + ' · imballaggio', dett + ' · tempo riservato a ' + x.r.nome);
+        else blocco(x.r, x.da, x.a, l.tipo, l.tipo==='montaggio' ? c.nome + ' · montaggio' : testo, dett);
+        fine.set(l.id, x.a);
+      };
+      ['carteggiatura','decorazione'].forEach(tipo=>{
+        c.lavori.filter(l=>l.tipo===tipo)
+          .map(l=>({l, dalle: l.dipende_da ? (fine.get(l.dipende_da) ?? 0) : 0}))
+          .sort((a,b)=>a.dalle - b.dalle)
+          .forEach(({l, dalle})=>esegui(l, dalle));
+      });
+      const statue = [...new Set(c.lavori.filter(l=>l.statua).map(l=>l.statua))];
+      let fineCommessa = 0;
+      statue.forEach(n=>{
+        const pezzi = c.lavori.filter(l=>l.statua===n && (l.tipo==='carteggiatura' || l.tipo==='decorazione'));
+        let t = Math.max(0, ...pezzi.map(l=>fine.get(l.id) || 0));
+        const mont = c.lavori.find(l=>l.statua===n && l.tipo==='montaggio');
+        if(mont){ esegui(mont, t); t = Math.max(t, fine.get(mont.id) || 0); }
+        const imb = c.lavori.find(l=>l.statua===n && l.tipo==='imballaggio');
+        if(imb){ esegui(imb, t); t = Math.max(t, fine.get(imb.id) || 0); }
+        fineCommessa = Math.max(fineCommessa, t);
+      });
+      fineCommessa = Math.max(fineCommessa, ...[...fine.values()]);
+      const mieiBlocchi = lane.concat([laneImballaggio]).flatMap(r=>r.blocchi.filter(b=>b.commessa===c.id));
+      esito[c.id] = {fine: fineCommessa, inizio: mieiBlocchi.length ? Math.min(...mieiBlocchi.map(b=>b.da)) : null, problemi,
+        completata: c.lavori.every(l=>l.stato==='fatto')};
+      return;
+    }
 
     // statue e pezzi da produrre
     const statue = [];
@@ -192,7 +255,7 @@ function pianifica(inp){
   for(let d=0; d<nGiorni; d++){ const x = new Date(oggi); x.setDate(x.getDate() + d); giorni.push({data:x, settimana: giornoSett(d)}); }
   const dataDi = (t)=>{ const x = new Date(oggi); x.setDate(x.getDate() + Math.max(0, Math.ceil(t - EPS) - 1)); return x; };
   Object.values(esito).forEach(x=>{
-    x.fineData = x.fine > 0 ? dataDi(x.fine) : null;
+    x.fineData = x.fine > 0 ? dataDi(x.fine) : (x.completata ? new Date(oggi) : null);
     if(x.inizio!=null){ const d = new Date(oggi); d.setDate(d.getDate() + Math.floor(x.inizio + EPS)); x.inizioData = d; }
   });
 
