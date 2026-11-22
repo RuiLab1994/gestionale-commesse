@@ -17,7 +17,7 @@ const st = {
   modelli: [], pezzi: [], files: [], contenuto: [], personale: [], macchine: [], cprod: [], righe: [],
   commessaId: null, commessaNome: null,
   selModello: null, bozzaModello: null,
-  selFile: null, bozzaFile: null, filtroMacchina: '',
+  selFile: null, bozzaFile: null, filtroMacchina: '', vistaFile: 'commessa', fileCommessa: null,
   cercaModelli: '', sporco: false, canale: null, timerReload: null, daRicaricare: false
 };
 
@@ -290,20 +290,45 @@ function renderFile(box){
   }
   const senza = pezziSenzaFile();
   const banner = senza.length ? `<div class="prod-banner"><i class="ti ti-alert-triangle"></i><span>${senza.length} ${senza.length===1?'pezzo del catalogo non esce':'pezzi del catalogo non escono'} da nessun file: ${senza.slice(0,6).map(p=>e(nomeModello(p.modello_id) + ' · ' + p.nome)).join(', ')}${senza.length>6?'…':''}</span></div>` : '';
-  const pills = `<button class="prod-pill ${!st.filtroMacchina?'on':''}" onclick="Prod.filtraMacchina('')">Tutti</button>` +
-    st.macchine.filter(m=>st.files.some(f=>f.macchina_id===m.id)).map(m=>`<button class="prod-pill ${st.filtroMacchina===m.id?'on':''}" onclick="Prod.filtraMacchina('${m.id}')">${e(m.nome)}</button>`).join('');
-  const items = lista.map(f=>{
+  const voceFile = (f, extra)=>{
     const cont = st.contenuto.filter(c=>c.file_id===f.id);
     const nPezzi = cont.reduce((s,c)=>s + c.quantita, 0);
     const nMod = new Set(cont.map(c=>modelloDi(c.pezzo_id)?.modello_id)).size;
     return `<button type="button" class="prod-item ${f.id===st.selFile?'sel':''}" onclick="Prod.scegliFile('${f.id}')">
-      <span class="tx"><b>${e(f.nome)}</b><span>${e(nomeMacchina(f.macchina_id))} · ${hm(f.minuti_durata)} · ${nPezzi} ${nPezzi===1?'pezzo':'pezzi'}${nMod>1 ? ', ' + nMod + ' modelli' : ''}</span></span></button>`;
-  }).join('') || `<div class="prod-empty">${st.files.length ? 'Nessun file per questa macchina' : 'Nessun file ancora: creane uno'}</div>`;
+      <span class="tx"><b>${e(f.nome)}</b><span>${extra ? extra + ' · ' : ''}${e(nomeMacchina(f.macchina_id))} · ${hm(f.minuti_durata)} · ${nPezzi} ${nPezzi===1?'pezzo':'pezzi'}${nMod>1 ? ', ' + nMod + ' modelli' : ''}</span></span></button>`;
+  };
+  const vista = `<div class="prod-pills"><button class="prod-pill ${st.vistaFile==='commessa'?'on':''}" onclick="Prod.vistaFile('commessa')">Per commessa</button><button class="prod-pill ${st.vistaFile==='macchina'?'on':''}" onclick="Prod.vistaFile('macchina')">Per macchina</button></div>`;
+  let items;
+  if(st.vistaFile==='commessa'){
+    // commesse aperte in produzione (nell'ordine della coda), poi quelle in preparazione
+    const aperte = codaProduzione().concat(st.cprod.filter(x=>x.stato!=='produzione'));
+    const usati = new Set();
+    items = aperte.map(x=>{
+      const cid = x.commessa_id, nome = nomeCommessaDaId(cid) || '?';
+      const lanci = lanciCommessa(cid);
+      lanci.forEach(l=>usati.add(l.file.id));
+      const senzaFile = righeDi(cid).flatMap(r=>st.pezzi.filter(p=>p.modello_id===r.modello_id)).filter(p=>!fileDelPezzo(p.id));
+      const stato = x.stato==='produzione' ? '<span class="pchip resina">In produzione</span>' : '<span class="pchip fdm">In preparazione</span>';
+      return `<div class="prod-grp"><div class="prod-grp-hdr"><b>${e(nome)}</b>${stato}</div>
+        ${lanci.map(l=>voceFile(l.file, 'da lanciare ×' + l.n)).join('')}
+        ${senzaFile.length ? `<div class="prod-grp-warn"><i class="ti ti-alert-triangle"></i> ${senzaFile.length} ${senzaFile.length===1?'pezzo':'pezzi'} senza file <button class="btn sm" onclick="Prod.nuovoFile('${cid}')">+ File per questa commessa</button></div>` : ''}
+        ${!lanci.length && !senzaFile.length ? '<div class="prod-empty" style="padding:10px 14px;text-align:left">Nessuna statua con modello</div>' : ''}
+      </div>`;
+    }).join('');
+    const altri = st.files.filter(f=>!usati.has(f.id));
+    if(altri.length) items += `<div class="prod-grp"><div class="prod-grp-hdr"><b>Altri file</b><span class="pchip grey">non usati dalle commesse aperte</span></div>${altri.map(f=>voceFile(f)).join('')}</div>`;
+    if(!items) items = `<div class="prod-empty">Nessun file ancora: creane uno</div>`;
+  } else {
+    const pills = `<button class="prod-pill ${!st.filtroMacchina?'on':''}" onclick="Prod.filtraMacchina('')">Tutte</button>` +
+      st.macchine.filter(m=>st.files.some(f=>f.macchina_id===m.id)).map(m=>`<button class="prod-pill ${st.filtroMacchina===m.id?'on':''}" onclick="Prod.filtraMacchina('${m.id}')">${e(m.nome)}</button>`).join('');
+    items = `<div class="prod-list-tools" style="border-top:1px solid var(--border)"><div class="prod-pills">${pills}</div></div>` +
+      (lista.map(f=>voceFile(f)).join('') || `<div class="prod-empty">${st.files.length ? 'Nessun file per questa macchina' : 'Nessun file ancora: creane uno'}</div>`);
+  }
 
   box.innerHTML = testata('File di stampa', 'Un file per macchina, con tutto quello che esce da un lancio. Può mescolare pezzi di modelli diversi; ogni pezzo esce da un solo file.',
       `<button class="btn-primary" onclick="Prod.nuovoFile()"><i class="ti ti-plus"></i> Nuovo file</button>`) + banner +
     `<div class="prod-split">
-      <div class="card prod-list"><div class="prod-list-tools"><div class="prod-pills">${pills}</div></div>${items}</div>
+      <div class="card prod-list"><div class="prod-list-tools">${vista}</div>${items}</div>
       <div class="prod-edit" id="prod-editor-file">${editorFile()}</div>
     </div>`;
 }
@@ -311,10 +336,11 @@ function opzioniPezzi(sceltoId){
   const b = st.bozzaFile;
   const altrove = new Set(st.contenuto.filter(c=>c.file_id!==b.id).map(c=>c.pezzo_id));
   const inQuesto = new Set(b.righe.map(r=>r.pezzo_id).filter(x=>x && x!==sceltoId));
-  const gruppi = st.modelli.slice().sort(perNome).map(m=>{
+  const daCommessa = st.fileCommessa ? new Set(righeDi(st.fileCommessa).map(r=>r.modello_id)) : new Set();
+  const gruppi = st.modelli.slice().sort((a,b)=>(daCommessa.has(b.id)?1:0) - (daCommessa.has(a.id)?1:0) || perNome(a,b)).map(m=>{
     const pz = st.pezzi.filter(p=>p.modello_id===m.id && (p.id===sceltoId || (!altrove.has(p.id) && !inQuesto.has(p.id))));
     if(!pz.length) return '';
-    return `<optgroup label="${e(nomeModello(m.id))}">${pz.map(p=>`<option value="${p.id}" ${p.id===sceltoId?'selected':''}>${e(p.nome)}${p.tipo==='accessorio'?' (accessorio)':''} · ${p.tecnologia==='resina'?'resina':'FDM'}</option>`).join('')}</optgroup>`;
+    return `<optgroup label="${daCommessa.has(m.id) ? '★ ' : ''}${e(nomeModello(m.id))}">${pz.map(p=>`<option value="${p.id}" ${p.id===sceltoId?'selected':''}>${e(p.nome)}${p.tipo==='accessorio'?' (accessorio)':''} · ${p.tecnologia==='resina'?'resina':'FDM'}</option>`).join('')}</optgroup>`;
   }).join('');
   return `<option value="">Scegli il pezzo…</option>` + gruppi;
 }
@@ -645,7 +671,7 @@ function renderCommessa(box){
   }).join('') || `<tr><td colspan="5"><div class="prod-empty">Nessuna statua: aggiungi quelle da produrre.</div></td></tr>`;
 
   const lanci = lanciCommessa(cid);
-  const lanciTxt = lanci.length ? lanci.map(l=>`<span style="font-weight:600">${e(l.file.nome)}</span> ×${l.n} <span class="muted">(${e(nomeMacchina(l.file.macchina_id))}, ${hm(l.file.minuti_durata*l.n)})</span>`).join('<br>') : '<span class="muted">nessuno ancora</span>';
+  const lanciTxt = lanci.length ? lanci.map(l=>`<a href="#" onclick="Prod.apriFile('${l.file.id}');return false" style="font-weight:600">${e(l.file.nome)}</a> ×${l.n} <span class="muted">(${e(nomeMacchina(l.file.macchina_id))}, ${hm(l.file.minuti_durata*l.n)})</span>`).join('<br>') : '<span class="muted">nessuno ancora</span>';
   const elencoProblemi = problemi.length && !inProd ? `<div class="prod-banner"><i class="ti ti-alert-triangle"></i><span style="flex:1">Per mandarla in produzione mancano:<br>${problemi.slice(0,8).map(e).join('<br>')}${problemi.length>8 ? '<br>…e altri ' + (problemi.length-8) : ''}</span></div>` : '';
   const azioni = inProd
     ? `<button class="btn" onclick="Prod.riportaInPreparazione()"><i class="ti ti-arrow-back-up"></i> Riporta in preparazione</button>`
@@ -663,7 +689,7 @@ function renderCommessa(box){
       ${inProd ? '' : `<div class="prod-add"><button class="btn-add" onclick="Prod.aggiungiRiga()"><i class="ti ti-plus"></i> Aggiungi statua</button></div>`}
     </div>
     <div class="card">
-      <div class="card-hdr"><h2>Riepilogo</h2></div>
+      <div class="card-hdr"><h2>Riepilogo</h2>${inProd ? '' : `<button class="btn sm" onclick="Prod.nuovoFile('${cid}')"><i class="ti ti-file-plus"></i> Nuovo file per questa commessa</button>`}</div>
       <div class="prod-tot">
         <div class="hl"><small>Lavoro delle persone</small><b>${hm(orePersoneCommessa(cid))}</b></div>
         <div style="grid-column:span 2"><small>Stampe da lanciare</small><span style="font-size:14px;line-height:1.7">${lanciTxt}</span></div>
@@ -781,22 +807,138 @@ async function riportaInPreparazione(){
   await ricarica(); render(); aggiornaRiquadro();
 }
 
-/* ═════════════ PROGRAMMAZIONE E MAGAZZINO (prossimi passi) ═════════════ */
-function renderProgrammazione(box){
-  const cat = modelliCatalogo();
-  const conPersone = st.personale.filter(p=>p.attivo && (p.ruoli||[]).length).length;
-  const macchine = st.macchine.filter(m=>m.attiva).length;
-  const senza = pezziSenzaFile().length;
-  const check = (ok, tit, sub, pag)=>`<div class="prod-check"><i class="ti ${ok?'ti-circle-check ok':'ti-circle-dashed no'}"></i><div class="tx"><b>${tit}</b><span>${sub}</span></div><button class="btn sm" onclick="showPage('${pag}')">Apri</button></div>`;
-  box.innerHTML = testata('Programmazione', 'Il Gantt delle commesse sulle ore di macchine e persone, e la simulazione del nuovo ordine.') +
-    `<div class="prod-banner" style="background:var(--blue-bg);border-color:transparent;color:var(--blue-ink)"><i class="ti ti-info-circle"></i><span>Il Gantt arriva nel prossimo passo. Per calcolarlo servono i dati qui sotto: puoi iniziare a inserirli.</span></div>
-    <div class="card"><div class="card-hdr"><h2>Cosa serve alla programmazione</h2></div><div class="prod-checks">
-      ${check(macchine>0, 'Macchine', macchine + ' attive, con le ore di stampa al giorno', 'prod-personale')}
-      ${check(conPersone>0, 'Personale con ruoli e ore', conPersone + ' persone attive', 'prod-personale')}
-      ${check(cat.length>0, 'Catalogo modelli', cat.length + ' modelli con pezzi e tempi', 'prod-catalogo')}
-      ${check(st.files.length>0 && senza===0, 'File di stampa', st.files.length + ' file' + (senza ? ' · ' + senza + (senza===1?' pezzo ancora senza file':' pezzi ancora senza file') : (st.files.length ? ' · tutti i pezzi coperti' : '')), 'prod-file')}
-    </div></div>`;
+/* ═════════════ PROGRAMMAZIONE (Gantt) ═════════════ */
+const COLORI = ['#0F766E','#6B3FC4','#C2410C','#1F4FD1','#A16207','#BE185D','#15803D','#7C3AED','#0E7490','#B45309'];
+const GG = ['dom','lun','mar','mer','gio','ven','sab'];
+const fmtGiorno = (d)=>GG[d.getDay()] + ' ' + d.getDate();
+const fmtData = (d)=>d ? d.toLocaleDateString('it-IT',{weekday:'short', day:'numeric', month:'short'}) : '—';
+function codaProduzione(){
+  return st.cprod.filter(x=>x.stato==='produzione').slice().sort((a,b)=>{
+    const pa = a.priorita ?? 1e9, pb = b.priorita ?? 1e9;
+    if(pa!==pb) return pa - pb;
+    return String(a.mandata_il||'').localeCompare(String(b.mandata_il||''));
+  });
 }
+function promessaDi(nome){
+  const s = (datiCommessa(nome)?.statue||[]).filter(x=>x.consegna && !x.consegnato).map(x=>x.consegna).sort();
+  return s[0] ? new Date(s[0] + 'T12:00') : null;
+}
+function giorniTra(a, b){ const x = new Date(a); x.setHours(0,0,0,0); const y = new Date(b); y.setHours(0,0,0,0); return Math.round((y - x) / 86400000); }
+
+function renderProgrammazione(box){
+  const coda = codaProduzione();
+  const attesa = st.cprod.filter(x=>x.stato!=='produzione');
+  const cardAttesa = attesa.length ? `<div class="card" style="margin-top:18px">
+      <div class="card-hdr"><h2>In attesa dei dati</h2><span class="sub">Non entrano nel Gantt finché non le mandi in produzione</span></div>
+      ${attesa.map(x=>{ const n = problemiCommessa(x.commessa_id).length; return `<div class="prod-check"><i class="ti ti-hourglass-empty no"></i><div class="tx"><b>${e(nomeCommessaDaId(x.commessa_id)||'?')}</b><span>${n ? (n===1 ? 'manca 1 dato' : 'mancano ' + n + ' dati') : 'dati completi: pronta da mandare in produzione'}</span></div><button class="btn sm" onclick="Prod.apriCommessaId('${x.commessa_id}')">Apri</button></div>`; }).join('')}
+    </div>` : '';
+
+  if(!coda.length){
+    const cat = modelliCatalogo();
+    const conPersone = st.personale.filter(p=>p.attivo && (p.ruoli||[]).length).length;
+    const macchine = st.macchine.filter(m=>m.attiva).length;
+    const check = (ok, tit, sub, pag)=>`<div class="prod-check"><i class="ti ${ok?'ti-circle-check ok':'ti-circle-dashed no'}"></i><div class="tx"><b>${tit}</b><span>${sub}</span></div><button class="btn sm" onclick="showPage('${pag}')">Apri</button></div>`;
+    box.innerHTML = testata('Programmazione', 'Il Gantt delle commesse in produzione, calcolato sulle ore di macchine e persone.') +
+      `<div class="prod-banner" style="background:var(--blue-bg);border-color:transparent;color:var(--blue-ink)"><i class="ti ti-info-circle"></i><span>Nessuna commessa in produzione. Il Gantt compare quando ne mandi almeno una in produzione dalla sua scheda (commessa → «Apri la produzione» → «Manda in produzione»).</span></div>
+      <div class="card"><div class="card-hdr"><h2>Cosa serve alla programmazione</h2></div><div class="prod-checks">
+        ${check(macchine>0, 'Macchine', macchine + ' attive, con le ore di stampa al giorno', 'prod-personale')}
+        ${check(conPersone>0, 'Personale con ruoli e ore', conPersone + ' persone attive', 'prod-personale')}
+        ${check(cat.length>0, 'Catalogo modelli', cat.length + ' modelli', 'prod-catalogo')}
+        ${check(st.files.length>0, 'File di stampa', st.files.length + ' file', 'prod-file')}
+      </div></div>` + cardAttesa;
+    return;
+  }
+
+  const comm = coda.map((x,i)=>{
+    const nome = nomeCommessaDaId(x.commessa_id) || '?';
+    return {id:x.commessa_id, nome, righe:righeDi(x.commessa_id), colore:COLORI[i % COLORI.length], promessa:promessaDi(nome), cliente:datiCommessa(nome)?.cliente?.nome||''};
+  });
+  const colore = Object.fromEntries(comm.map(c=>[c.id, c.colore]));
+  const piano = window.ProdPianifica({oggi:new Date(), macchine:st.macchine, personale:st.personale, modelli:st.modelli, pezzi:st.pezzi, files:st.files, contenuto:st.contenuto, commesse:comm});
+
+  // coda
+  let inRitardo = 0;
+  const righeCoda = comm.map((c,i)=>{
+    const r = piano.commesse[c.id] || {};
+    const prevista = r.fineData;
+    let badge;
+    if(!prevista) badge = '<span class="pchip grey">Da calcolare</span>';
+    else if(!c.promessa) badge = '<span class="pchip grey">Senza data promessa</span>';
+    else{
+      const diff = giorniTra(c.promessa, prevista);
+      if(diff > 0){ inRitardo++; badge = `<span class="pchip" style="background:var(--red-bg);color:var(--red)">${diff===1 ? '1 giorno' : diff + ' giorni'} di ritardo</span>`; }
+      else badge = '<span class="pchip resina">In tempo</span>';
+    }
+    const nStatue = c.righe.reduce((s,x)=>s + (x.quantita||1), 0);
+    return `<div class="prod-coda-item">
+      <div class="prod-coda-move">
+        <button type="button" aria-label="Più in alto" ${i===0?'disabled':''} onclick="Prod.sposta('${c.id}',-1)"><i class="ti ti-chevron-up"></i></button>
+        <button type="button" aria-label="Più in basso" ${i===comm.length-1?'disabled':''} onclick="Prod.sposta('${c.id}',1)"><i class="ti ti-chevron-down"></i></button>
+      </div>
+      <button type="button" class="prod-coda-tx" onclick="Prod.apriCommessaId('${c.id}')">
+        <b><span class="prod-dot" style="background:${c.colore}"></span> ${i+1}. ${e(c.nome)}</b>
+        <span>${e(c.cliente || 'Cliente non indicato')} · ${nStatue} ${nStatue===1?'statua':'statue'}</span>
+        <span>Promessa ${fmtData(c.promessa)} · prevista <b>${fmtData(prevista)}</b></span>
+        <span style="margin-top:4px">${badge}</span>
+      </button>
+    </div>`;
+  }).join('');
+
+  // gantt
+  const DW = 110, LW = 190;
+  const n = piano.giorni.length;
+  const testa = piano.giorni.map((g,d)=>{
+    const fest = g.settimana>=6, oggi = d===0;
+    return `<div class="g-day ${fest?'fest':''} ${oggi?'oggi':''}" style="left:${LW + d*DW}px;width:${DW}px">${fmtGiorno(g.data)}</div>`;
+  }).join('');
+  const sfondo = piano.giorni.map((g,d)=>g.settimana>=6 ? `<div class="g-we" style="left:${LW + d*DW}px;width:${DW}px"></div>` : '').join('');
+  const gruppi = [['macchina','Stampa'],['esterno',''],['persona','Persone'],['imballaggio','']];
+  let corpo = '';
+  gruppi.forEach(([tipo, titolo])=>{
+    const ls = piano.lane.filter(l=>l.tipo===tipo);
+    if(!ls.length) return;
+    if(titolo) corpo += `<div class="g-group" style="width:${LW + n*DW}px"><span>${titolo}</span></div>`;
+    ls.forEach(l=>{
+      const blocchi = l.blocchi.map(b=>{
+        const left = LW + b.da*DW, w = Math.max(4, (b.a - b.da)*DW - 2);
+        const tip = [b.testo, ...(b.dettagli || [b.dettaglio])].filter(Boolean).join('\n') + '\n' + fmtData(piano.giorni[Math.min(n-1, Math.floor(b.da))]?.data) + ' → ' + fmtData(piano.giorni[Math.min(n-1, Math.max(0, Math.ceil(b.a)-1))]?.data);
+        const cls = l.tipo==='esterno' ? 'g-b est' : l.tipo==='imballaggio' ? 'g-b imb' : 'g-b';
+        const stile = l.tipo==='esterno' ? `left:${left}px;width:${w}px;border-color:${colore[b.commessa]};color:${colore[b.commessa]}` : `left:${left}px;width:${w}px;background:${colore[b.commessa]}`;
+        return `<div class="${cls}" style="${stile}" title="${e(tip)}">${w >= 56 ? e(b.testo) : ''}</div>`;
+      }).join('');
+      corpo += `<div class="g-row" style="width:${LW + n*DW}px"><div class="g-label" style="width:${LW}px" title="${e(l.nome)}">${e(l.nome)}</div>${blocchi}</div>`;
+    });
+  });
+
+  const ultima = comm.map(c=>piano.commesse[c.id]?.fineData).filter(Boolean).sort((a,b)=>b-a)[0];
+  const avvisi = piano.avvisi.map(a=>`<div class="prod-banner err"><i class="ti ti-alert-triangle"></i><span>${e(a)}</span></div>`).join('');
+  box.innerHTML = testata('Programmazione', `${comm.length} ${comm.length===1?'commessa':'commesse'} in produzione · ultima consegna prevista ${fmtData(ultima)}${inRitardo ? ' · <b style="color:var(--red)">' + inRitardo + ' in ritardo</b>' : ''}`) +
+    avvisi +
+    `<div class="prod-banner" style="background:var(--bg3);border-color:var(--border);color:var(--text2);font-weight:400"><i class="ti ti-info-circle"></i><span>Il calcolo parte da oggi e considera tutto il lavoro ancora da fare: finché i tablet non registrano l'avanzamento, anche le commesse già iniziate sono calcolate dall'inizio. Macchine dal lunedì al venerdì; festività non considerate.</span></div>
+    <div class="prod-split">
+      <div class="card prod-list prod-coda"><div class="card-hdr"><h2>Coda</h2><span class="sub">Usa le frecce per la priorità</span></div>${righeCoda}</div>
+      <div class="card prod-edit" style="padding:0;overflow:hidden">
+        <div class="card-hdr" style="padding:14px 18px"><h2>Carico per macchina e persona</h2><span class="sub">Passa sopra un blocco per i dettagli</span></div>
+        <div class="g-wrap"><div class="g-inner" style="width:${LW + n*DW}px">
+          <div class="g-head" style="width:${LW + n*DW}px"><div class="g-label g-corner" style="width:${LW}px"></div>${testa}</div>
+          <div class="g-body">${sfondo}<div class="g-today" style="left:${LW + ((new Date().getHours()+new Date().getMinutes()/60)/24)*DW}px"></div>${corpo}</div>
+        </div></div>
+        <div class="g-leg">${comm.map(c=>`<span><span class="prod-dot" style="background:${c.colore}"></span>${e(c.nome)}</span>`).join('')}<span><span class="g-leg-est"></span>Stampatore esterno</span></div>
+      </div>
+    </div>` + cardAttesa;
+}
+async function sposta(id, dir){
+  const coda = codaProduzione().map(x=>x.commessa_id);
+  const i = coda.indexOf(id), j = i + dir;
+  if(i<0 || j<0 || j>=coda.length) return;
+  [coda[i], coda[j]] = [coda[j], coda[i]];
+  const ris = await Promise.all(coda.map((cid, k)=>sb.from('commesse_produzione').update({priorita:k}).eq('commessa_id', cid)));
+  const err = ris.find(r=>r.error)?.error;
+  if(err){ showToast(/priorita/.test(err.message) ? 'Manca la colonna della priorità: esegui supabase/04_priorita.sql su Supabase' : 'Non riuscito: ' + err.message, 'error'); return; }
+  await ricarica(); render();
+}
+
+/* ═════════════ MAGAZZINO (prossimo passo) ═════════════ */
 function renderMagazzino(box){
   box.innerHTML = testata('Magazzino pezzi', 'I pezzi stampati in più, usati dalle commesse successive prima di lanciare una nuova stampa.') +
     `<div class="card"><div class="empty"><i class="ti ti-building-warehouse"></i><p>Il magazzino si riempie da solo quando una stampa produce più pezzi del necessario.<br>Arriva insieme ai tablet della stampa, nel prossimo passo.</p></div></div>`;
@@ -835,8 +977,10 @@ window.Prod = {
   salvaModello, eliminaModello,
   // file
   filtraMacchina(id){ st.filtroMacchina = id; render(); },
-  scegliFile(id){ if(id===st.selFile || !puoiLasciare()) return; st.selFile = id; st.bozzaFile = bozzaFileDa(st.files.find(f=>f.id===id)); st.sporco = false; render(); },
-  nuovoFile(){ if(!puoiLasciare()) return; st.selFile = null; st.bozzaFile = bozzaFileDa(null); st.sporco = false; render(); document.getElementById('pf-nome')?.focus(); },
+  scegliFile(id){ if(id===st.selFile || !puoiLasciare()) return; st.fileCommessa = null; st.selFile = id; st.bozzaFile = bozzaFileDa(st.files.find(f=>f.id===id)); st.sporco = false; render(); },
+  nuovoFile(cid){ if(!puoiLasciare()) return; st.fileCommessa = typeof cid==='string' ? cid : null; st.selFile = null; st.bozzaFile = bozzaFileDa(null); st.sporco = false; if(st.pagina!=='prod-file') showPage('prod-file'); else render(); document.getElementById('pf-nome')?.focus(); },
+  vistaFile(v){ st.vistaFile = v; render(); },
+  apriFile(id){ if(!puoiLasciare()) return; st.selFile = id; st.bozzaFile = bozzaFileDa(st.files.find(f=>f.id===id)); st.sporco = false; st.vistaFile = 'commessa'; showPage('prod-file'); },
   fileCampo(k,v){ st.bozzaFile[k] = v; segnaSporco(); },
   fileTempo(el){ const m = leggiTempo(el.value); if(isNaN(m)){ el.classList.add('t-err'); showToast('Durata non valida: scrivi ore:minuti, es. 6:30','error'); return; } el.classList.remove('t-err'); st.bozzaFile.durata = m; el.value = hm(m); segnaSporco(); },
   rigaFile(i,k,v){ st.bozzaFile.righe[i][k] = v; segnaSporco(); if(k==='pezzo_id') riediFile(); else { const tr = document.querySelectorAll('#prod-editor-file tbody tr')[i]; const p = modelloDi(st.bozzaFile.righe[i].pezzo_id); if(tr && p){ const n = Math.floor((Number(v)||0)/p.quantita); tr.children[3].textContent = n + (n===1?' statua':' statue'); } } },
@@ -852,6 +996,8 @@ window.Prod = {
   ridisegna(){ render(); },
   tornaACommessa(){ const cid = st.bozzaModello?.commessa_id; if(!cid || !puoiLasciare()) return; st.sporco = false; st.commessaId = cid; st.commessaNome = nomeCommessaDaId(cid); showPage('prod-commessa'); },
   vaiAllaCommessa(){ const n = st.commessaNome; if(n && typeof apriCommessa==='function') window.apriCommessa(n); },
+  sposta,
+  apriCommessaId(id){ st.commessaId = id; st.commessaNome = nomeCommessaDaId(id); showPage('prod-commessa'); },
   // per i test
   _st: st, _leggiTempo: leggiTempo, _hm: hm
 };
