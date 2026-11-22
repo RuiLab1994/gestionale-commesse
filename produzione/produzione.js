@@ -822,9 +822,9 @@ async function avviaProduzione(cid){
   if(!confirm(`Avviare la produzione di ${nome}? Da ora i suoi lavori compaiono sui tablet.`)) return;
   let g;
   try{ g = await generaLavori(cid); }
-  catch(err){ showToast(/lavori|magazzino/.test(err.message||'') ? 'Manca un aggiornamento del database: esegui supabase/06_tablet.sql su Supabase' : 'Non riesco a preparare i lavori: ' + (err.message||err), 'error'); await ricarica(); return; }
+  catch(err){ showToast(/does not exist|schema cache|Could not find/i.test(err.message||'') ? 'Manca un aggiornamento del database: esegui supabase/06_tablet.sql su Supabase' : 'Non riesco a preparare i lavori: ' + (err.message||err), 'error'); console.error(err); await ricarica(); return; }
   const r = await sb.from('commesse_produzione').update({stato:'avviata', avviata_il: new Date().toISOString(), nome, consegna: consegnaIso(nome)}).eq('commessa_id', cid);
-  if(r.error){ showToast(/avviata|check/.test(r.error.message) ? 'Manca un aggiornamento del database: esegui supabase/05_avvio_produzione.sql su Supabase' : 'Non riuscito: ' + r.error.message, 'error'); return; }
+  if(r.error){ showToast(/commesse_produzione_stato_check|avviata_il/.test(r.error.message) ? 'Manca un aggiornamento del database: esegui supabase/05_avvio_produzione.sql su Supabase' : 'Non riuscito: ' + r.error.message, 'error'); return; }
   await ricarica();
   showToast(g?.tenuti ? 'Produzione riavviata ✓ (lavori già iniziati mantenuti)' : 'Produzione avviata ✓ · ' + g.creati + ' lavori sui tablet' + (g.dalMagazzino ? ' · ' + g.dalMagazzino + ' pezzi dal magazzino' : ''));
   render(); aggiornaRiquadro();
@@ -1082,7 +1082,11 @@ async function generaLavori(cid){
     if(s.m.minuti_montaggio>0) out.push({...base, id:nuovoId(), tipo:'montaggio', ordine:ordine++, minuti_previsti:s.m.minuti_montaggio});
     if(s.m.minuti_imballaggio>0) out.push({...base, id:nuovoId(), tipo:'imballaggio', ordine:ordine++, minuti_previsti:s.m.minuti_imballaggio});
   });
-  for(let i=0; i<out.length; i+=400){ const r = await sb.from('lavori').insert(out.slice(i, i+400)); if(r.error) throw r.error; }
+  // tutte le righe con tutti i campi: in un invio multiplo un campo mancante arriverebbe vuoto
+  const VUOTO = {statua:null, statua_nome:'', pezzo_id:null, pezzo_nome:'', accessorio:false, tecnologia:null, file_id:null, file_nome:'',
+    macchina_id:null, contenuto:'', extra:{}, dipende_da:null, minuti_previsti:0, stato:'da_fare', persona_id:null, minuti_lavorati:0, fallimenti:0};
+  const righe = out.map(r=>({...VUOTO, ...r, contenuto: r.contenuto || '', minuti_previsti: Number(r.minuti_previsti)||0}));
+  for(let i=0; i<righe.length; i+=400){ const r = await sb.from('lavori').insert(righe.slice(i, i+400), {defaultToNull:false}); if(r.error) throw r.error; }
   for(const [pid, n] of consumo){ const r = await sb.rpc('magazzino_aggiungi', {p_pezzo:pid, p_n:-n}); if(r.error) throw r.error; }
   return {creati: out.length, dalMagazzino: [...consumo.values()].reduce((a,b)=>a+b, 0)};
 }
