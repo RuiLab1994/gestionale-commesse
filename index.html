@@ -15,7 +15,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="produzione/produzione.css?v=3">
+<link rel="stylesheet" href="produzione/produzione.css?v=5">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.2/dist/umd/supabase.js"></script>
 <style>
@@ -600,7 +600,8 @@ td input[type=number]{text-align:right}
       <div class="brand-icon"><i class="ti ti-package"></i></div>
       <span class="brand-name">Commesse</span>
     </div>
-    <div class="nav">
+    <div class="nav nav-comm" aria-label="Gestione commesse">
+      <div class="nav-group"><i class="ti ti-briefcase"></i> Gestione commesse</div>
       <button class="nav-item active" data-nav="dashboard" onclick="showPage('dashboard')"><i class="ti ti-sun"></i><span class="lbl">Oggi</span></button>
       <button class="nav-item" data-nav="commesse" onclick="showPage('commesse')"><i class="ti ti-list-details"></i><span class="lbl">Commesse</span><span class="nav-badge" id="nav-badge-aperte"></span></button>
       <button class="nav-item" data-nav="calendario" onclick="showPage('calendario')"><i class="ti ti-calendar-month"></i><span class="lbl">Calendario</span></button>
@@ -609,7 +610,7 @@ td input[type=number]{text-align:right}
     </div>
     <div class="nav nav-prod" aria-label="Produzione">
       <div class="nav-group"><i class="ti ti-building-factory-2"></i> Produzione</div>
-      <button class="nav-item" data-nav="prod-programmazione" onclick="showPage('prod-programmazione')"><i class="ti ti-timeline"></i><span class="lbl">Programmazione</span></button>
+      <button class="nav-item" data-nav="prod-programmazione" onclick="showPage('prod-programmazione')"><i class="ti ti-timeline"></i><span class="lbl">Programmazione</span><span class="nav-badge" id="nav-badge-prod"></span></button>
       <button class="nav-item" data-nav="prod-catalogo" onclick="showPage('prod-catalogo')"><i class="ti ti-box-multiple"></i><span class="lbl">Catalogo modelli</span></button>
       <button class="nav-item" data-nav="prod-file" onclick="showPage('prod-file')"><i class="ti ti-file-description"></i><span class="lbl">File di stampa</span></button>
       <button class="nav-item" data-nav="prod-magazzino" onclick="showPage('prod-magazzino')"><i class="ti ti-building-warehouse"></i><span class="lbl">Magazzino pezzi</span></button>
@@ -632,6 +633,7 @@ td input[type=number]{text-align:right}
 
     <!-- ══ OGGI ══ -->
     <div class="page active" id="page-dashboard">
+      <div id="prod-promemoria"></div>
       <div class="page-hdr">
         <div class="ttl">
           <h1 id="dash-greeting">Buongiorno</h1>
@@ -3844,7 +3846,7 @@ if('serviceWorker' in navigator){
   });
 }
 </script>
-<script src="produzione/pianifica.js?v=1"></script>
-<script src="produzione/produzione.js?v=3"></script>
+<script src="produzione/pianifica.js?v=2"></script>
+<script src="produzione/produzione.js?v=4"></script>
 </body>
 </html>

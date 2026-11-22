@@ -48,6 +48,7 @@ async function carica(){
   const ris = await Promise.all(TABELLE.map(t=>sb.from(t).select('*')));
   ris.forEach((r,i)=>{ if(r.error) throw new Error(r.error.message + ' [' + TABELLE[i] + ']'); });
   [st.modelli, st.pezzi, st.files, st.contenuto, st.personale, st.macchine, st.cprod, st.righe] = ris.map(r=>r.data||[]);
+  setTimeout(aggiornaPromemoria, 0);
   st.righe.sort((a,b)=>a.ordine-b.ordine);
   st.modelli.sort(perNome); st.files.sort(perNome); st.personale.sort(perNome); st.macchine.sort(perNome);
   st.pezzi.sort((a,b)=>a.ordine-b.ordine);
@@ -301,14 +302,14 @@ function renderFile(box){
   let items;
   if(st.vistaFile==='commessa'){
     // commesse aperte in produzione (nell'ordine della coda), poi quelle in preparazione
-    const aperte = codaProduzione().concat(st.cprod.filter(x=>x.stato!=='produzione'));
+    const aperte = codaProduzione().concat(st.cprod.filter(x=>x.stato==='preparazione'));
     const usati = new Set();
     items = aperte.map(x=>{
       const cid = x.commessa_id, nome = nomeCommessaDaId(cid) || '?';
       const lanci = lanciCommessa(cid);
       lanci.forEach(l=>usati.add(l.file.id));
       const senzaFile = righeDi(cid).flatMap(r=>st.pezzi.filter(p=>p.modello_id===r.modello_id)).filter(p=>!fileDelPezzo(p.id));
-      const stato = x.stato==='produzione' ? '<span class="pchip resina">In produzione</span>' : '<span class="pchip fdm">In preparazione</span>';
+      const stato = x.stato==='avviata' ? '<span class="pchip resina">Avviata</span>' : x.stato==='produzione' ? '<span class="pchip grey">In coda</span>' : '<span class="pchip fdm">In preparazione</span>';
       return `<div class="prod-grp"><div class="prod-grp-hdr"><b>${e(nome)}</b>${stato}</div>
         ${lanci.map(l=>voceFile(l.file, 'da lanciare ×' + l.n)).join('')}
         ${senzaFile.length ? `<div class="prod-grp-warn"><i class="ti ti-alert-triangle"></i> ${senzaFile.length} ${senzaFile.length===1?'pezzo':'pezzi'} senza file <button class="btn sm" onclick="Prod.nuovoFile('${cid}')">+ File per questa commessa</button></div>` : ''}
@@ -589,7 +590,8 @@ function lanciCommessa(cid){
   const serve = {};
   righeDi(cid).forEach(r=>{
     if(!r.modello_id) return;
-    st.pezzi.filter(p=>p.modello_id===r.modello_id).forEach(p=>{ serve[p.id] = (serve[p.id]||0) + p.quantita * r.quantita; });
+    const daStampare = Math.max(0, r.quantita - (r.gia_stampate||0));
+    st.pezzi.filter(p=>p.modello_id===r.modello_id).forEach(p=>{ serve[p.id] = (serve[p.id]||0) + p.quantita * daStampare; });
   });
   const lanci = {};
   Object.entries(serve).forEach(([pid, n])=>{
@@ -645,9 +647,14 @@ function renderCommessa(box){
   const consegne = (dati.statue||[]).filter(s=>s.consegna && !s.consegnato).map(s=>s.consegna).sort();
   const consegna = consegne.length ? new Date(consegne[0]+'T12:00').toLocaleDateString('it-IT',{weekday:'short', day:'numeric', month:'long'}) : 'non indicata';
   const problemi = problemiCommessa(cid);
-  const inProd = sp.stato==='produzione';
-  const statoChip = inProd ? '<span class="pchip" style="background:var(--green-bg);color:var(--green)">In produzione</span>'
-    : problemi.length ? '<span class="pchip fdm">In attesa dei dati</span>' : '<span class="pchip" style="background:var(--blue-bg);color:var(--blue-ink)">Dati completi</span>';
+  const inCoda = sp.stato==='produzione', avviata = sp.stato==='avviata', inProd = inCoda || avviata;
+  const pianoC = inCoda ? calcolaPiano()?.commesse?.[cid] : null;
+  const statoChip = avviata ? '<span class="pchip" style="background:var(--green-bg);color:var(--green)">Avviata</span>'
+    : inCoda ? '<span class="pchip" style="background:var(--blue-bg);color:var(--blue-ink)">In coda</span>'
+    : problemi.length ? '<span class="pchip fdm">In attesa dei dati</span>' : '<span class="pchip grey">Dati completi</span>';
+  const statoNota = avviata ? 'avviata il ' + fmtData(new Date(sp.avviata_il||sp.aggiornato_il))
+    : inCoda ? 'nel Gantt, non ancora sui tablet' + (pianoC?.inizioData ? ' · avvio previsto ' + fmtData(pianoC.inizioData) : '') + (pianoC?.fineData ? ' · fine prevista ' + fmtData(pianoC.fineData) : '')
+    : '';
 
   const catalogo = modelliCatalogo();
   const personali = st.modelli.filter(m=>m.commessa_id===cid).sort(perNome);
@@ -664,27 +671,30 @@ function renderCommessa(box){
     return `<tr>
       <td><input type="text" value="${e(r.descrizione)}" placeholder="es. Madonna con manto azzurro" aria-label="Descrizione" ${inProd?'disabled':''} onchange="Prod.rigaCampo('${r.id}','descrizione',this.value)"></td>
       <td class="q"><input type="number" min="1" value="${r.quantita}" aria-label="Quantità" ${inProd?'disabled':''} onchange="Prod.rigaCampo('${r.id}','quantita',this.value)"></td>
+      <td class="q"><input type="number" min="0" max="${r.quantita}" value="${r.gia_stampate||0}" aria-label="Già stampate" title="Statue già stampate (es. dal magazzino): saltano la stampa" ${inProd?'disabled':''} onchange="Prod.rigaCampo('${r.id}','gia_stampate',this.value)"></td>
       <td><select aria-label="Modello" ${inProd?'disabled':''} onchange="Prod.rigaModello('${r.id}',this)">${opz}</select></td>
       <td>${statoRiga}</td>
       <td style="white-space:nowrap">${azione} ${inProd ? '' : `<button type="button" class="btn-del" aria-label="Togli statua" onclick="Prod.togliRiga('${r.id}')">×</button>`}</td>
     </tr>`;
-  }).join('') || `<tr><td colspan="5"><div class="prod-empty">Nessuna statua: aggiungi quelle da produrre.</div></td></tr>`;
+  }).join('') || `<tr><td colspan="6"><div class="prod-empty">Nessuna statua: aggiungi quelle da produrre.</div></td></tr>`;
 
   const lanci = lanciCommessa(cid);
   const lanciTxt = lanci.length ? lanci.map(l=>`<a href="#" onclick="Prod.apriFile('${l.file.id}');return false" style="font-weight:600">${e(l.file.nome)}</a> ×${l.n} <span class="muted">(${e(nomeMacchina(l.file.macchina_id))}, ${hm(l.file.minuti_durata*l.n)})</span>`).join('<br>') : '<span class="muted">nessuno ancora</span>';
-  const elencoProblemi = problemi.length && !inProd ? `<div class="prod-banner"><i class="ti ti-alert-triangle"></i><span style="flex:1">Per mandarla in produzione mancano:<br>${problemi.slice(0,8).map(e).join('<br>')}${problemi.length>8 ? '<br>…e altri ' + (problemi.length-8) : ''}</span></div>` : '';
-  const azioni = inProd
-    ? `<button class="btn" onclick="Prod.riportaInPreparazione()"><i class="ti ti-arrow-back-up"></i> Riporta in preparazione</button>`
-    : `<button class="btn-primary" ${problemi.length?'disabled':''} onclick="Prod.mandaInProduzione()"><i class="ti ti-player-play"></i> Manda in produzione</button>`;
+  const elencoProblemi = problemi.length && !inProd ? `<div class="prod-banner"><i class="ti ti-alert-triangle"></i><span style="flex:1">Per metterla in coda di produzione mancano:<br>${problemi.slice(0,8).map(e).join('<br>')}${problemi.length>8 ? '<br>…e altri ' + (problemi.length-8) : ''}</span></div>` : '';
+  const azioni = avviata
+    ? `<button class="btn" onclick="Prod.riportaInCoda()"><i class="ti ti-arrow-back-up"></i> Riporta in coda</button>`
+    : inCoda
+    ? `<button class="btn" onclick="Prod.riportaInPreparazione()"><i class="ti ti-arrow-back-up"></i> Riporta in preparazione</button><button class="btn-primary" onclick="Prod.avviaProduzione('${cid}')"><i class="ti ti-player-play"></i> Avvia produzione</button>`
+    : `<button class="btn-primary" ${problemi.length?'disabled':''} onclick="Prod.mandaInProduzione()"><i class="ti ti-list-numbers"></i> Metti in coda</button>`;
 
   box.innerHTML = testata(e(nome), `${e(dati.cliente?.nome||'Cliente non indicato')} · consegna promessa: ${e(consegna)}`,
       `<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" onclick="Prod.vaiAllaCommessa()"><i class="ti ti-arrow-left"></i> Torna alla commessa</button>${azioni}</div>`) +
-    `<div style="margin:-6px 0 16px">${statoChip}${inProd && sp.mandata_il ? ` <span class="muted" style="font-size:13px">dal ${new Date(sp.mandata_il).toLocaleDateString('it-IT',{day:'numeric',month:'long'})}</span>` : ''}</div>
+    `<div style="margin:-6px 0 16px">${statoChip}${statoNota ? ` <span class="muted" style="font-size:13px">${statoNota}</span>` : ''}</div>
     ${elencoProblemi}
     <div class="card" style="margin-bottom:18px">
       <div class="card-hdr"><h2>Statue da produrre</h2><span class="sub">Dal catalogo del negozio, oppure personalizzate per questa commessa</span></div>
       <div class="prod-tbl-wrap"><table class="prod-tbl" style="min-width:820px">
-        <thead><tr><th>Descrizione</th><th>Quantità</th><th>Modello</th><th>Dati</th><th></th></tr></thead>
+        <thead><tr><th>Descrizione</th><th>Quantità</th><th title="Statue già stampate (es. dal magazzino): saltano la stampa">Già stampate</th><th>Modello</th><th>Dati</th><th></th></tr></thead>
         <tbody>${righe}</tbody></table></div>
       ${inProd ? '' : `<div class="prod-add"><button class="btn-add" onclick="Prod.aggiungiRiga()"><i class="ti ti-plus"></i> Aggiungi statua</button></div>`}
     </div>
@@ -694,7 +704,7 @@ function renderCommessa(box){
         <div class="hl"><small>Lavoro delle persone</small><b>${hm(orePersoneCommessa(cid))}</b></div>
         <div style="grid-column:span 2"><small>Stampe da lanciare</small><span style="font-size:14px;line-height:1.7">${lanciTxt}</span></div>
       </div>
-      <p class="muted" style="font-size:13px;padding:0 20px 16px">I pezzi in più delle stampe andranno in magazzino; quando il magazzino sarà attivo, i pezzi già presenti ridurranno le stampe.</p>
+      <p class="muted" style="font-size:13px;padding:0 20px 16px">Le statue segnate come «già stampate» saltano la stampa ma passano da carteggiatura, decorazione, montaggio e imballaggio. I pezzi in più delle stampe andranno in magazzino.</p>
     </div>`;
 }
 
@@ -709,17 +719,21 @@ function aggiornaRiquadro(){
   const fai = ()=>{
     const sp = statoProd(cid);
     if(!sp){ scrivi('Non impostata', 'grey', 'Imposta quali statue produrre, con pezzi, file di stampa e tempi.'); return; }
-    if(sp.stato==='produzione'){ scrivi('In produzione', 'resina', 'Mandata in produzione il ' + new Date(sp.mandata_il||sp.aggiornato_il).toLocaleDateString('it-IT',{day:'numeric',month:'long'}) + '.'); return; }
+    if(sp.stato==='avviata'){ scrivi('Avviata', 'resina', 'Produzione avviata il ' + new Date(sp.avviata_il||sp.aggiornato_il).toLocaleDateString('it-IT',{day:'numeric',month:'long'}) + '.'); return; }
+    if(sp.stato==='produzione'){ const pc = calcolaPiano()?.commesse?.[cid]; scrivi('In coda', 'grey', 'Nel Gantt, da avviare' + (pc?.inizioData ? ': avvio previsto ' + fmtData(pc.inizioData) : '') + '.'); return; }
     const p = problemiCommessa(cid);
-    if(p.length) scrivi('In attesa dei dati', 'fdm', (p.length===1 ? 'Manca 1 dato' : 'Mancano ' + p.length + ' dati') + ' prima di poterla mandare in produzione.');
-    else scrivi('Dati completi', 'grey', 'Pronta da mandare in produzione.');
+    if(p.length) scrivi('In attesa dei dati', 'fdm', (p.length===1 ? 'Manca 1 dato' : 'Mancano ' + p.length + ' dati') + ' prima di poterla mettere in coda.');
+    else scrivi('Dati completi', 'grey', 'Pronta da mettere in coda di produzione.');
   };
   if(st.caricato) fai();
   else assicuraDati().then(fai).catch(()=>scrivi('Non disponibile', 'grey', 'Dati di produzione non raggiungibili in questo momento.'));
 }
 
 async function rigaCampo(id, campo, v){
-  const val = campo==='quantita' ? Math.max(1, parseInt(v)||1) : String(v).trim();
+  const riga = st.righe.find(x=>x.id===id);
+  const val = campo==='quantita' ? Math.max(1, parseInt(v)||1)
+    : campo==='gia_stampate' ? Math.min(Math.max(0, parseInt(v)||0), riga?.quantita||1)
+    : String(v).trim();
   const r = await sb.from('produzione_righe').update({[campo]: val}).eq('id', id);
   if(r.error){ showToast('Non salvato: ' + r.error.message, 'error'); return; }
   const loc = st.righe.find(x=>x.id===id); if(loc) loc[campo] = val;
@@ -795,13 +809,26 @@ async function mandaInProduzione(){
   const cid = st.commessaId;
   const p = problemiCommessa(cid);
   if(p.length){ showToast('Mancano ancora dei dati', 'error'); return; }
-  if(!confirm('Mandare la commessa in produzione? Entrerà nella programmazione e sui tablet.')) return;
+  if(!confirm('Mettere la commessa in coda di produzione? Entrerà nel Gantt; sui tablet comparirà solo quando la avvii.')) return;
   const r = await sb.from('commesse_produzione').update({stato:'produzione', mandata_il: new Date().toISOString()}).eq('commessa_id', cid);
   if(r.error){ showToast('Non riuscito: ' + r.error.message, 'error'); return; }
-  await ricarica(); showToast('Commessa in produzione ✓'); render(); aggiornaRiquadro();
+  await ricarica(); showToast('Commessa in coda ✓'); render(); aggiornaRiquadro();
+}
+async function avviaProduzione(cid){
+  const nome = nomeCommessaDaId(cid) || '';
+  if(!confirm(`Avviare la produzione di ${nome}? Da ora i suoi lavori compaiono sui tablet.`)) return;
+  const r = await sb.from('commesse_produzione').update({stato:'avviata', avviata_il: new Date().toISOString()}).eq('commessa_id', cid);
+  if(r.error){ showToast(/avviata|check/.test(r.error.message) ? 'Manca un aggiornamento del database: esegui supabase/05_avvio_produzione.sql su Supabase' : 'Non riuscito: ' + r.error.message, 'error'); return; }
+  await ricarica(); showToast('Produzione avviata ✓'); render(); aggiornaRiquadro();
+}
+async function riportaInCoda(){
+  if(!confirm('Riportarla in coda? Sparirà dai tablet finché non la riavvii.')) return;
+  const r = await sb.from('commesse_produzione').update({stato:'produzione', avviata_il:null}).eq('commessa_id', st.commessaId);
+  if(r.error){ showToast('Non riuscito: ' + r.error.message, 'error'); return; }
+  await ricarica(); render(); aggiornaRiquadro();
 }
 async function riportaInPreparazione(){
-  if(!confirm('Riportarla in preparazione? Uscirà dalla programmazione finché non la rimandi in produzione.')) return;
+  if(!confirm('Riportarla in preparazione? Uscirà dal Gantt finché non la rimetti in coda.')) return;
   const r = await sb.from('commesse_produzione').update({stato:'preparazione', mandata_il:null}).eq('commessa_id', st.commessaId);
   if(r.error){ showToast('Non riuscito: ' + r.error.message, 'error'); return; }
   await ricarica(); render(); aggiornaRiquadro();
@@ -813,7 +840,9 @@ const GG = ['dom','lun','mar','mer','gio','ven','sab'];
 const fmtGiorno = (d)=>GG[d.getDay()] + ' ' + d.getDate();
 const fmtData = (d)=>d ? d.toLocaleDateString('it-IT',{weekday:'short', day:'numeric', month:'short'}) : '—';
 function codaProduzione(){
-  return st.cprod.filter(x=>x.stato==='produzione').slice().sort((a,b)=>{
+  return st.cprod.filter(x=>x.stato==='produzione' || x.stato==='avviata').slice().sort((a,b)=>{
+    const av = (x)=>x.stato==='avviata' ? 0 : 1;
+    if(av(a)!==av(b)) return av(a) - av(b);             // le avviate stanno sempre davanti
     const pa = a.priorita ?? 1e9, pb = b.priorita ?? 1e9;
     if(pa!==pb) return pa - pb;
     return String(a.mandata_il||'').localeCompare(String(b.mandata_il||''));
@@ -825,9 +854,33 @@ function promessaDi(nome){
 }
 function giorniTra(a, b){ const x = new Date(a); x.setHours(0,0,0,0); const y = new Date(b); y.setHours(0,0,0,0); return Math.round((y - x) / 86400000); }
 
+function calcolaPiano(){
+  if(!st.caricato || !window.ProdPianifica) return null;
+  const elenco = codaProduzione().map((x,i)=>{
+    const nome = nomeCommessaDaId(x.commessa_id) || '?';
+    return {id:x.commessa_id, nome, stato:x.stato, righe:righeDi(x.commessa_id), colore:COLORI[i % COLORI.length], promessa:promessaDi(nome), cliente:datiCommessa(nome)?.cliente?.nome||''};
+  });
+  const piano = window.ProdPianifica({oggi:new Date(), macchine:st.macchine, personale:st.personale, modelli:st.modelli, pezzi:st.pezzi, files:st.files, contenuto:st.contenuto, commesse:elenco});
+  piano.elenco = elenco;
+  return piano;
+}
+
+/* Promemoria: commesse in coda il cui avvio previsto è oggi (o già passato) */
+function daAvviareOggi(){
+  const piano = calcolaPiano(); if(!piano) return [];
+  return piano.elenco.filter(c=>c.stato==='produzione' && piano.commesse[c.id]?.inizioData && giorniTra(new Date(), piano.commesse[c.id].inizioData) <= 0);
+}
+function aggiornaPromemoria(){
+  const lista = st.caricato ? daAvviareOggi() : [];
+  const badge = document.getElementById('nav-badge-prod');
+  if(badge){ badge.textContent = lista.length || ''; badge.className = 'nav-badge' + (lista.length ? ' alert' : ''); badge.title = lista.length ? 'Commesse da avviare oggi' : ''; }
+  const box = document.getElementById('prod-promemoria');
+  if(box) box.innerHTML = lista.length ? `<div class="prod-banner prod-promemoria"><i class="ti ti-bell-ringing"></i><span><b>Produzione da avviare oggi:</b> ${lista.map(c=>e(c.nome)).join(', ')}</span><button class="btn sm" onclick="showPage('prod-programmazione')">Vai alla programmazione</button></div>` : '';
+}
+
 function renderProgrammazione(box){
   const coda = codaProduzione();
-  const attesa = st.cprod.filter(x=>x.stato!=='produzione');
+  const attesa = st.cprod.filter(x=>x.stato==='preparazione');
   const cardAttesa = attesa.length ? `<div class="card" style="margin-top:18px">
       <div class="card-hdr"><h2>In attesa dei dati</h2><span class="sub">Non entrano nel Gantt finché non le mandi in produzione</span></div>
       ${attesa.map(x=>{ const n = problemiCommessa(x.commessa_id).length; return `<div class="prod-check"><i class="ti ti-hourglass-empty no"></i><div class="tx"><b>${e(nomeCommessaDaId(x.commessa_id)||'?')}</b><span>${n ? (n===1 ? 'manca 1 dato' : 'mancano ' + n + ' dati') : 'dati completi: pronta da mandare in produzione'}</span></div><button class="btn sm" onclick="Prod.apriCommessaId('${x.commessa_id}')">Apri</button></div>`; }).join('')}
@@ -849,12 +902,9 @@ function renderProgrammazione(box){
     return;
   }
 
-  const comm = coda.map((x,i)=>{
-    const nome = nomeCommessaDaId(x.commessa_id) || '?';
-    return {id:x.commessa_id, nome, righe:righeDi(x.commessa_id), colore:COLORI[i % COLORI.length], promessa:promessaDi(nome), cliente:datiCommessa(nome)?.cliente?.nome||''};
-  });
+  const piano = calcolaPiano();
+  const comm = piano.elenco;
   const colore = Object.fromEntries(comm.map(c=>[c.id, c.colore]));
-  const piano = window.ProdPianifica({oggi:new Date(), macchine:st.macchine, personale:st.personale, modelli:st.modelli, pezzi:st.pezzi, files:st.files, contenuto:st.contenuto, commesse:comm});
 
   // coda
   let inRitardo = 0;
@@ -870,6 +920,9 @@ function renderProgrammazione(box){
       else badge = '<span class="pchip resina">In tempo</span>';
     }
     const nStatue = c.righe.reduce((s,x)=>s + (x.quantita||1), 0);
+    const daAvviare = c.stato==='produzione' && r.inizioData && giorniTra(new Date(), r.inizioData) <= 0;
+    const statoTxt = c.stato==='avviata' ? '<span class="pchip resina">Avviata</span>'
+      : `<span class="pchip ${daAvviare?'fdm':'grey'}">${daAvviare ? 'Da avviare oggi' : 'In coda · avvio ' + fmtData(r.inizioData)}</span>`;
     return `<div class="prod-coda-item">
       <div class="prod-coda-move">
         <button type="button" aria-label="Più in alto" ${i===0?'disabled':''} onclick="Prod.sposta('${c.id}',-1)"><i class="ti ti-chevron-up"></i></button>
@@ -879,8 +932,9 @@ function renderProgrammazione(box){
         <b><span class="prod-dot" style="background:${c.colore}"></span> ${i+1}. ${e(c.nome)}</b>
         <span>${e(c.cliente || 'Cliente non indicato')} · ${nStatue} ${nStatue===1?'statua':'statue'}</span>
         <span>Promessa ${fmtData(c.promessa)} · prevista <b>${fmtData(prevista)}</b></span>
-        <span style="margin-top:4px">${badge}</span>
+        <span style="margin-top:4px;display:flex;flex-wrap:wrap;gap:6px">${statoTxt}${badge}</span>
       </button>
+      ${c.stato==='produzione' ? `<button class="btn sm ${daAvviare?'primary':''}" onclick="Prod.avviaProduzione('${c.id}')"><i class="ti ti-player-play"></i> Avvia</button>` : ''}
     </div>`;
   }).join('');
 
@@ -944,6 +998,16 @@ function renderMagazzino(box){
     `<div class="card"><div class="empty"><i class="ti ti-building-warehouse"></i><p>Il magazzino si riempie da solo quando una stampa produce più pezzi del necessario.<br>Arriva insieme ai tablet della stampa, nel prossimo passo.</p></div></div>`;
 }
 
+/* Promemoria: carica i dati di produzione appena il database è collegato, poi li tiene aggiornati */
+let _tentativi = 0;
+setInterval(()=>{
+  if(st.caricato || st.inCarica || _tentativi > 20) return;
+  if(!(typeof sbPronto==='function' && sbPronto())) return;
+  _tentativi++;
+  assicuraDati().then(()=>{ ascolta(); aggiornaPromemoria(); }).catch(()=>{});
+}, 4000);
+setInterval(()=>{ if(st.caricato) aggiornaPromemoria(); }, 15*60*1000);
+
 /* ═════════════ API pubblica (usata dai pulsanti) ═════════════ */
 window.Prod = {
   mostra,
@@ -991,7 +1055,7 @@ window.Prod = {
   apriPersona, salvaPersona, eliminaPersona, apriMacchina, salvaMacchina, eliminaMacchina,
   toggleEsterno(v){ document.getElementById('pk-ore-box').style.display = v ? 'none' : ''; document.getElementById('pk-gg-box').style.display = v ? '' : 'none'; },
   // produzione della commessa
-  apriCommessa, aggiornaRiquadro, rigaCampo, rigaModello, aggiungiRiga, togliRiga, mandaInProduzione, riportaInPreparazione, modificaModelloRiga,
+  apriCommessa, aggiornaRiquadro, avviaProduzione, riportaInCoda, rigaCampo, rigaModello, aggiungiRiga, togliRiga, mandaInProduzione, riportaInPreparazione, modificaModelloRiga,
   confermaCopia(rigaId){ const mid = document.getElementById('pc-mod')?.value; chiudiModale(); const riga = st.righe.find(x=>x.id===rigaId); if(riga && mid) creaPersonalizzata(riga, mid); },
   ridisegna(){ render(); },
   tornaACommessa(){ const cid = st.bozzaModello?.commessa_id; if(!cid || !puoiLasciare()) return; st.sporco = false; st.commessaId = cid; st.commessaNome = nomeCommessaDaId(cid); showPage('prod-commessa'); },

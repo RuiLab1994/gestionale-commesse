@@ -98,7 +98,8 @@ function pianifica(inp){
     (c.righe||[]).forEach(riga=>{
       const m = modelli.get(riga.modello_id);
       if(!m){ problemi.push('una statua senza modello'); return; }
-      for(let k=1; k<=Math.max(1, riga.quantita|0); k++) statue.push({m, etichetta: (riga.descrizione || m.nome) + (riga.quantita>1 ? ' ' + k + '/' + riga.quantita : ''), pezzi:[]});
+      const gia = Math.max(0, riga.gia_stampate|0);
+      for(let k=1; k<=Math.max(1, riga.quantita|0); k++) statue.push({m, stampata: k <= gia, etichetta: (riga.descrizione || m.nome) + (riga.quantita>1 ? ' ' + k + '/' + riga.quantita : ''), pezzi:[]});
     });
     const istanze = [];
     statue.forEach(s=>{
@@ -110,6 +111,7 @@ function pianifica(inp){
     // stampa: lanci per file
     const perFile = new Map();
     istanze.forEach(i=>{
+      if(i.statua.stampata){ i.pronto = 0; return; }     // già stampata: niente stampa
       const c2 = fileDi.get(i.p.id);
       if(!c2 || !files.has(c2.file_id)){ problemi.push(i.p.nome + ': nessun file'); i.pronto = 0; return; }
       if(!perFile.has(c2.file_id)) perFile.set(c2.file_id, new Map());
@@ -162,7 +164,8 @@ function pianifica(inp){
       }
       fineCommessa = Math.max(fineCommessa, t);
     });
-    esito[c.id] = {fine: fineCommessa, problemi};
+    const mieiBlocchi = lane.concat([laneImballaggio]).flatMap(r=>r.blocchi.filter(b=>b.commessa===c.id));
+    esito[c.id] = {fine: fineCommessa, inizio: mieiBlocchi.length ? Math.min(...mieiBlocchi.map(b=>b.da)) : null, problemi};
   });
 
   // unisce i blocchi consecutivi della stessa commessa e fase sulla stessa riga
@@ -188,7 +191,10 @@ function pianifica(inp){
   const giorni = [];
   for(let d=0; d<nGiorni; d++){ const x = new Date(oggi); x.setDate(x.getDate() + d); giorni.push({data:x, settimana: giornoSett(d)}); }
   const dataDi = (t)=>{ const x = new Date(oggi); x.setDate(x.getDate() + Math.max(0, Math.ceil(t - EPS) - 1)); return x; };
-  Object.values(esito).forEach(x=>{ x.fineData = x.fine > 0 ? dataDi(x.fine) : null; });
+  Object.values(esito).forEach(x=>{
+    x.fineData = x.fine > 0 ? dataDi(x.fine) : null;
+    if(x.inizio!=null){ const d = new Date(oggi); d.setDate(d.getDate() + Math.floor(x.inizio + EPS)); x.inizioData = d; }
+  });
 
   return {
     giorni,
