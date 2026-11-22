@@ -88,8 +88,8 @@ function pianifica(inp){
   const adesso = inp.adesso ? new Date(inp.adesso) : new Date();
   (inp.commesse||[]).forEach(c=>{
     const problemi = [];
-    const blocco = (r, da, a, fase, testo, dettaglio)=>{
-      const b = {commessa:c.id, nome:c.nome, fase, testo, dettaglio, da, a};
+    const blocco = (r, da, a, fase, testo, dettaglio, minuti, idLavoro, pezzo)=>{
+      const b = {commessa:c.id, nome:c.nome, stato:c.stato, fase, testo, dettaglio, da, a, minuti: Number(minuti)||0, ids: idLavoro ? [idLavoro] : [], pezzo: pezzo||''};
       (r.tipo==='imballaggio' ? laneImballaggio : r).blocchi.push(b);
       return b;
     };
@@ -107,11 +107,11 @@ function pianifica(inp){
         else if(r.tipo==='esterno'){
           const passati = Math.max(0, (adesso - new Date(l.creato_il || adesso)) / 86400000);
           x = {da:0, a:Math.max(0.3, r.giorniConsegna - passati)};
-          blocco(r, x.da, x.a, 'stampa', c.nome + ' · ' + l.file_nome, 'Stampatore esterno · in attesa di consegna');
+          blocco(r, x.da, x.a, 'stampa', c.nome + ' · ' + l.file_nome, 'Stampatore esterno · in attesa di consegna', 0, l.id, l.file_nome);
         } else {
           const dur = l.stato==='in_corso' && l.iniziato_il ? Math.max(5, Number(l.minuti_previsti||0) - (adesso - new Date(l.iniziato_il))/60000) : Number(l.minuti_previsti||0);
           x = alloca(r, 0, dur);
-          blocco(r, x.da, x.a, 'stampa', c.nome + ' · ' + l.file_nome, (l.stato==='in_corso' ? 'In stampa · ' : '') + l.statua_nome);
+          blocco(r, x.da, x.a, 'stampa', c.nome + ' · ' + l.file_nome, (l.stato==='in_corso' ? 'In stampa · ' : '') + l.statua_nome, dur, l.id, l.file_nome);
         }
         fine.set(l.id, x.a);
       });
@@ -128,8 +128,8 @@ function pianifica(inp){
         }
         const testo = c.nome + ' · ' + (l.pezzo_nome || l.tipo);
         const dett = l.statua_nome + (l.stato==='in_corso' ? ' · in lavorazione' : l.stato==='in_pausa' ? ' · in pausa' : '');
-        if(l.tipo==='imballaggio') blocco(laneImballaggio, x.da, x.a, 'imballaggio', c.nome + ' · imballaggio', dett + ' · tempo riservato a ' + x.r.nome);
-        else blocco(x.r, x.da, x.a, l.tipo, l.tipo==='montaggio' ? c.nome + ' · montaggio' : testo, dett);
+        if(l.tipo==='imballaggio') blocco(laneImballaggio, x.da, x.a, 'imballaggio', c.nome + ' · imballaggio', dett + ' · tempo riservato a ' + x.r.nome, dur, l.id, l.statua_nome);
+        else blocco(x.r, x.da, x.a, l.tipo, l.tipo==='montaggio' ? c.nome + ' · montaggio' : testo, dett, dur, l.id, l.tipo==='montaggio' ? l.statua_nome : l.pezzo_nome);
         fine.set(l.id, x.a);
       };
       ['carteggiatura','decorazione'].forEach(tipo=>{
@@ -189,8 +189,8 @@ function pianifica(inp){
       for(let n=0; n<lanci; n++){
         let x;
         if(!r){ problemi.push(f.nome + ': macchina non disponibile'); x = {da:0, a:0}; }
-        else if(r.tipo==='esterno'){ x = {da:0, a:r.giorniConsegna}; blocco(r, x.da, x.a, 'stampa', c.nome + ' · ' + f.nome, 'Stampatore esterno · consegna promessa dopo ' + r.giorniConsegna + ' giorni'); }
-        else{ x = alloca(r, 0, Number(f.minuti_durata||0)); blocco(r, x.da, x.a, 'stampa', c.nome + ' · ' + f.nome, 'Lancio ' + (n+1) + ' di ' + lanci); }
+        else if(r.tipo==='esterno'){ x = {da:0, a:r.giorniConsegna}; blocco(r, x.da, x.a, 'stampa', c.nome + ' · ' + f.nome, 'Stampatore esterno · consegna promessa dopo ' + r.giorniConsegna + ' giorni', 0, null, f.nome); }
+        else{ x = alloca(r, 0, Number(f.minuti_durata||0)); blocco(r, x.da, x.a, 'stampa', c.nome + ' · ' + f.nome, 'Lancio ' + (n+1) + ' di ' + lanci, f.minuti_durata, null, f.nome); }
         tipi.forEach(t=>t.istanze.slice(n*t.resa, (n+1)*t.resa).forEach(i=>{ i.pronto = x.a; }));
       }
     });
@@ -202,7 +202,7 @@ function pianifica(inp){
         if(dur<=0){ i[campoA] = i[campoDa]; return; }
         const x = allocaRuolo(ruolo, i[campoDa], dur);
         if(!x){ avvisa('Nessuna persona attiva con il ruolo ' + nomiRuolo[ruolo] + ': aggiungila in Personale e macchine.'); i[campoA] = i[campoDa]; return; }
-        blocco(x.r, x.da, x.a, nomeFase, c.nome + ' · ' + i.p.nome, i.statua.etichetta);
+        blocco(x.r, x.da, x.a, nomeFase, c.nome + ' · ' + i.p.nome, i.statua.etichetta, dur, null, i.p.nome);
         i[campoA] = x.a;
       });
     };
@@ -217,13 +217,13 @@ function pianifica(inp){
       if(mont>0){
         const x = allocaRuolo('montaggio', t, mont);
         if(!x) avvisa('Nessuna persona attiva con il ruolo Montaggio: aggiungila in Personale e macchine.');
-        else{ blocco(x.r, x.da, x.a, 'montaggio', c.nome + ' · montaggio', s.etichetta); t = x.a; }
+        else{ blocco(x.r, x.da, x.a, 'montaggio', c.nome + ' · montaggio', s.etichetta, mont, null, s.etichetta); t = x.a; }
       }
       const imb = Number(s.m.minuti_imballaggio||0);
       if(imb>0){
         const x = allocaRuolo('imballaggio', t, imb);
         if(!x) avvisa('Nessuna persona attiva con il ruolo Imballaggio: aggiungila in Personale e macchine.');
-        else{ blocco(laneImballaggio, x.da, x.a, 'imballaggio', c.nome + ' · imballaggio', s.etichetta + ' · tempo riservato a ' + x.r.nome); t = x.a; }
+        else{ blocco(laneImballaggio, x.da, x.a, 'imballaggio', c.nome + ' · imballaggio', s.etichetta + ' · tempo riservato a ' + x.r.nome, imb, null, s.etichetta); t = x.a; }
       }
       fineCommessa = Math.max(fineCommessa, t);
     });
@@ -233,13 +233,14 @@ function pianifica(inp){
 
   // unisce i blocchi consecutivi della stessa commessa e fase sulla stessa riga
   const tutte = lane.concat(laneImballaggio.blocchi.length ? [laneImballaggio] : []);
+  const singoli = tutte.flatMap(r=>r.blocchi.map(b=>({...b, risorsa:r.id, risorsaNome:r.nome, tipoRisorsa:r.tipo})));
   tutte.forEach(r=>{
     r.blocchi.sort((a,b)=>a.da-b.da);
     const out = [];
     r.blocchi.forEach(b=>{
       const u = out[out.length-1];
       if(u && r.tipo!=='esterno' && u.commessa===b.commessa && u.fase===b.fase && b.da - u.a < 0.02){
-        u.a = Math.max(u.a, b.a); u.n = (u.n||1) + 1;
+        u.a = Math.max(u.a, b.a); u.n = (u.n||1) + 1; u.minuti += b.minuti; u.ids = u.ids.concat(b.ids);
         if(!u.base) u.base = u.testo;
         u.testo = u.fase==='stampa' ? u.base + ' ×' + u.n : u.nome + ' · ' + u.fase + ' (' + u.n + ')';
         if(!u.dettagli) u.dettagli = [u.testo + ' — ' + u.dettaglio];
@@ -263,6 +264,8 @@ function pianifica(inp){
     giorni,
     lane: tutte.map(r=>({id:r.id, nome:r.nome, tipo:r.tipo, blocchi:r.blocchi})),
     commesse: esito,
+    singoli,
+    giornoDi: (t)=>Math.floor(t + EPS),
     avvisi
   };
 }

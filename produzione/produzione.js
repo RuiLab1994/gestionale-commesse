@@ -49,6 +49,12 @@ async function carica(){
   ris.forEach((r,i)=>{ if(r.error) throw new Error(r.error.message + ' [' + TABELLE[i] + ']'); });
   [st.modelli, st.pezzi, st.files, st.contenuto, st.personale, st.macchine, st.cprod, st.righe, st.lavori, st.magazzino] = ris.map(r=>r.data||[]);
   st.lavori.sort((a,b)=>a.ordine-b.ordine);
+  // nome e consegna servono ai tablet (che non leggono le commesse): si completano se mancano
+  st.cprod.filter(x=>x.stato!=='preparazione' && !x.nome).forEach(x=>{
+    const nome = nomeCommessaDaId(x.commessa_id); if(!nome) return;
+    x.nome = nome;
+    sb.from('commesse_produzione').update({nome, consegna: consegnaIso(nome)}).eq('commessa_id', x.commessa_id).then(()=>{}, ()=>{});
+  });
   setTimeout(aggiornaPromemoria, 0);
   st.righe.sort((a,b)=>a.ordine-b.ordine);
   st.modelli.sort(perNome); st.files.sort(perNome); st.personale.sort(perNome); st.macchine.sort(perNome);

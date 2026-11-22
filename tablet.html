@@ -10,6 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.2/dist/umd/supabase.js"></script>
+<script src="produzione/pianifica.js?v=4"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -117,6 +118,14 @@ input{font:inherit;color:inherit}
 .modal h2{font-family:var(--head);font-weight:600;font-size:22px;margin-bottom:12px}
 .persone{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin:10px 0 16px}
 .persone button{min-height:72px;border:1px solid var(--border2);border-radius:14px;background:var(--bg2);font-size:17px;font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.arrivo .giorno{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:12px 0 4px;padding-bottom:4px;border-bottom:1px solid var(--bg4)}
+.arrivo .giorno b{font-size:16px;font-weight:600}
+.arrivo .giorno span{font-size:14px;color:var(--text2)}
+.arrivo .el{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:15px}
+.arrivo .el .tx{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.arrivo .el .tx small{color:var(--text2);font-size:13px}
+.arrivo .el .h{font-weight:600;min-width:52px;text-align:right}
+.tag.coda{background:var(--amber-bg);color:var(--amber)}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#17202B;color:#fff;padding:14px 20px;border-radius:12px;font-size:16px;font-weight:500;z-index:30;max-width:90vw}
 .toast.err{background:var(--red)}
 .spin{width:22px;height:22px;border:3px solid var(--border);border-top-color:var(--acc);border-radius:50%;animation:g .8s linear infinite;display:inline-block}
@@ -227,19 +236,28 @@ function scegliReparto(k){ try{ localStorage.setItem('tablet_reparto', k); }catc
 /* ── dati ── */
 async function carica(manuale){
   try{
-    const [l, c, p, m] = await Promise.all([
+    const [l, c, p, m, mo, pz, fi, co, ri] = await Promise.all([
       sb.from('lavori').select('*').neq('stato','fatto'),
-      sb.from('commesse_produzione').select('commessa_id,stato,nome,consegna,priorita,avviata_il').eq('stato','avviata'),
-      sb.from('personale').select('id,nome,ruoli,attivo').eq('attivo', true),
-      sb.from('macchine').select('id,nome,esterno,attiva').eq('attiva', true)
+      sb.from('commesse_produzione').select('commessa_id,stato,nome,consegna,priorita,avviata_il,mandata_il').in('stato',['produzione','avviata']),
+      sb.from('personale').select('*').eq('attivo', true),
+      sb.from('macchine').select('*').eq('attiva', true),
+      sb.from('modelli').select('id,nome,altezza_cm,minuti_montaggio,minuti_imballaggio,commessa_id'),
+      sb.from('modelli_pezzi').select('*'),
+      sb.from('file_stampa').select('*'),
+      sb.from('file_stampa_contenuto').select('*'),
+      sb.from('produzione_righe').select('*')
     ]);
-    for(const r of [l,c,p,m]) if(r.error) throw r.error;
-    D.cprod = c.data; D.personale = p.data.sort((a,b)=>a.nome.localeCompare(b.nome,'it')); D.macchine = m.data.sort((a,b)=>a.nome.localeCompare(b.nome,'it'));
+    for(const r of [l,c,p,m,mo,pz,fi,co,ri]) if(r.error) throw r.error;
+    D.coda = c.data; D.cprod = c.data.filter(x=>x.stato==='avviata');
+    D.personale = p.data.sort((a,b)=>a.nome.localeCompare(b.nome,'it')); D.macchine = m.data.sort((a,b)=>a.nome.localeCompare(b.nome,'it'));
+    D.extra = {modelli:mo.data, pezzi:pz.data, files:fi.data, contenuto:co.data, righe:ri.data};
     const ordine = new Map(D.cprod.slice().sort((a,b)=>(a.priorita ?? 1e9) - (b.priorita ?? 1e9) || String(a.avviata_il).localeCompare(String(b.avviata_il))).map((x,i)=>[x.commessa_id, i]));
     D.ordineCommessa = ordine;
     D.lavori = l.data.filter(x=>ordine.has(x.commessa_id)).sort((a,b)=>ordine.get(a.commessa_id) - ordine.get(b.commessa_id) || a.ordine - b.ordine);
     D.aperti = new Set(l.data.map(x=>x.id));
+    D.tuttiAperti = l.data;
     D.caricato = true;
+    calcolaPiano();
     statoRete(true);
     disegna();
     if(manuale) toast('Aggiornato');
@@ -284,6 +302,47 @@ function tags(l){
   if(l.contenuto==='dal magazzino') t.push('<span class="tag mag">Dal magazzino</span>');
   if(l.contenuto==='già stampato') t.push('<span class="tag mag">Già stampato</span>');
   return t.length ? `<div class="tags">${t.join('')}</div>` : '';
+}
+
+/* ── lavoro in arrivo: lo stesso calcolo del Gantt dell'ufficio ── */
+function calcolaPiano(){
+  D.piano = null;
+  if(!window.ProdPianifica) return;
+  try{
+    const ordinate = D.coda.slice().sort((a,b)=>{
+      const av = (x)=>x.stato==='avviata' ? 0 : 1;
+      return av(a) - av(b) || (a.priorita ?? 1e9) - (b.priorita ?? 1e9) || String(a.mandata_il||'').localeCompare(String(b.mandata_il||''));
+    });
+    const commesse = ordinate.map(x=>{
+      const lav = x.stato==='avviata' ? D.tuttiAperti.filter(l=>l.commessa_id===x.commessa_id) : [];
+      return {id:x.commessa_id, nome:x.nome || 'Commessa', stato:x.stato, righe:D.extra.righe.filter(r=>r.commessa_id===x.commessa_id), lavori: lav.length ? lav : (x.stato==='avviata' ? [] : null)};
+    }).filter(c=>c.lavori===null || c.lavori.length);
+    D.piano = window.ProdPianifica({oggi:new Date(), adesso:new Date(), macchine:D.macchine, personale:D.personale, modelli:D.extra.modelli, pezzi:D.extra.pezzi, files:D.extra.files, contenuto:D.extra.contenuto, commesse});
+  }catch(err){ console.warn('piano non calcolato', err); }
+}
+function inArrivo(titolo, filtro, conRisorsa){
+  const P = D.piano; if(!P) return '';
+  const giaQui = new Set(D.lavori.filter(l=>l.stato!=='da_fare' || disponibile(l)).map(l=>l.id));
+  const voci = P.singoli.filter(b=>filtro(b) && !(b.ids.length && b.ids.every(id=>giaQui.has(id))) && P.giornoDi(b.da) < 7);
+  if(!voci.length) return `<div class="sez arrivo"><h3><i class="ti ti-calendar-time"></i> ${titolo}</h3><div class="nota">Niente in arrivo nei prossimi giorni.</div></div>`;
+  const perGiorno = new Map();
+  voci.forEach(b=>{ const d = P.giornoDi(b.da); if(!perGiorno.has(d)) perGiorno.set(d, []); perGiorno.get(d).push(b); });
+  const maiusc = (t)=>t.charAt(0).toUpperCase() + t.slice(1);
+  const nomeGiorno = (d)=>maiusc(nomeGiorno0(d));
+  const nomeGiorno0 = (d)=>d===0 ? 'Oggi, più tardi' : d===1 ? 'Domani · ' + P.giorni[1].data.toLocaleDateString('it-IT',{weekday:'long', day:'numeric'}) : P.giorni[d].data.toLocaleDateString('it-IT',{weekday:'long', day:'numeric', month:'short'});
+  const html = [...perGiorno.keys()].sort((a,b)=>a-b).map(d=>{
+    const lista = perGiorno.get(d);
+    const gruppi = new Map();
+    lista.forEach(b=>{
+      const k = b.commessa + '|' + b.pezzo + (conRisorsa ? '|' + b.risorsaNome : '');
+      if(!gruppi.has(k)) gruppi.set(k, {b, n:0, minuti:0});
+      const g = gruppi.get(k); g.n++; g.minuti += b.minuti;
+    });
+    const tot = lista.reduce((s,b)=>s + b.minuti, 0);
+    return `<div class="giorno"><b>${nomeGiorno(d)}</b><span>${tot ? hm(tot) + ' di lavoro previsto' : ''}</span></div>` +
+      [...gruppi.values()].map(({b, n, minuti})=>`<div class="el"><div class="tx">${esc(b.nome)} · <b>${esc(b.pezzo || b.fase)}</b>${n>1 ? ' ×' + n : ''} <small>${conRisorsa ? '· ' + esc(b.risorsaNome) : ''}</small></div>${b.stato==='produzione' ? '<span class="tag coda">da avviare</span>' : ''}<span class="h">${minuti ? hm(minuti) : ''}</span></div>`).join('');
+  }).join('');
+  return `<div class="sez arrivo"><h3><i class="ti ti-calendar-time"></i> ${titolo}</h3><div class="nota">Previsione del Gantt: può cambiare se le fasi precedenti vanno più veloci o più lente.</div>${html}</div>`;
 }
 
 /* ── disegno ── */
@@ -350,7 +409,7 @@ function disegnaPersone(rep){
     ${resto.length>6 ? `<div class="nota">…e altri ${resto.length-6}</div>` : ''}
     ${attesa ? `<div class="nota">${attesa} ${attesa===1?'pezzo arriverà':'pezzi arriveranno'} dalla fase precedente.</div>` : ''}
   </div>`;
-  return `<div class="griglia">${cols}</div>` + coda;
+  return `<div class="griglia">${cols}</div>` + coda + inArrivo('In arrivo nei prossimi giorni', b=>b.fase===rep.tipo, false);
 }
 
 // Stampa: una scheda per macchina + stampatore esterno
@@ -382,7 +441,7 @@ function disegnaStampa(){
   const sezEst = esterni.length ? `<div class="sez tratt"><h3><i class="ti ti-truck-delivery"></i> Stampatore esterno</h3>
     ${est.map(l=>`<div class="riga"><div class="tx"><b>${esc(l.file_nome)} · ${esc(l.commessa_nome)}</b><span>Esce: ${esc(l.contenuto)}</span></div><button class="b sm ok" style="flex:0 0 auto" onclick="riuscita('${l.id}')"><i class="ti ti-package-import"></i> Ricevuto</button></div>`).join('') || '<div class="nota">Nessun pezzo in attesa dallo stampatore esterno.</div>'}
   </div>` : '';
-  return `<div class="griglia">${cols}</div>` + sezEst;
+  return `<div class="griglia">${cols}</div>` + sezEst + inArrivo('Stampe in arrivo nei prossimi giorni', b=>b.fase==='stampa' && b.stato==='produzione', true);
 }
 
 // Montaggio e imballaggio: per chi è libero, su tutti i tablet
